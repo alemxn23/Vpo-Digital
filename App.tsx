@@ -282,7 +282,11 @@ const App: React.FC = () => {
       scale: 2,
       useCORS: true,
       logging: false,
-      windowWidth: 816 // Force Letter width approx
+      windowWidth: 816,
+      scrollX: 0,
+      scrollY: 0,
+      x: 0,
+      y: 0
     });
 
     const imgData = canvas.toDataURL('image/png');
@@ -744,7 +748,7 @@ const App: React.FC = () => {
         <BottomNav activeStep={activeStep} setStep={setActiveStep} />
 
         {/* Hidden Container for high-res PDF generation using html2canvas */}
-        <div id="print-content" className="absolute top-0 left-0 bg-white p-8 w-[816px] -z-50" style={{ transform: 'translateX(-9999px)' }}>
+        <div id="print-content" className="absolute left-0 bg-white p-8 w-[816px] -z-50" style={{ top: '-10000px' }}>
           <PrintView />
         </div>
 

@@ -31,7 +31,7 @@ const PrintView: React.FC = () => {
     return (
         <div className="text-[10px] leading-tight font-sans text-black">
             {/* Header */}
-            <div className="flex justify-between items-center mb-4 border-b pb-4">
+            <div className="flex justify-between items-start mb-4 border-b pb-4 pt-2">
                 <div className="flex items-center gap-4">
                     <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain" />
                     <div className="flex flex-col">
@@ -40,9 +40,9 @@ const PrintView: React.FC = () => {
                         <p className="text-[8px] font-medium text-gray-400 mt-0.5">Medicina Interna</p>
                     </div>
                 </div>
-                <div className="text-right flex flex-col items-end">
-                    <h1 className="font-bold text-[10px] uppercase">{data.unidadMedica || 'Dirección de Prestaciones Médicas'}</h1>
-                    <h2 className="font-extrabold text-[9px] text-gray-400 uppercase">{data.servicioSolicitante || 'Servicio de Medicina Interna'}</h2>
+                <div className="text-right flex flex-col items-end gap-0.5">
+                    <h1 className="font-bold text-[10px] uppercase leading-tight">{data.unidadMedica || 'Dirección de Prestaciones Médicas'}</h1>
+                    <h2 className="font-extrabold text-[9px] text-gray-400 uppercase leading-tight">{data.servicioSolicitante || 'Servicio de Medicina Interna'}</h2>
                     <h2 className="font-black text-xs mt-1 uppercase border-b-2 border-black">Valoración Preoperatoria</h2>
                 </div>
             </div>
