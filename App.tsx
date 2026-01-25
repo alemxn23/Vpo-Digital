@@ -47,6 +47,8 @@ const StickyHeader = () => {
   const asa = watch('asa');
   const lee = watch('lee');
   const caprini = watch('caprini');
+  const unidadMedica = watch('unidadMedica');
+  const servicioSolicitante = watch('servicioSolicitante');
 
   // Determine colors based on severity (simple logic)
   const getSeverityColor = (val: string | number | undefined) => {
@@ -66,7 +68,9 @@ const StickyHeader = () => {
           </div>
           <div className="flex flex-col">
             <h1 className="text-[13px] font-extrabold text-slate-900 leading-none">VPO DIGITAL</h1>
-            <p className="text-[9px] text-clinical-navy font-bold tracking-tighter mt-0.5">CMN S. XXI</p>
+            <p className="text-[9px] text-clinical-navy font-bold tracking-tighter mt-0.5">
+              {servicioSolicitante || 'Medicina Interna'} {unidadMedica || 'CMN S. XXI'}
+            </p>
           </div>
         </div>
 
@@ -81,6 +85,9 @@ const StickyHeader = () => {
 };
 
 const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: number) => void }) => {
+  const { watch } = useFormContext<VPOData>();
+  const unidadMedica = watch('unidadMedica');
+
   const navItems = [
     { icon: User, label: "Paciente", step: 0 },
     { icon: Activity, label: "Clínica", step: 1 },
@@ -99,7 +106,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg font-black text-clinical-navy leading-none tracking-tight">VPO Digital</h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">CMN S. XXI</p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{unidadMedica || 'CMN S. XXI'}</p>
           </div>
         </div>
       </div>
@@ -234,6 +241,8 @@ const App: React.FC = () => {
       tabaquismo: false,
       diabetes: false,
       hta: false,
+      servicioSolicitante: "Medicina Interna",
+      unidadMedica: "CMN SIGLO XXI",
       selectedMeds: []
     },
     mode: "onBlur"

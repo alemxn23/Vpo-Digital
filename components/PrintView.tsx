@@ -41,7 +41,8 @@ const PrintView: React.FC = () => {
                     </div>
                 </div>
                 <div className="text-right flex flex-col items-end">
-                    <h1 className="font-bold text-[10px] uppercase">Dirección de Prestaciones Médicas</h1>
+                    <h1 className="font-bold text-[10px] uppercase">{data.unidadMedica || 'Dirección de Prestaciones Médicas'}</h1>
+                    <h2 className="font-extrabold text-[9px] text-gray-400 uppercase">{data.servicioSolicitante || 'Servicio de Medicina Interna'}</h2>
                     <h2 className="font-black text-xs mt-1 uppercase border-b-2 border-black">Valoración Preoperatoria</h2>
                 </div>
             </div>

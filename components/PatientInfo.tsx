@@ -142,6 +142,7 @@ const PatientInfo: React.FC = () => {
         tfg: 0,
         rx_fecha: "",
         rx_imagen: "",
+        ekg_imagen: "",
         rx_descripcion: "",
         ariscat_infeccion: false,
         ariscat_incision: "periferica",
@@ -217,7 +218,8 @@ const PatientInfo: React.FC = () => {
         fechaNacimiento: "",
         edad: 0,
         cama: "",
-        servicioSolicitante: "",
+        servicioSolicitante: "Medicina Interna",
+        unidadMedica: "CMN SIGLO XXI",
         diagnosticoQuirurgico: "",
         cirugiaProgramada: "",
         fechaQx: "",
@@ -299,9 +301,20 @@ const PatientInfo: React.FC = () => {
             </div>
           </div>
 
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase">Cama</label>
+              <input {...register('cama')} className="w-full mt-1 p-2 border border-gray-200 rounded-lg bg-gray-50 text-sm" placeholder="123-A" />
+            </div>
+            <div>
+              <label className="text-xs font-bold text-gray-500 uppercase">Servicio</label>
+              <input {...register('servicioSolicitante')} className="w-full mt-1 p-2 border border-gray-200 rounded-lg bg-gray-50 text-sm" placeholder="Medicina Interna" />
+            </div>
+          </div>
+
           <div>
-            <label className="text-xs font-bold text-gray-500 uppercase">Cama / Servicio</label>
-            <input {...register('cama')} className="w-full mt-1 p-2 border border-gray-200 rounded-lg bg-gray-50 text-sm" />
+            <label className="text-xs font-bold text-gray-500 uppercase">Unidad Médica (Hospital)</label>
+            <input {...register('unidadMedica')} className="w-full mt-1 p-2 border border-gray-200 rounded-lg bg-gray-50 text-sm" placeholder="HGZ / CMN S. XXI" />
           </div>
         </div>
 

@@ -38,6 +38,8 @@ export interface VPOData {
   genero: Gender;
   cama: string;
   servicioSolicitante: string;
+  unidadMedica: string;
+
   diagnosticoQuirurgico: string;
   cirugiaProgramada: string;
 
