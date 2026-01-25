@@ -69,7 +69,7 @@ const StickyHeader = () => {
           <div className="flex flex-col">
             <h1 className="text-[13px] font-extrabold text-slate-900 leading-none">VPO DIGITAL</h1>
             <p className="text-[9px] text-clinical-navy font-bold tracking-tighter mt-0.5">
-              {servicioSolicitante || 'Medicina Interna'} {unidadMedica || 'CMN S. XXI'}
+              {servicioSolicitante || 'Medicina Interna'} CMN S. XXI
             </p>
           </div>
         </div>
@@ -106,7 +106,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg font-black text-clinical-navy leading-none tracking-tight">VPO Digital</h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">{unidadMedica || 'CMN S. XXI'}</p>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">CMN S. XXI</p>
           </div>
         </div>
       </div>
@@ -272,36 +272,37 @@ const App: React.FC = () => {
 
 
   const generatePDFDoc = async (): Promise<jsPDF> => {
-    // 1. Get the Hidden Report Element
-    const reportElement = document.getElementById('print-content');
-    if (!reportElement) throw new Error("Report element not found");
+    // 1. Get the Hidden Report Elements
+    const page1 = document.getElementById('print-page-1');
+    const page2 = document.getElementById('print-page-2');
 
-    // 2. Use html2canvas to capture it
-    // Scale 2 for better retina/print resolution
-    const canvas = await html2canvas(reportElement, {
-      scale: 2,
-      useCORS: true,
-      logging: false,
-      windowWidth: 816,
-      scrollX: 0,
-      scrollY: 0,
-      x: 0,
-      y: 0
-    });
+    if (!page1 || !page2) throw new Error("Report pages not found");
 
-    const imgData = canvas.toDataURL('image/png');
-
-    // 3. Create PDF
     const pdf = new jsPDF('p', 'mm', 'letter');
     const pdfWidth = pdf.internal.pageSize.getWidth();
-    const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    // Calculate aspect ratio to fit
-    const imgProps = pdf.getImageProperties(imgData);
-    const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+    const capturePage = async (element: HTMLElement) => {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        windowWidth: 816,
+      });
+      return canvas.toDataURL('image/png');
+    };
 
-    // Add Image
-    pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, imgHeight);
+    // Capture and add Page 1
+    const imgData1 = await capturePage(page1);
+    const imgProps1 = pdf.getImageProperties(imgData1);
+    const imgHeight1 = (imgProps1.height * pdfWidth) / imgProps1.width;
+    pdf.addImage(imgData1, 'PNG', 0, 0, pdfWidth, imgHeight1);
+
+    // Add Page 2
+    pdf.addPage();
+    const imgData2 = await capturePage(page2);
+    const imgProps2 = pdf.getImageProperties(imgData2);
+    const imgHeight2 = (imgProps2.height * pdfWidth) / imgProps2.width;
+    pdf.addImage(imgData2, 'PNG', 0, 0, pdfWidth, imgHeight2);
 
     return pdf;
   };
@@ -748,7 +749,7 @@ const App: React.FC = () => {
         <BottomNav activeStep={activeStep} setStep={setActiveStep} />
 
         {/* Hidden Container for high-res PDF generation using html2canvas */}
-        <div id="print-content" className="absolute left-0 bg-white p-8 w-[816px] -z-50" style={{ top: '-10000px' }}>
+        <div id="print-content" className="absolute left-0 bg-gray-100 p-0 w-[850px] -z-50 overflow-hidden" style={{ top: '-20000px' }}>
           <PrintView />
         </div>
 
