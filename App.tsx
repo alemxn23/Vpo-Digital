@@ -282,11 +282,11 @@ const App: React.FC = () => {
     const pdfWidth = pdf.internal.pageSize.getWidth();
 
     const capturePage = async (element: HTMLElement) => {
-      // 1500ms delay for maximum rendering stability on any system
-      await new Promise(resolve => setTimeout(resolve, 1500));
+      // 2000ms delay for maximum rendering stability on any system
+      await new Promise(resolve => setTimeout(resolve, 2000));
 
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 1, // Standard scale to prevent Retina artifacts
         useCORS: true,
         logging: true,
         backgroundColor: '#ffffff',
@@ -294,16 +294,22 @@ const App: React.FC = () => {
         windowWidth: 794,
         scrollX: 0,
         scrollY: 0,
+        imageTimeout: 15000,
         onclone: (clonedDoc) => {
+          // Force a virtual viewport that is exactly 794px width
           const body = clonedDoc.body;
           if (body) {
             body.style.width = '794px';
+            body.style.minWidth = '794px';
             body.style.transform = 'scale(1)';
-            body.style.transformOrigin = 'top left';
+            body.style.overflow = 'hidden';
+            // Normalize for any retina effects
+            (clonedDoc.defaultView as any).devicePixelRatio = 1;
           }
           const el = clonedDoc.getElementById(element.id);
           if (el) {
             el.style.width = '794px';
+            el.style.minWidth = '794px';
             el.style.display = 'block';
           }
         }
