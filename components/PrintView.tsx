@@ -29,21 +29,24 @@ const PrintView: React.FC = () => {
     };
 
     return (
-        <div className="text-[10px] leading-tight font-sans text-black">
-            {/* Header */}
-            <div className="flex justify-between items-start mb-4 border-b pb-4 pt-2">
+        <div className="text-[10px] leading-tight font-sans text-black bg-white">
+            {/* Header Area */}
+            <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4 pt-4">
                 <div className="flex items-center gap-4">
                     <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain" />
-                    <div className="flex flex-col">
-                        <h1 className="font-black text-sm text-clinical-navy leading-none">VPO Digital</h1>
-                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">CMN Siglo XXI</p>
-                        <p className="text-[8px] font-medium text-gray-400 mt-0.5">Medicina Interna</p>
+                    <div className="flex flex-col justify-center">
+                        <h1 className="font-black text-lg text-clinical-navy leading-none">VPO Digital</h1>
+                        <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">CMN SIGLO XXI</p>
+                        <p className="text-[9px] font-semibold text-gray-500 mt-0.5">Medicina Interna</p>
                     </div>
                 </div>
-                <div className="text-right flex flex-col items-end gap-0.5">
-                    <h1 className="font-bold text-[10px] uppercase leading-tight">{data.unidadMedica || 'Dirección de Prestaciones Médicas'}</h1>
-                    <h2 className="font-extrabold text-[9px] text-gray-400 uppercase leading-tight">{data.servicioSolicitante || 'Servicio de Medicina Interna'}</h2>
-                    <h2 className="font-black text-xs mt-1 uppercase border-b-2 border-black">Valoración Preoperatoria</h2>
+                <div className="text-right">
+                    <h1 className="font-bold text-[10px] uppercase text-slate-600 leading-tight mb-1">Dirección de Prestaciones Médicas</h1>
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mb-4">{data.unidadMedica || 'Unidad Médica CMN S. XXI'}</p>
+                    <div className="inline-block border-b-2 border-black pb-1">
+                        <h2 className="font-black text-xs uppercase px-2">{data.servicioSolicitante || 'SERVICIO DE MEDICINA INTERNA'}</h2>
+                        <h2 className="font-black text-sm uppercase px-2 mt-1">Valoración Preoperatoria</h2>
+                    </div>
                 </div>
             </div>
 
@@ -94,9 +97,9 @@ const PrintView: React.FC = () => {
             </div>
 
             {/* Riesgos */}
-            <div className="mb-2">
-                <h4 className="font-bold bg-gray-200 px-1 border border-black border-b-0 text-xs">FACTORES DE RIESGO</h4>
-                <div className="border border-black p-1">
+            <div className="mb-3 border border-black">
+                <h4 className="font-bold bg-gray-100 px-2 py-1.5 border-b border-black text-[11px] leading-normal uppercase">Factores de Riesgo</h4>
+                <div className="p-2">
                     <div className="grid grid-cols-2 gap-x-4">
                         <div className="flex justify-between border-b border-dotted border-gray-400"><span>TABAQUISMO:</span> <span>SI (<Check val={data.tabaquismo} />) IT: {data.indiceTabaquico}</span></div>
                         <div className="flex justify-between border-b border-dotted border-gray-400"><span>ALERGIAS:</span> <span>SI (<Check val={data.alergicos} />)</span></div>
@@ -176,47 +179,51 @@ const PrintView: React.FC = () => {
             </div>
 
             {/* GABINETE: RX & ECG */}
-            <div className="mb-2 border border-black p-1">
-                <h4 className="font-bold bg-gray-200 px-1 border-b border-black text-xs mb-1">GABINETE</h4>
-                <div className="grid grid-cols-2 gap-4">
-                    {/* ECG COLUMN */}
-                    <div className="border-r border-dotted border-black pr-2">
-                        <div className="font-bold underline text-xs">ELECTROCARDIOGRAMA:</div>
-                        <div className="grid grid-cols-2 gap-1 mt-1">
-                            <div><span className="font-semibold">Frec:</span> {data.ecg_frecuencia || data.frecuenciaEcg} lpm</div>
-                            <div><span className="font-semibold">Ritmo:</span> {data.ecg_ritmo_especifico || data.ritmo}</div>
+            <div className="mb-3 border border-black">
+                <h4 className="font-bold bg-gray-100 px-2 py-1.5 border-b border-black text-[11px] leading-normal uppercase">Gabinete</h4>
+                <div className="p-2">
+                    <div className="grid grid-cols-2 gap-4">
+                        {/* ECG COLUMN */}
+                        <div className="border-r border-dotted border-black pr-2">
+                            <div className="font-bold underline text-xs">ELECTROCARDIOGRAMA:</div>
+                            <div className="grid grid-cols-2 gap-1 mt-1">
+                                <div><span className="font-semibold">Frec:</span> {data.ecg_frecuencia || data.frecuenciaEcg} lpm</div>
+                                <div><span className="font-semibold">Ritmo:</span> {data.ecg_ritmo_especifico || data.ritmo}</div>
+                            </div>
+                            <div className="mt-1"><span className="font-semibold">Bloqueo:</span> {data.ecg_bloqueo}</div>
+                            <div className="mt-1 flex flex-wrap gap-2 text-[9px]">
+                                {data.ecg_hvi && <span className="border border-black px-1">HVI</span>}
+                                {data.ecg_brihh_completo && <span className="border border-black px-1 font-bold">BRIHH</span>}
+                                {data.ecg_isquemia && <span className="border border-black px-1 font-bold">ISQUEMIA</span>}
+                                {data.ecg_extrasistoles && <span className="border border-black px-1">EXTRASÍS.</span>}
+                            </div>
+                            <div className="mt-1 italic">{data.ecg_otras_alteraciones}</div>
                         </div>
-                        <div className="mt-1"><span className="font-semibold">Bloqueo:</span> {data.ecg_bloqueo}</div>
-                        <div className="mt-1 flex flex-wrap gap-2 text-[9px]">
-                            {data.ecg_hvi && <span className="border border-black px-1">HVI</span>}
-                            {data.ecg_brihh_completo && <span className="border border-black px-1 font-bold">BRIHH</span>}
-                            {data.ecg_isquemia && <span className="border border-black px-1 font-bold">ISQUEMIA</span>}
-                            {data.ecg_extrasistoles && <span className="border border-black px-1">EXTRASÍS.</span>}
-                        </div>
-                        <div className="mt-1 italic">{data.ecg_otras_alteraciones}</div>
-                    </div>
 
-                    {/* RX COLUMN */}
-                    <div className="pl-2">
-                        <div className="font-bold underline text-xs">RADIOGRAFÍA DE TÓRAX:</div>
-                        <div className="mt-1 min-h-[1.5em] border-b border-dotted border-gray-400">{data.rx_descripcion}</div>
-                        <div className="mt-2 border-t border-dotted border-black pt-1">
-                            <span className="font-bold">ARISCAT:</span> {data.ariscat_total} pts ({data.ariscat_categoria})
+                        {/* RX COLUMN */}
+                        <div className="pl-2">
+                            <div className="font-bold underline text-xs">RADIOGRAFÍA DE TÓRAX:</div>
+                            <div className="mt-1 min-h-[1.5em] border-b border-dotted border-gray-400">{data.rx_descripcion}</div>
+                            <div className="mt-2 border-t border-dotted border-black pt-1">
+                                <span className="font-bold">ARISCAT:</span> {data.ariscat_total} pts ({data.ariscat_categoria})
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             {/* INFECTOLOGÍA / ENDOCARDITIS SECTION (NEW) */}
-            <div className="mb-2 border border-black p-1">
-                <h4 className="font-bold bg-gray-200 px-1 border-b border-black text-xs mb-1">INFECTOLOGÍA (CRITERIOS DE DUKE MODIFICADOS)</h4>
-                <div className="text-[9px] px-2 py-1">
-                    <span className="font-bold">RESULTADO:</span> {data.duke_resultado || 'Rechazado'}
-                    {(data.duke_resultado === 'Definitivo' || data.duke_resultado === 'Posible') && (
-                        <div className="mt-1 font-bold text-red-700 border border-red-600 p-1 bg-red-50 uppercase text-center">
-                            ALERTA: Riesgo de Endocarditis. Diferir cirugía electiva, iniciar protocolo de antibióticos y solicitar Ecocardiograma Transesofágico (ETE) urgente.
-                        </div>
-                    )}
+            <div className="mb-3 border border-black">
+                <h4 className="font-bold bg-gray-100 px-2 py-1.5 border-b border-black text-[11px] leading-normal uppercase">Infectología (Duke)</h4>
+                <div className="p-2">
+                    <div className="text-[9px]">
+                        <span className="font-bold">RESULTADO:</span> {data.duke_resultado || 'Rechazado'}
+                        {(data.duke_resultado === 'Definitivo' || data.duke_resultado === 'Posible') && (
+                            <div className="mt-1 font-bold text-red-700 border border-red-600 p-1 bg-red-50 uppercase text-center">
+                                ALERTA: Riesgo de Endocarditis. Diferir cirugía electiva, iniciar protocolo de antibióticos y solicitar Ecocardiograma Transesofágico (ETE) urgente.
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
 
@@ -237,7 +244,6 @@ const PrintView: React.FC = () => {
                 <div className="bg-gray-200 font-bold border-b border-black px-2 py-1 text-center">PLAN DE MANEJO PERIOPERATORIO</div>
 
                 <div className="flex-1 grid grid-cols-3 text-[9px]">
-
                     {/* PRE-QX */}
                     <div className="border-r border-black p-2">
                         <h5 className="font-bold underline mb-1 text-center bg-gray-100">PRE-QUIRÚRGICO</h5>
@@ -255,7 +261,6 @@ const PrintView: React.FC = () => {
                         <h5 className="font-bold underline mb-1 text-center bg-gray-100">POST-QUIRÚRGICO</h5>
                         <p className="whitespace-pre-wrap">{data.plan_post || data.tromboprofilaxis}</p>
                     </div>
-
                 </div>
 
                 {/* NOTAS DE AUDITORÍA (NEW SECTION) */}
