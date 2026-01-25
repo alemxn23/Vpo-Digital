@@ -124,7 +124,7 @@ const Gabinete: React.FC = () => {
         <div className="space-y-6">
             <div className="flex items-center gap-2 mb-2 px-1">
                 <FileImage className="text-clinical-navy" size={20} />
-                <h2 className="text-lg font-bold text-slate-800">Gabinete: RADIOLOGÍA Y ECG (V3)</h2>
+                <h2 className="text-lg font-bold text-slate-800">Gabinete: Radiología y ECG</h2>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">

@@ -61,12 +61,12 @@ const StickyHeader = () => {
       <div className="w-full max-w-md md:max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-2 lg:opacity-0 pointer-events-none">
           {/* Logo Hidden on Desktop via opacity since it's in Sidebar, keeps layout spacing */}
-          <div className="bg-clinical-navy p-1.5 rounded-lg text-white">
-            <Stethoscope size={20} />
+          <div className="bg-white p-1 rounded-lg border border-gray-100 flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
           </div>
           <div>
             <h1 className="text-sm font-bold text-slate-900 leading-tight">VPO Digital</h1>
-            <p className="text-[10px] text-gray-500">Medicina Interna</p>
+            <p className="text-[10px] text-gray-500">Medicina Interna CMN S. XXI</p>
           </div>
         </div>
 
@@ -93,13 +93,13 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 left-0 z-40 overflow-y-auto no-print shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       <div className="p-6 border-b border-gray-100 mb-2">
-        <div className="flex items-center gap-3">
-          <div className="bg-clinical-navy p-2 rounded-xl text-white shadow-lg shadow-clinical-navy/20">
-            <Stethoscope size={24} />
+        <div className="flex flex-col items-center text-center gap-3">
+          <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-50 mb-1">
+            <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain" />
           </div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 leading-tight">VPO Digital</h1>
-            <p className="text-xs text-gray-500 font-medium">Medicina Interna</p>
+            <h1 className="text-xl font-bold text-clinical-navy leading-tight">VPO Digital</h1>
+            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">CMN S. XXI</p>
           </div>
         </div>
       </div>
