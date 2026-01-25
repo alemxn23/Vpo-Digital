@@ -282,8 +282,8 @@ const App: React.FC = () => {
     const pdfWidth = pdf.internal.pageSize.getWidth();
 
     const capturePage = async (element: HTMLElement) => {
-      // 2000ms delay for categorical rendering safety
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // 2500ms delay for categorical rendering safety on legacy tables
+      await new Promise(resolve => setTimeout(resolve, 2500));
 
       const canvas = await html2canvas(element, {
         scale: 2,
@@ -291,24 +291,9 @@ const App: React.FC = () => {
         logging: true,
         backgroundColor: '#ffffff',
         width: 794,
-        windowWidth: 794,
+        windowWidth: 800,
         scrollX: 0,
         scrollY: 0,
-        onclone: (clonedDoc) => {
-          const body = clonedDoc.body;
-          if (body) {
-            body.style.width = '794px';
-            body.style.minWidth = '794px';
-            body.style.maxWidth = '794px';
-            body.style.overflow = 'hidden';
-            // Normalize any zoom/scaling
-            body.style.zoom = '1.0';
-          }
-          const el = clonedDoc.getElementById(element.id);
-          if (el) {
-            el.setAttribute('style', `width: 794px !important; min-width: 794px !important; max-width: 794px !important; display: block !important; padding: 0 !important; margin: 0 !important; background: white !important;`);
-          }
-        }
       });
       return canvas.toDataURL('image/png', 0.98);
     };

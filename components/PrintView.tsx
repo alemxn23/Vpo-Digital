@@ -9,7 +9,7 @@ const PrintView: React.FC = () => {
     const hasOverrides = Object.keys(overrides).length > 0;
 
     const Check = ({ val }: { val: boolean }) => (
-        <span style={{ fontWeight: 'bold', fontSize: '11px' }}>{val ? '[X]' : '[ ]'}</span>
+        <span style={{ fontWeight: 'bold', fontSize: '11px', fontFamily: 'Arial' }}>{val ? 'X' : ''}</span>
     );
 
     const getCardioText = () => {
@@ -19,296 +19,312 @@ const PrintView: React.FC = () => {
         return "Angina Estable";
     };
 
-    // STYLES - Extremely rigid pixel values
-    const containerStyle: React.CSSProperties = {
-        width: '794px',
-        backgroundColor: 'white',
+    // Shared Styles
+    const baseTable: React.CSSProperties = {
+        borderCollapse: 'collapse',
+        tableLayout: 'fixed',
+        width: '714px',
+        margin: '0 auto',
+        fontFamily: 'Arial, sans-serif',
         color: 'black',
-        fontFamily: '-apple-system, sans-serif',
-        margin: '0',
-        padding: '0',
-        lineHeight: '1.3'
+        backgroundColor: 'white'
     };
-
-    const blockStyle = (width: number, border = false): React.CSSProperties => ({
-        width: `${width}px`,
-        minWidth: `${width}px`,
-        maxWidth: `${width}px`,
-        float: 'left',
-        boxSizing: 'border-box',
-        border: border ? '1px solid black' : 'none',
-        overflow: 'hidden'
-    });
 
     const labelStyle: React.CSSProperties = {
         fontWeight: 'bold',
-        fontSize: '10px',
-        whiteSpace: 'nowrap'
+        fontSize: '10px'
     };
 
     const valueStyle: React.CSSProperties = {
         fontSize: '10px',
         borderBottom: '1px solid black',
-        display: 'inline-block',
-        minHeight: '13px',
-        width: '100%',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap'
+        height: '14px',
+        overflow: 'hidden'
     };
-
-    const sectionHeader: React.CSSProperties = {
-        width: '100%',
-        backgroundColor: '#f1f5f9',
-        border: '1px solid black',
-        fontWeight: 'bold',
-        fontSize: '11px',
-        padding: '4px 10px',
-        boxSizing: 'border-box',
-        clear: 'both'
-    };
-
-    const rowWrapper: React.CSSProperties = {
-        width: '100%',
-        clear: 'both',
-        display: 'block'
-    };
-
-    const spacer = (h = 10) => <div style={{ height: `${h}px`, clear: 'both', width: '100%' }} />;
 
     return (
-        <div style={containerStyle}>
+        <div style={{ background: 'white', width: '794px' }}>
             {/* PAGE 1 */}
-            <div id="print-page-1" style={{ width: '794px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white', minHeight: '1120px' }}>
+            <div id="print-page-1" style={{ width: '794px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white' }}>
 
-                {/* HEAD */}
-                <div style={{ ...rowWrapper, borderBottom: '2px solid black', paddingBottom: '10px' }}>
-                    <div style={blockStyle(70)}>
-                        <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px' }} />
-                    </div>
-                    <div style={{ ...blockStyle(344), paddingLeft: '15px' }}>
-                        <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e3a8a' }}>VPO Digital</div>
-                        <div style={{ fontSize: '10px', fontWeight: 'bold' }}>CMN SIGLO XXI - MEDICINA INTERNA</div>
-                    </div>
-                    <div style={{ ...blockStyle(300), textAlign: 'right' }}>
-                        <div style={{ fontSize: '9px', fontWeight: 'bold' }}>DIRECCIÓN DE PRESTACIONES MÉDICAS</div>
-                        <div style={{ fontSize: '12px', fontWeight: 'bold', textDecoration: 'underline', marginTop: '5px' }}>VALORACIÓN PREOPERATORIA</div>
-                    </div>
-                    <div style={{ clear: 'both' }}></div>
-                </div>
+                {/* HEADER SECTION - LEGACY TABLE */}
+                <table width="714" border={0} cellPadding={0} cellSpacing={0} style={baseTable}>
+                    <tbody>
+                        <tr>
+                            <td width="70" valign="middle" style={{ borderBottom: '2px solid black', paddingBottom: '10px' }}>
+                                <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px' }} />
+                            </td>
+                            <td width="344" valign="middle" style={{ paddingLeft: '15px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
+                                <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e3a8a', lineHeight: '1.2' }}>VPO Digital</div>
+                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#444' }}>CMN SIGLO XXI - MEDICINA INTERNA</div>
+                            </td>
+                            <td width="300" align="right" valign="top" style={{ borderBottom: '2px solid black', paddingBottom: '10px' }}>
+                                <div style={{ fontSize: '9px', fontWeight: 'bold' }}>DIRECCIÓN DE PRESTACIONES MÉDICAS</div>
+                                <div style={{ fontSize: '12px', fontWeight: 'bold', textDecoration: 'underline', marginTop: '5px' }}>VALORACIÓN PREOPERATORIA</div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                {spacer(15)}
+                <table width="714" height="15"><tbody><tr><td></td></tr></tbody></table>
 
-                {/* IDENTIFICACION */}
-                <div style={{ border: '1px solid black', padding: '10px', width: '714px', boxSizing: 'border-box' }}>
-                    <div style={rowWrapper}>
-                        <div style={blockStyle(80)}><span style={labelStyle}>NOMBRE:</span></div>
-                        <div style={blockStyle(400)}><span style={valueStyle}>{data.nombre}</span></div>
-                        <div style={{ ...blockStyle(60), paddingLeft: '10px' }}><span style={labelStyle}>FECHA:</span></div>
-                        <div style={blockStyle(154)}><span style={valueStyle}>{data.fecha}</span></div>
-                        <div style={{ clear: 'both' }}></div>
-                    </div>
-                    {spacer(8)}
-                    <div style={rowWrapper}>
-                        <div style={blockStyle(40)}><span style={labelStyle}>NSS:</span></div>
-                        <div style={blockStyle(140)}><span style={valueStyle}>{data.nss}</span></div>
-                        <div style={{ ...blockStyle(50), paddingLeft: '10px' }}><span style={labelStyle}>EDAD:</span></div>
-                        <div style={blockStyle(50)}><span style={valueStyle}>{data.edad}</span></div>
-                        <div style={{ ...blockStyle(70), paddingLeft: '10px' }}><span style={labelStyle}>GÉNERO:</span></div>
-                        <div style={blockStyle(80)}><span style={valueStyle}>{data.genero}</span></div>
-                        <div style={{ ...blockStyle(55), paddingLeft: '10px' }}><span style={labelStyle}>CAMA:</span></div>
-                        <div style={blockStyle(189)}><span style={valueStyle}>{data.cama}</span></div>
-                        <div style={{ clear: 'both' }}></div>
-                    </div>
-                    {spacer(8)}
-                    <div style={rowWrapper}>
-                        <div style={blockStyle(110)}><span style={labelStyle}>DX QUIRÚRGICO:</span></div>
-                        <div style={blockStyle(584)}><span style={valueStyle}>{data.diagnosticoQuirurgico}</span></div>
-                        <div style={{ clear: 'both' }}></div>
-                    </div>
-                    {spacer(8)}
-                    <div style={rowWrapper}>
-                        <div style={blockStyle(140)}><span style={labelStyle}>CIRUGÍA PROGRAMADA:</span></div>
-                        <div style={blockStyle(554)}><span style={valueStyle}>{data.cirugiaProgramada}</span></div>
-                        <div style={{ clear: 'both' }}></div>
-                    </div>
-                    {spacer(8)}
-                    <div style={rowWrapper}>
-                        <div style={blockStyle(45)}><span style={labelStyle}>TIPO:</span></div>
-                        <div style={blockStyle(150)}><span style={valueStyle}>{data.tipoCirugia}</span></div>
-                        <div style={{ ...blockStyle(45), paddingLeft: '10px' }}><span style={labelStyle}>PESO:</span></div>
-                        <div style={blockStyle(60)}><span style={valueStyle}>{data.peso} kg</span></div>
-                        <div style={{ ...blockStyle(45), paddingLeft: '10px' }}><span style={labelStyle}>TALLA:</span></div>
-                        <div style={blockStyle(60)}><span style={valueStyle}>{data.talla} m</span></div>
-                        <div style={{ ...blockStyle(50), paddingLeft: '10px', backgroundColor: '#f3f4f6' }}><span style={labelStyle}>IMC:</span></div>
-                        <div style={{ ...blockStyle(239), backgroundColor: '#f3f4f6', textAlign: 'center' }}><span style={valueStyle}>{data.imc}</span></div>
-                        <div style={{ clear: 'both' }}></div>
-                    </div>
-                </div>
+                {/* IDENTIFICATION SECTION */}
+                <table width="714" border={1} cellPadding={10} cellSpacing={0} style={{ ...baseTable, border: '1px solid black' }}>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <table width="100%" border={0} cellPadding={2} cellSpacing={0} style={{ tableLayout: 'fixed' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="70" style={labelStyle}>NOMBRE:</td>
+                                            <td width="400" style={valueStyle}>{data.nombre}</td>
+                                            <td width="60" style={{ ...labelStyle, paddingLeft: '10px' }}>FECHA:</td>
+                                            <td width="154" style={valueStyle}>{data.fecha}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table width="100%" border={0} cellPadding={2} cellSpacing={0} style={{ tableLayout: 'fixed', marginTop: '8px' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="40" style={labelStyle}>NSS:</td>
+                                            <td width="140" style={valueStyle}>{data.nss}</td>
+                                            <td width="50" style={{ ...labelStyle, paddingLeft: '10px' }}>EDAD:</td>
+                                            <td width="50" style={valueStyle}>{data.edad}</td>
+                                            <td width="70" style={{ ...labelStyle, paddingLeft: '10px' }}>GÉNERO:</td>
+                                            <td width="80" style={valueStyle}>{data.genero}</td>
+                                            <td width="50" style={{ ...labelStyle, paddingLeft: '10px' }}>CAMA:</td>
+                                            <td style={valueStyle}>{data.cama}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table width="100%" border={0} cellPadding={2} cellSpacing={0} style={{ tableLayout: 'fixed', marginTop: '8px' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="110" style={labelStyle}>DX QUIRÚRGICO:</td>
+                                            <td style={valueStyle}>{data.diagnosticoQuirurgico}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table width="100%" border={0} cellPadding={2} cellSpacing={0} style={{ tableLayout: 'fixed', marginTop: '8px' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="140" style={labelStyle}>CIRUGÍA PROGRAMADA:</td>
+                                            <td style={valueStyle}>{data.cirugiaProgramada}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table width="100%" border={0} cellPadding={2} cellSpacing={0} style={{ tableLayout: 'fixed', marginTop: '8px' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="40" style={labelStyle}>TIPO:</td>
+                                            <td width="150" style={valueStyle}>{data.tipoCirugia}</td>
+                                            <td width="45" style={{ ...labelStyle, paddingLeft: '10px' }}>PESO:</td>
+                                            <td width="60" style={valueStyle}>{data.peso} kg</td>
+                                            <td width="45" style={{ ...labelStyle, paddingLeft: '10px' }}>TALLA:</td>
+                                            <td width="60" style={valueStyle}>{data.talla} m</td>
+                                            <td width="45" style={{ ...labelStyle, paddingLeft: '10px', backgroundColor: '#eee' }}>IMC:</td>
+                                            <td style={{ ...valueStyle, backgroundColor: '#eee', textAlign: 'center' }}>{data.imc}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                {spacer(15)}
+                <table width="714" height="15"><tbody><tr><td></td></tr></tbody></table>
 
-                {/* RIESGOS */}
-                <div style={{ border: '1px solid black', width: '714px' }}>
-                    <div style={sectionHeader}>FACTORES DE RIESGO</div>
-                    <div style={{ padding: '10px' }}>
-                        <div style={rowWrapper}>
-                            <div style={{ ...blockStyle(347), borderBottom: '1px dotted #ccc' }}>
-                                <span style={labelStyle}>TABAQUISMO:</span> SI <Check val={data.tabaquismo} /> IT: {data.indiceTabaquico}
-                            </div>
-                            <div style={{ ...blockStyle(347), borderBottom: '1px dotted #ccc', paddingLeft: '20px' }}>
-                                <span style={labelStyle}>ALERGIAS:</span> SI <Check val={data.alergicos} />
-                            </div>
-                        </div>
-                        <div style={rowWrapper}>
-                            <div style={{ ...blockStyle(347), borderBottom: '1px dotted #ccc' }}>
-                                <span style={labelStyle}>HTA:</span> SI <Check val={data.hta} /> {data.hta ? `(${data.hta_control})` : ''}
-                            </div>
-                            <div style={{ ...blockStyle(347), borderBottom: '1px dotted #ccc', paddingLeft: '20px' }}>
-                                <span style={labelStyle}>DIABETES:</span> SI <Check val={data.diabetes} /> {data.diabetesTipo}
-                            </div>
-                        </div>
-                        <div style={rowWrapper}>
-                            <div style={{ ...blockStyle(347), borderBottom: '1px dotted #ccc' }}>
-                                <span style={labelStyle}>CARD. ISQUÉMICA:</span> SI <Check val={data.cardiopatiaIsquemica} /> {getCardioText()}
-                            </div>
-                            <div style={{ ...blockStyle(347), borderBottom: '1px dotted #ccc', paddingLeft: '20px' }}>
-                                <span style={labelStyle}>I. CARDIACA:</span> SI <Check val={data.icc} /> NYHA: {data.icc_nyha}
-                            </div>
-                        </div>
-                        <div style={rowWrapper}>
-                            <div style={{ ...blockStyle(347), borderBottom: '1px dotted #ccc' }}>
-                                <span style={labelStyle}>ENF. RENAL:</span> SI <Check val={data.enfRenalCronica} /> TFG: {data.tfg}
-                            </div>
-                            <div style={{ ...blockStyle(347), borderBottom: '1px dotted #ccc', paddingLeft: '20px' }}>
-                                <span style={labelStyle}>NEUMOPATÍA:</span> SI <Check val={data.neumopatia} /> {data.neumo_tipo}
-                            </div>
-                        </div>
-                        {spacer(10)}
-                        <div style={rowWrapper}>
-                            <span style={labelStyle}>CIRUGÍAS PREVIAS / COMPLICACIONES:</span>
-                            <div style={{ ...valueStyle, width: '100%', minHeight: '1.4em' }}>{data.cirugiasPrevias || '-'}</div>
-                        </div>
-                        <div style={rowWrapper}>
-                            <span style={labelStyle}>OTRAS ENFERMEDADES / TRATAMIENTO ACTUAL:</span>
-                            <div style={{ ...valueStyle, width: '100%', minHeight: '1.4em' }}>{data.otrasEnfermedades} {data.tratamientoActual}</div>
-                        </div>
-                    </div>
-                </div>
+                {/* RISK FACTORS SECTION */}
+                <table width="714" border={1} cellPadding={0} cellSpacing={0} style={{ ...baseTable, border: '1px solid black' }}>
+                    <tbody>
+                        <tr>
+                            <td height="25" style={{ backgroundColor: '#f3f4f6', paddingLeft: '10px', fontWeight: 'bold', fontSize: '11px', borderBottom: '1px solid black' }}>FACTORES DE RIESGO</td>
+                        </tr>
+                        <tr>
+                            <td style={{ padding: '10px' }}>
+                                <table width="100%" border={0} cellPadding={2} cellSpacing={0} style={{ tableLayout: 'fixed' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="347" style={{ borderBottom: '1px dotted #ccc' }}><span style={labelStyle}>TABAQUISMO:</span> SI (<Check val={data.tabaquismo} />) IT: {data.indiceTabaquico}</td>
+                                            <td width="347" style={{ borderBottom: '1px dotted #ccc', paddingLeft: '20px' }}><span style={labelStyle}>ALERGIAS:</span> SI (<Check val={data.alergicos} />)</td>
+                                        </tr>
+                                        <tr>
+                                            <td style={{ borderBottom: '1px dotted #ccc' }}><span style={labelStyle}>HTA:</span> SI (<Check val={data.hta} />) {data.hta ? `(${data.hta_control})` : ''}</td>
+                                            <td style={{ borderBottom: '1px dotted #ccc', paddingLeft: '20px' }}><span style={labelStyle}>DIABETES:</span> SI (<Check val={data.diabetes} />) {data.diabetesTipo}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style={{ borderBottom: '1px dotted #ccc' }}><span style={labelStyle}>CARD. ISQUÉMICA:</span> SI (<Check val={data.cardiopatiaIsquemica} />) {getCardioText()}</td>
+                                            <td style={{ borderBottom: '1px dotted #ccc', paddingLeft: '20px' }}><span style={labelStyle}>I. CARDIACA:</span> SI (<Check val={data.icc} />) NYHA: {data.icc_nyha}</td>
+                                        </tr>
+                                        <tr>
+                                            <td style={{ borderBottom: '1px dotted #ccc' }}><span style={labelStyle}>ENF. RENAL:</span> SI (<Check val={data.enfRenalCronica} />) TFG: {data.tfg}</td>
+                                            <td style={{ borderBottom: '1px dotted #ccc', paddingLeft: '20px' }}><span style={labelStyle}>NEUMOPATÍA:</span> SI (<Check val={data.neumopatia} />) {data.neumo_tipo}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                                <table width="100%" border={0} cellPadding={2} cellSpacing={0} style={{ tableLayout: 'fixed', marginTop: '8px' }}>
+                                    <tbody>
+                                        <tr><td style={labelStyle}>CIRUGÍAS PREVIAS / COMPLICACIONES:</td></tr>
+                                        <tr><td style={{ ...valueStyle, borderBottom: '1px dotted black' }}>{data.cirugiasPrevias || '-'}</td></tr>
+                                        <tr><td height="5"></td></tr>
+                                        <tr><td style={labelStyle}>OTRAS ENFERMEDADES / TRATAMIENTO ACTUAL:</td></tr>
+                                        <tr><td style={{ ...valueStyle, borderBottom: '1px dotted black' }}>{data.otrasEnfermedades} {data.tratamientoActual ? `/ ${data.tratamientoActual}` : ''}</td></tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                {spacer(15)}
+                <table width="714" height="15"><tbody><tr><td></td></tr></tbody></table>
 
-                {/* SIGNOS Y LABS */}
-                <div style={{ border: '1px solid black', width: '714px' }}>
-                    <div style={{ ...rowWrapper, backgroundColor: '#f1f5f9', borderBottom: '1px solid black', textAlign: 'center' }}>
-                        <div style={blockStyle(119)}><span style={labelStyle}>TA:</span> {data.taSistolica}/{data.taDiastolica}</div>
-                        <div style={blockStyle(119)}><span style={labelStyle}>FC:</span> {data.fc}</div>
-                        <div style={blockStyle(119)}><span style={labelStyle}>FR:</span> {data.fr}</div>
-                        <div style={blockStyle(119)}><span style={labelStyle}>TEMP:</span> {data.temp}°C</div>
-                        <div style={blockStyle(119)}><span style={labelStyle}>SATO2:</span> {data.sato2}%</div>
-                        <div style={blockStyle(119)}><span style={labelStyle}>GLUC:</span> {data.glucosaCapilar}</div>
-                        <div style={{ clear: 'both' }}></div>
-                    </div>
-                    <div style={{ padding: '8px', textAlign: 'center' }}>
-                        <div style={{ ...blockStyle(173), borderRight: '1px dotted black' }}>
-                            <div style={{ ...labelStyle, textDecoration: 'underline' }}>BIOMETRÍA</div>
-                            <div style={{ fontSize: '9px' }}>Hb: {data.hb} / Leu: {data.leucocitos} / Plaq: {data.plaquetas}</div>
-                        </div>
-                        <div style={{ ...blockStyle(173), borderRight: '1px dotted black' }}>
-                            <div style={{ ...labelStyle, textDecoration: 'underline' }}>TIEMPOS</div>
-                            <div style={{ fontSize: '9px' }}>TP: {data.tp} / TTP: {data.ttp} / INR: {data.inr}</div>
-                        </div>
-                        <div style={{ ...blockStyle(173), borderRight: '1px dotted black' }}>
-                            <div style={{ ...labelStyle, textDecoration: 'underline' }}>QUÍMICA</div>
-                            <div style={{ fontSize: '9px' }}>Glu: {data.glucosaCentral} / Urea: {data.urea} / Cr: {data.creatinina}</div>
-                        </div>
-                        <div style={blockStyle(173)}>
-                            <div style={{ ...labelStyle, textDecoration: 'underline' }}>ES</div>
-                            <div style={{ fontSize: '9px' }}>Na: {data.na} / K: {data.k} / Cl: {data.cl}</div>
-                        </div>
-                        <div style={{ clear: 'both' }}></div>
-                    </div>
-                </div>
+                {/* VITAL SIGNS SECTION */}
+                <table width="714" border={1} cellPadding={0} cellSpacing={0} style={{ ...baseTable, border: '1px solid black' }}>
+                    <tbody>
+                        <tr height="25" bgcolor="#f3f4f6" align="center">
+                            <td width="119" style={labelStyle}>TA: {data.taSistolica}/{data.taDiastolica}</td>
+                            <td width="119" style={labelStyle}>FC: {data.fc}</td>
+                            <td width="119" style={labelStyle}>FR: {data.fr}</td>
+                            <td width="119" style={labelStyle}>TEMP: {data.temp}°C</td>
+                            <td width="119" style={labelStyle}>SATO2: {data.sato2}%</td>
+                            <td width="119" style={labelStyle}>GLUC: {data.glucosaCapilar}</td>
+                        </tr>
+                        <tr align="center">
+                            <td colSpan={6} style={{ padding: '8px' }}>
+                                <table width="100%" border={0} cellPadding={0} cellSpacing={0} style={{ tableLayout: 'fixed' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="178" style={{ borderRight: '1px dotted black' }}>
+                                                <div style={{ ...labelStyle, textDecoration: 'underline' }}>BIOMETRÍA</div>
+                                                <div style={{ fontSize: '9px' }}>Hb: {data.hb} / Leu: {data.leucocitos} / Plaq: {data.plaquetas}</div>
+                                            </td>
+                                            <td width="178" style={{ borderRight: '1px dotted black' }}>
+                                                <div style={{ ...labelStyle, textDecoration: 'underline' }}>TIEMPOS</div>
+                                                <div style={{ fontSize: '9px' }}>TP: {data.tp} / TTP: {data.ttp} / INR: {data.inr}</div>
+                                            </td>
+                                            <td width="178" style={{ borderRight: '1px dotted black' }}>
+                                                <div style={{ ...labelStyle, textDecoration: 'underline' }}>QUÍMICA</div>
+                                                <div style={{ fontSize: '9px' }}>Glu: {data.glucosaCentral} / Urea: {data.urea} / Cr: {data.creatinina}</div>
+                                            </td>
+                                            <td width="180">
+                                                <div style={{ ...labelStyle, textDecoration: 'underline' }}>ELECTROLITOS</div>
+                                                <div style={{ fontSize: '9px' }}>Na: {data.na} / K: {data.k} / Cl: {data.cl}</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                {spacer(15)}
+                <table width="714" height="15"><tbody><tr><td></td></tr></tbody></table>
 
-                {/* GABINETE */}
-                <div style={{ border: '1px solid black', width: '714px' }}>
-                    <div style={sectionHeader}>GABINETE</div>
-                    <div style={{ padding: '10px' }}>
-                        <div style={rowWrapper}>
-                            <div style={{ ...blockStyle(347), borderRight: '1px dotted black', paddingRight: '10px' }}>
-                                <div style={{ ...labelStyle, textDecoration: 'underline' }}>ELECTROCARDIOGRAMA:</div>
-                                <div style={{ fontSize: '10px' }}>Frec: {data.ecg_frecuencia || data.frecuenciaEcg} lpm / Ritmo: {data.ecg_ritmo_especifico || data.ritmo}</div>
-                                <div style={{ fontSize: '10px' }}>Bloqueo: {data.ecg_bloqueo || 'Ninguno'} {data.ecg_hvi ? '/ HVI' : ''}</div>
-                            </div>
-                            <div style={{ ...blockStyle(347), paddingLeft: '15px' }}>
-                                <div style={{ ...labelStyle, textDecoration: 'underline' }}>RADIOGRAFÍA DE TÓRAX:</div>
-                                <div style={{ ...valueStyle }}>{data.rx_descripcion || '-'}</div>
-                                <div style={{ fontSize: '10px', marginTop: '5px' }}><span style={labelStyle}>ARISCAT:</span> {data.ariscat_total} pts ({data.ariscat_categoria})</div>
-                            </div>
-                            <div style={{ clear: 'both' }}></div>
-                        </div>
-                    </div>
-                </div>
+                {/* GABINETE SECTION */}
+                <table width="714" border={1} cellPadding={0} cellSpacing={0} style={{ ...baseTable, border: '1px solid black' }}>
+                    <tbody>
+                        <tr><td height="25" bgcolor="#f3f4f6" style={{ paddingLeft: '10px', fontWeight: 'bold', fontSize: '11px', borderBottom: '1px solid black' }}>GABINETE</td></tr>
+                        <tr>
+                            <td style={{ padding: '10px' }}>
+                                <table width="100%" border={0} cellPadding={0} cellSpacing={0} style={{ tableLayout: 'fixed' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="350" valign="top" style={{ borderRight: '1px dotted black', paddingRight: '10px' }}>
+                                                <div style={{ ...labelStyle, textDecoration: 'underline' }}>ELECTROCARDIOGRAMA:</div>
+                                                <div style={{ fontSize: '10px', marginTop: '4px' }}>Frec: {data.ecg_frecuencia || data.frecuenciaEcg} lpm / Ritmo: {data.ecg_ritmo_especifico || data.ritmo}</div>
+                                                <div style={{ fontSize: '10px' }}>Bloqueo: {data.ecg_bloqueo || 'Ninguno'} {data.ecg_hvi ? '/ HVI' : ''} {data.ecg_isquemia ? '/ ISQUEMIA' : ''}</div>
+                                            </td>
+                                            <td width="364" valign="top" style={{ paddingLeft: '15px' }}>
+                                                <div style={{ ...labelStyle, textDecoration: 'underline' }}>RADIOGRAFÍA DE TÓRAX:</div>
+                                                <div style={{ ...valueStyle, borderBottom: '1px solid black' }}>{data.rx_descripcion || '-'}</div>
+                                                <div style={{ fontSize: '10px', marginTop: '5px' }}><span style={labelStyle}>ARISCAT:</span> {data.ariscat_total} pts ({data.ariscat_categoria})</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                {spacer(15)}
+                <table width="714" height="15"><tbody><tr><td></td></tr></tbody></table>
 
-                {/* ESCALAS */}
-                <div style={{ border: '1px solid black', width: '714px', textAlign: 'center', backgroundColor: '#fafafa' }}>
-                    <div style={blockStyle(178)}><span style={labelStyle}>ASA:</span> {data.asa}</div>
-                    <div style={blockStyle(178)}><span style={labelStyle}>GOLDMAN:</span> {data.goldman}</div>
-                    <div style={blockStyle(178)}><span style={labelStyle}>LEE:</span> {data.lee}</div>
-                    <div style={blockStyle(178)}><span style={labelStyle}>DUKE:</span> {data.duke_resultado || '-'}</div>
-                    <div style={{ clear: 'both' }}></div>
-                </div>
+                {/* SCALES SECTION */}
+                <table width="714" border={1} cellPadding={10} cellSpacing={0} style={{ ...baseTable, border: '1px solid black', textAlign: 'center', backgroundColor: '#fafafa' }}>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <table width="100%" border={0} cellPadding={0} cellSpacing={0} style={{ tableLayout: 'fixed' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="25%" style={{ borderRight: '1px solid #ddd' }}><span style={labelStyle}>ASA:</span> {data.asa}</td>
+                                            <td width="25%" style={{ borderRight: '1px solid #ddd' }}><span style={labelStyle}>GOLDMAN:</span> {data.goldman}</td>
+                                            <td width="25%" style={{ borderRight: '1px solid #ddd' }}><span style={labelStyle}>LEE:</span> {data.lee}</td>
+                                            <td width="25%"><span style={labelStyle}>DUKE:</span> {data.duke_resultado || '-'}</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
             {/* PAGE 2 */}
-            <div id="print-page-2" style={{ width: '794px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white', marginTop: '40px', minHeight: '1120px' }}>
-                <div style={{ border: '2px solid black', minHeight: '940px', position: 'relative', width: '714px' }}>
-                    <div style={{ backgroundColor: '#1e3a8a', color: 'white', padding: '12px', textAlign: 'center', fontWeight: 'bold', fontSize: '15px', width: '100%', boxSizing: 'border-box' }}>PLAN DE MANEJO PERIOPERATORIO</div>
-
-                    <div style={{ padding: '20px' }}>
-                        <div style={{ ...blockStyle(224), borderRight: '1px solid black', height: '600px', paddingRight: '10px' }}>
-                            <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '5px', border: '1px solid black' }}>PRE-QUIRÚRGICO</div>
-                            <div style={{ fontSize: '10px', marginTop: '15px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{data.plan_pre || data.recomendacionesGenerales || data.ayuno}</div>
-                        </div>
-                        <div style={{ ...blockStyle(224), borderRight: '1px solid black', height: '600px', padding: '0 10px' }}>
-                            <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '5px', border: '1px solid black' }}>TRANS-QUIRÚRGICO</div>
-                            <div style={{ fontSize: '10px', marginTop: '15px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{data.plan_trans || "Ver notas de Anestesiología."}</div>
-                        </div>
-                        <div style={{ ...blockStyle(224), height: '600px', paddingLeft: '10px' }}>
-                            <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '5px', border: '1px solid black' }}>POST-QUIRÚRGICO</div>
-                            <div style={{ fontSize: '10px', marginTop: '15px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{data.plan_post || data.tromboprofilaxis}</div>
-                        </div>
-                        <div style={{ clear: 'both' }}></div>
-                    </div>
-
-                    <div style={{ position: 'absolute', bottom: '0', width: '100%', borderTop: '2px solid black' }}>
-                        {hasOverrides && (
-                            <div style={{ padding: '8px 15px', backgroundColor: '#fffbeb', fontSize: '10px', fontStyle: 'italic', borderBottom: '1px solid black' }}>
-                                NOTA DE AUDITORÍA: Escalas ajustadas según criterio clínico del médico tratante.
-                            </div>
-                        )}
-                        <div style={{ width: '100%', padding: '50px 20px', textAlign: 'center' }}>
-                            <div style={blockStyle(307)}>
-                                <div style={{ borderTop: '2px solid black', paddingTop: '10px' }}>
-                                    <div style={{ fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase' }}>{data.elaboro || 'DR. MÉDICO INTERNISTA'}</div>
-                                    <div style={{ fontSize: '10px', color: '#666' }}>MÉDICO INTERNISTA</div>
-                                </div>
-                            </div>
-                            <div style={blockStyle(100)}></div>
-                            <div style={blockStyle(307)}>
-                                <div style={{ borderTop: '2px solid black', paddingTop: '10px' }}>
-                                    <div style={{ fontWeight: 'bold', fontSize: '12px' }}>{data.matricula || '----------'}</div>
-                                    <div style={{ fontSize: '10px', color: '#666' }}>MATRÍCULA</div>
-                                </div>
-                            </div>
-                            <div style={{ clear: 'both' }}></div>
-                        </div>
-                    </div>
-                </div>
+            <div id="print-page-2" style={{ width: '794px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white', marginTop: '40px' }}>
+                <table width="714" border={1} cellPadding={0} cellSpacing={0} style={{ ...baseTable, border: '2px solid black', minHeight: '940px' }}>
+                    <tbody>
+                        <tr><td height="40" bgcolor="#1e3a8a" align="center" style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>PLAN DE MANEJO PERIOPERATORIO</td></tr>
+                        <tr>
+                            <td valign="top" style={{ height: '700px', padding: '15px' }}>
+                                <table width="100%" border={0} cellPadding={0} cellSpacing={0} style={{ tableLayout: 'fixed', height: '100%' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="228" valign="top" style={{ borderRight: '1px solid black', paddingRight: '15px' }}>
+                                                <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '5px', border: '1px solid black' }}>PRE-QUIRÚRGICO</div>
+                                                <div style={{ fontSize: '11px', marginTop: '15px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{data.plan_pre || data.recomendacionesGenerales || data.ayuno}</div>
+                                            </td>
+                                            <td width="228" valign="top" style={{ borderRight: '1px solid black', padding: '0 15px' }}>
+                                                <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '5px', border: '1px solid black' }}>TRANS-QUIRÚRGICO</div>
+                                                <div style={{ fontSize: '11px', marginTop: '15px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{data.plan_trans || "Ver notas de Anestesiología.\nVigilancia de constantes vitales."}</div>
+                                            </td>
+                                            <td width="228" valign="top" style={{ paddingLeft: '15px' }}>
+                                                <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '5px', border: '1px solid black' }}>POST-QUIRÚRGICO</div>
+                                                <div style={{ fontSize: '11px', marginTop: '15px', whiteSpace: 'pre-wrap', lineHeight: '1.5' }}>{data.plan_post || data.tromboprofilaxis}</div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td valign="bottom" style={{ borderTop: '2px solid black' }}>
+                                {hasOverrides && (
+                                    <div style={{ padding: '8px 15px', backgroundColor: '#fffbeb', fontSize: '10px', fontStyle: 'italic', borderBottom: '1px solid black' }}>
+                                        NOTA DE AUDITORÍA: Escalas ajustadas manualmente por el facultativo basándose en criterio clínico.
+                                    </div>
+                                )}
+                                <table width="100%" border={0} cellPadding={0} cellSpacing={0} style={{ marginTop: '60px', marginBottom: '60px' }}>
+                                    <tbody>
+                                        <tr>
+                                            <td width="5%"></td>
+                                            <td width="40%" align="center" style={{ borderTop: '2px solid black', paddingTop: '10px' }}>
+                                                <div style={{ fontWeight: 'bold', fontSize: '12px', textTransform: 'uppercase' }}>{data.elaboro || 'DR. MÉDICO INTERNISTA'}</div>
+                                                <div style={{ fontSize: '10px', color: '#666' }}>MÉDICO INTERNISTA</div>
+                                            </td>
+                                            <td width="10%"></td>
+                                            <td width="40%" align="center" style={{ borderTop: '2px solid black', paddingTop: '10px' }}>
+                                                <div style={{ fontWeight: 'bold', fontSize: '12px' }}>{data.matricula || '----------'}</div>
+                                                <div style={{ fontSize: '10px', color: '#666' }}>MATRÍCULA</div>
+                                            </td>
+                                            <td width="5%"></td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     );
