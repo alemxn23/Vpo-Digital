@@ -283,12 +283,12 @@ const App: React.FC = () => {
 
     const capturePage = async (element: HTMLElement) => {
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
         logging: false,
-        windowWidth: 816,
+        backgroundColor: '#ffffff'
       });
-      return canvas.toDataURL('image/png');
+      return canvas.toDataURL('image/png', 1.0);
     };
 
     // Capture and add Page 1
@@ -749,7 +749,7 @@ const App: React.FC = () => {
         <BottomNav activeStep={activeStep} setStep={setActiveStep} />
 
         {/* Hidden Container for high-res PDF generation using html2canvas */}
-        <div id="print-content" className="absolute left-0 bg-gray-100 p-0 w-[850px] -z-50 overflow-hidden" style={{ top: '-20000px' }}>
+        <div id="print-content" className="fixed left-[-9999px] top-0 bg-white" style={{ width: '820px' }}>
           <PrintView />
         </div>
 

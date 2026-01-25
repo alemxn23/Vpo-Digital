@@ -30,68 +30,68 @@ const PrintView: React.FC = () => {
 
     return (
         <div className="text-[10px] leading-tight font-sans text-black bg-white">
-            <div id="print-page-1" className="bg-white p-2">
+            <div id="print-page-1" className="bg-white p-4 w-[790px]">
                 {/* Header Area */}
                 <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4 pt-4">
                     <div className="flex items-center gap-4">
-                        <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain" />
-                        <div className="flex flex-col justify-center">
-                            <h1 className="font-black text-lg text-clinical-navy leading-none">VPO Digital</h1>
-                            <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">CMN SIGLO XXI</p>
-                            <p className="text-[9px] font-semibold text-gray-500 mt-0.5">Medicina Interna</p>
+                        <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
+                        <div className="flex flex-col">
+                            <h1 className="font-bold text-xl text-blue-900 m-0 p-0">VPO Digital</h1>
+                            <p className="text-[10px] font-bold text-gray-500 uppercase mt-1">CMN SIGLO XXI</p>
+                            <p className="text-[9px] font-semibold text-gray-500">Medicina Interna</p>
                         </div>
                     </div>
                     <div className="text-right">
-                        <h1 className="font-bold text-[10px] uppercase text-slate-600 leading-tight mb-1">Dirección de Prestaciones Médicas</h1>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-tight mb-4">{data.unidadMedica || 'Unidad Médica CMN S. XXI'}</p>
+                        <h1 className="font-bold text-[10px] uppercase text-slate-600 mb-1">Dirección de Prestaciones Médicas</h1>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-4">{data.unidadMedica || 'Unidad Médica CMN S. XXI'}</p>
                         <div className="inline-block border-b-2 border-black pb-1">
-                            <h2 className="font-black text-xs uppercase px-2">{data.servicioSolicitante || 'SERVICIO DE MEDICINA INTERNA'}</h2>
-                            <h2 className="font-black text-sm uppercase px-2 mt-1">Valoración Preoperatoria</h2>
+                            <h2 className="font-bold text-xs uppercase px-2">{data.servicioSolicitante || 'SERVICIO DE MEDICINA INTERNA'}</h2>
+                            <h2 className="font-bold text-sm uppercase px-2 mt-1">Valoración Preoperatoria</h2>
                         </div>
                     </div>
                 </div>
 
                 {/* Identificación */}
                 <div className="border border-black p-1 mb-2">
-                    <div className="grid grid-cols-12 gap-1 mb-1">
-                        <div className="col-span-8 flex border-b border-black border-dotted pb-1">
+                    <div className="flex gap-2 mb-1">
+                        <div className="flex-[2] border-b border-black border-dotted pb-1">
                             <span className="font-bold mr-2">NOMBRE:</span> {data.nombre}
                         </div>
-                        <div className="col-span-4 flex border-b border-black border-dotted pb-1">
+                        <div className="flex-[1] border-b border-black border-dotted pb-1">
                             <span className="font-bold mr-2">FECHA:</span> {data.fecha} {data.hora}
                         </div>
                     </div>
-                    <div className="grid grid-cols-12 gap-1 mb-1">
-                        <div className="col-span-4 flex border-b border-black border-dotted">
+                    <div className="flex gap-2 mb-1">
+                        <div className="flex-[2] border-b border-black border-dotted">
                             <span className="font-bold mr-2">NSS:</span> {data.nss}
                         </div>
-                        <div className="col-span-2 flex border-b border-black border-dotted">
+                        <div className="flex-[1] border-b border-black border-dotted">
                             <span className="font-bold mr-2">EDAD:</span> {data.edad}
                         </div>
-                        <div className="col-span-3 flex border-b border-black border-dotted">
+                        <div className="flex-[1] border-b border-black border-dotted">
                             <span className="font-bold mr-2">GÉNERO:</span> {data.genero}
                         </div>
-                        <div className="col-span-3 flex border-b border-black border-dotted">
+                        <div className="flex-[1] border-b border-black border-dotted">
                             <span className="font-bold mr-2">CAMA:</span> {data.cama}
                         </div>
                     </div>
-                    <div className="flex border-b border-black border-dotted mb-1">
+                    <div className="flex border-b border-black border-dotted mb-1 pb-1">
                         <span className="font-bold mr-2">DX QUIRÚRGICO:</span> {data.diagnosticoQuirurgico}
                     </div>
-                    <div className="flex border-b border-black border-dotted mb-1">
+                    <div className="flex border-b border-black border-dotted mb-1 pb-1">
                         <span className="font-bold mr-2">CIRUGÍA PROGRAMADA:</span> {data.cirugiaProgramada}
                     </div>
-                    <div className="grid grid-cols-12 gap-1">
-                        <div className="col-span-6 flex border-b border-black border-dotted">
+                    <div className="flex gap-2">
+                        <div className="flex-[3] border-b border-black border-dotted">
                             <span className="font-bold mr-2">TIPO:</span> {data.tipoCirugia}
                         </div>
-                        <div className="col-span-2 flex border-b border-black border-dotted">
+                        <div className="flex-[1] border-b border-black border-dotted text-center">
                             <span className="font-bold mr-2">PESO:</span> {data.peso} kg
                         </div>
-                        <div className="col-span-2 flex border-b border-black border-dotted">
+                        <div className="flex-[1] border-b border-black border-dotted text-center">
                             <span className="font-bold mr-2">TALLA:</span> {data.talla} m
                         </div>
-                        <div className="col-span-2 flex border-b border-black border-dotted bg-gray-100">
+                        <div className="flex-[1] border-b border-black border-dotted bg-gray-100 text-center">
                             <span className="font-bold mr-2">IMC:</span> {data.imc}
                         </div>
                     </div>
@@ -99,32 +99,32 @@ const PrintView: React.FC = () => {
 
                 {/* Riesgos */}
                 <div className="mb-3 border border-black">
-                    <h4 className="font-bold bg-gray-100 px-2 py-1.5 border-b border-black text-[11px] leading-normal uppercase">Factores de Riesgo</h4>
+                    <h4 className="font-bold bg-gray-100 px-2 py-1.5 border-b border-black text-[11px] uppercase">Factores de Riesgo</h4>
                     <div className="p-2">
-                        <div className="grid grid-cols-2 gap-x-4">
-                            <div className="flex justify-between border-b border-dotted border-gray-400"><span>TABAQUISMO:</span> <span>SI (<Check val={data.tabaquismo} />) IT: {data.indiceTabaquico}</span></div>
-                            <div className="flex justify-between border-b border-dotted border-gray-400"><span>ALERGIAS:</span> <span>SI (<Check val={data.alergicos} />)</span></div>
-                            <div className="flex justify-between border-b border-dotted border-gray-400">
+                        <div className="flex flex-wrap">
+                            <div className="w-1/2 pr-4 border-b border-dotted border-gray-400 flex justify-between"><span>TABAQUISMO:</span> <span>SI (<Check val={data.tabaquismo} />) IT: {data.indiceTabaquico}</span></div>
+                            <div className="w-1/2 pl-4 border-b border-dotted border-gray-400 flex justify-between"><span>ALERGIAS:</span> <span>SI (<Check val={data.alergicos} />)</span></div>
+                            <div className="w-1/2 pr-4 border-b border-dotted border-gray-400 flex justify-between">
                                 <span>HTA:</span>
                                 <span>SI (<Check val={data.hta} />) {data.hta ? `(${data.hta_control})` : ''}</span>
                             </div>
-                            <div className="flex justify-between border-b border-dotted border-gray-400">
+                            <div className="w-1/2 pl-4 border-b border-dotted border-gray-400 flex justify-between">
                                 <span>DIABETES:</span>
                                 <span>SI (<Check val={data.diabetes} />) {data.diabetes ? `Tipo: ${data.diabetesTipo}` : ''}</span>
                             </div>
-                            <div className="flex justify-between border-b border-dotted border-gray-400">
+                            <div className="w-1/2 pr-4 border-b border-dotted border-gray-400 flex justify-between">
                                 <span>CARDIOPATÍA ISQUÉMICA:</span>
                                 <span>SI (<Check val={data.cardiopatiaIsquemica} />) {getCardioText()}</span>
                             </div>
-                            <div className="flex justify-between border-b border-dotted border-gray-400">
+                            <div className="w-1/2 pl-4 border-b border-dotted border-gray-400 flex justify-between">
                                 <span>INSUF. CARDIACA:</span>
                                 <span>SI (<Check val={data.icc} />) {getICCText()}</span>
                             </div>
-                            <div className="flex justify-between border-b border-dotted border-gray-400">
+                            <div className="w-1/2 pr-4 border-b border-dotted border-gray-400 flex justify-between">
                                 <span>ENF. RENAL:</span>
                                 <span>SI (<Check val={data.enfRenalCronica} />) {data.enfRenalCronica ? `Estadio ${data.erc_estadio}` : ''} TFG: {data.tfg}</span>
                             </div>
-                            <div className="flex justify-between border-b border-dotted border-gray-400">
+                            <div className="w-1/2 pl-4 border-b border-dotted border-gray-400 flex justify-between">
                                 <span>NEUMOPATÍA:</span>
                                 <span>SI (<Check val={data.neumopatia} />) {data.neumo_tipo}</span>
                             </div>
@@ -132,11 +132,11 @@ const PrintView: React.FC = () => {
 
                         <div className="mt-2 border-t border-black pt-1">
                             <span className="font-bold">CIRUGÍAS PREVIAS / COMPLICACIONES:</span>
-                            <p className="border-b border-dotted border-black min-h-[1.5em]">{data.cirugiasPrevias}</p>
+                            <p className="border-b border-dotted border-black min-h-[1.5em] m-0">{data.cirugiasPrevias}</p>
                         </div>
                         <div className="mt-1">
                             <span className="font-bold uppercase text-[9px]">Otras Enfermedades / Tratamiento Actual:</span>
-                            <p className="border-b border-dotted border-black min-h-[1.5em] leading-relaxed">
+                            <p className="border-b border-dotted border-black min-h-[1.5em] m-0 leading-normal">
                                 {data.otrasEnfermedades} {data.tratamientoActual ? ` / ${data.tratamientoActual}` : ''}
                             </p>
                         </div>
@@ -145,36 +145,36 @@ const PrintView: React.FC = () => {
 
                 {/* Exploración y Labs */}
                 <div className="mb-2 border border-black p-1">
-                    <div className="grid grid-cols-6 gap-2 bg-gray-100 p-1 mb-1 font-bold text-center border-b border-black">
-                        <div>TA: {data.taSistolica}/{data.taDiastolica}</div>
-                        <div>FC: {data.fc}</div>
-                        <div>FR: {data.fr}</div>
-                        <div>Temp: {data.temp}</div>
-                        <div>SatO2: {data.sato2}%</div>
-                        <div>Gluc: {data.glucosaCapilar}</div>
+                    <div className="flex bg-gray-100 p-1 mb-1 font-bold text-center border-b border-black text-[9px]">
+                        <div className="flex-1">TA: {data.taSistolica}/{data.taDiastolica}</div>
+                        <div className="flex-1">FC: {data.fc}</div>
+                        <div className="flex-1">FR: {data.fr}</div>
+                        <div className="flex-1">Temp: {data.temp}</div>
+                        <div className="flex-1">SatO2: {data.sato2}%</div>
+                        <div className="flex-1">Gluc: {data.glucosaCapilar}</div>
                     </div>
 
-                    <div className="grid grid-cols-4 gap-4 text-center mt-2">
-                        <div className="border-r border-dotted border-black">
-                            <div className="font-bold border-b">Biometría</div>
+                    <div className="flex text-center mt-2 text-[9px]">
+                        <div className="flex-1 border-r border-dotted border-black">
+                            <div className="font-bold border-b border-black mb-1">Biometría</div>
                             <div>Hb: {data.hb}</div>
                             <div>Leu: {data.leucocitos}</div>
                             <div>Plaq: {data.plaquetas}</div>
                         </div>
-                        <div className="border-r border-dotted border-black">
-                            <div className="font-bold border-b">Tiempos</div>
+                        <div className="flex-1 border-r border-dotted border-black">
+                            <div className="font-bold border-b border-black mb-1">Tiempos</div>
                             <div>TP: {data.tp}</div>
                             <div>TTP: {data.ttp}</div>
                             <div>INR: {data.inr}</div>
                         </div>
-                        <div className="border-r border-dotted border-black">
-                            <div className="font-bold border-b">QS</div>
+                        <div className="flex-1 border-r border-dotted border-black">
+                            <div className="font-bold border-b border-black mb-1">QS</div>
                             <div>Glu: {data.glucosaCentral}</div>
                             <div>Urea: {data.urea}</div>
                             <div>Cr: {data.creatinina}</div>
                         </div>
-                        <div>
-                            <div className="font-bold border-b">E.S.</div>
+                        <div className="flex-1">
+                            <div className="font-bold border-b border-black mb-1">E.S.</div>
                             <div>Na: {data.na} K: {data.k}</div>
                             <div>Cl: {data.cl}</div>
                         </div>
@@ -232,19 +232,19 @@ const PrintView: React.FC = () => {
 
                 {/* Escalas */}
                 <div className="mb-2 border border-black p-1 bg-gray-50 text-[9px]">
-                    <div className="grid grid-cols-6 gap-2 text-center">
-                        <div><span className="font-bold block">ASA</span> {data.asa}</div>
-                        <div><span className="font-bold block">GOLDMAN</span> {data.goldman}</div>
-                        <div><span className="font-bold block">DETSKY</span> {data.detsky}</div>
-                        <div><span className="font-bold block">LEE</span> {data.lee}</div>
-                        <div><span className="font-bold block">GUPTA</span> {data.gupta}%</div>
-                        <div><span className="font-bold block">DUKE</span> {data.duke_resultado || '-'}</div>
+                    <div className="flex text-center">
+                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">ASA</span> {data.asa}</div>
+                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">GOLDMAN</span> {data.goldman}</div>
+                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">DETSKY</span> {data.detsky}</div>
+                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">LEE</span> {data.lee}</div>
+                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">GUPTA</span> {data.gupta}%</div>
+                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">DUKE</span> {data.duke_resultado || '-'}</div>
                     </div>
                 </div>
             </div>
 
             {/* PAGE 2 STARTS HERE */}
-            <div id="print-page-2" className="bg-white p-2 mt-8">
+            <div id="print-page-2" className="bg-white p-4 w-[790px] mt-8">
                 {/* PLAN DE MANEJO INTEGRAL (3 COLUMNS) */}
                 <div className="border border-black flex flex-col min-h-[400px]">
                     <div className="bg-gray-200 font-bold border-b border-black px-2 py-1 text-center">PLAN DE MANEJO PERIOPERATORIO</div>
