@@ -282,11 +282,11 @@ const App: React.FC = () => {
     const pdfWidth = pdf.internal.pageSize.getWidth();
 
     const capturePage = async (element: HTMLElement) => {
-      // 2000ms delay for maximum rendering stability on any system
+      // 2000ms delay for categorical rendering safety
       await new Promise(resolve => setTimeout(resolve, 2000));
 
       const canvas = await html2canvas(element, {
-        scale: 1, // Standard scale to prevent Retina artifacts
+        scale: 2,
         useCORS: true,
         logging: true,
         backgroundColor: '#ffffff',
@@ -294,23 +294,19 @@ const App: React.FC = () => {
         windowWidth: 794,
         scrollX: 0,
         scrollY: 0,
-        imageTimeout: 15000,
         onclone: (clonedDoc) => {
-          // Force a virtual viewport that is exactly 794px width
           const body = clonedDoc.body;
           if (body) {
             body.style.width = '794px';
             body.style.minWidth = '794px';
-            body.style.transform = 'scale(1)';
+            body.style.maxWidth = '794px';
             body.style.overflow = 'hidden';
-            // Normalize for any retina effects
-            (clonedDoc.defaultView as any).devicePixelRatio = 1;
+            // Normalize any zoom/scaling
+            body.style.zoom = '1.0';
           }
           const el = clonedDoc.getElementById(element.id);
           if (el) {
-            el.style.width = '794px';
-            el.style.minWidth = '794px';
-            el.style.display = 'block';
+            el.setAttribute('style', `width: 794px !important; min-width: 794px !important; max-width: 794px !important; display: block !important; padding: 0 !important; margin: 0 !important; background: white !important;`);
           }
         }
       });
