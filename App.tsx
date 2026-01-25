@@ -59,14 +59,14 @@ const StickyHeader = () => {
   return (
     <header className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-200 z-30 shadow-sm transition-all duration-200 no-print">
       <div className="w-full max-w-md md:max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-2 lg:opacity-0 pointer-events-none">
+        <div className="flex items-center gap-3 lg:opacity-0 pointer-events-none">
           {/* Logo Hidden on Desktop via opacity since it's in Sidebar, keeps layout spacing */}
-          <div className="bg-white p-1 rounded-lg border border-gray-100 flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-8 h-8 object-contain" />
+          <div className="flex items-center justify-center">
+            <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
           </div>
-          <div>
-            <h1 className="text-sm font-bold text-slate-900 leading-tight">VPO Digital</h1>
-            <p className="text-[10px] text-gray-500">Medicina Interna CMN S. XXI</p>
+          <div className="flex flex-col">
+            <h1 className="text-[13px] font-extrabold text-slate-900 leading-none">VPO DIGITAL</h1>
+            <p className="text-[9px] text-clinical-navy font-bold tracking-tighter mt-0.5">CMN S. XXI</p>
           </div>
         </div>
 
@@ -92,14 +92,14 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
 
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 left-0 z-40 overflow-y-auto no-print shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-      <div className="p-6 border-b border-gray-100 mb-2">
-        <div className="flex flex-col items-center text-center gap-3">
-          <div className="bg-white p-1 rounded-xl shadow-sm border border-gray-50 mb-1">
-            <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain" />
+      <div className="p-5 border-b border-gray-100 mb-2">
+        <div className="flex items-center gap-3">
+          <div className="flex-shrink-0">
+            <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-clinical-navy leading-tight">VPO Digital</h1>
-            <p className="text-xs text-gray-400 font-bold uppercase tracking-widest mt-1">CMN S. XXI</p>
+          <div className="flex flex-col">
+            <h1 className="text-lg font-black text-clinical-navy leading-none tracking-tight">VPO Digital</h1>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">CMN S. XXI</p>
           </div>
         </div>
       </div>

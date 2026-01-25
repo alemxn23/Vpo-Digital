@@ -31,18 +31,18 @@ const PrintView: React.FC = () => {
     return (
         <div className="text-[10px] leading-tight font-sans text-black">
             {/* Header */}
-            <div className="flex justify-between items-start mb-4 border-b pb-2">
-                <div className="w-20 h-20 flex items-center justify-center">
-                    <img src="/logo.png" alt="Logo" className="w-full h-full object-contain" />
+            <div className="flex justify-between items-center mb-4 border-b pb-4">
+                <div className="flex items-center gap-4">
+                    <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain" />
+                    <div className="flex flex-col">
+                        <h1 className="font-black text-sm text-clinical-navy leading-none">VPO Digital</h1>
+                        <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">CMN Siglo XXI</p>
+                        <p className="text-[8px] font-medium text-gray-400 mt-0.5">Medicina Interna</p>
+                    </div>
                 </div>
-                <div className="text-center flex-1 px-4">
-                    <h1 className="font-bold text-sm">DIRECCIÓN DE PRESTACIONES MÉDICAS</h1>
-                    <h2 className="font-bold text-xs uppercase underline">CMN SIGLO XXI</h2>
-                    <h3 className="font-bold text-xs mt-1 uppercase">SERVICIO DE MEDICINA INTERNA</h3>
-                    <h1 className="font-bold text-lg mt-2 uppercase border-b-2 border-black inline-block px-4">Valoración Preoperatoria</h1>
-                </div>
-                <div className="w-16 h-16 bg-gray-200 flex items-center justify-center text-[8px] text-center font-bold text-gray-500">
-                    IMSS LOGO
+                <div className="text-right flex flex-col items-end">
+                    <h1 className="font-bold text-[10px] uppercase">Dirección de Prestaciones Médicas</h1>
+                    <h2 className="font-black text-xs mt-1 uppercase border-b-2 border-black">Valoración Preoperatoria</h2>
                 </div>
             </div>
 
