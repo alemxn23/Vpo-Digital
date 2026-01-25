@@ -282,16 +282,31 @@ const App: React.FC = () => {
     const pdfWidth = pdf.internal.pageSize.getWidth();
 
     const capturePage = async (element: HTMLElement) => {
-      // 800ms delay to ensure the browser has fully rendered the tables
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // 1500ms delay for maximum rendering stability on any system
+      await new Promise(resolve => setTimeout(resolve, 1500));
 
       const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
-        logging: false,
+        logging: true,
         backgroundColor: '#ffffff',
         width: 794,
-        windowWidth: 1200,
+        windowWidth: 794,
+        scrollX: 0,
+        scrollY: 0,
+        onclone: (clonedDoc) => {
+          const body = clonedDoc.body;
+          if (body) {
+            body.style.width = '794px';
+            body.style.transform = 'scale(1)';
+            body.style.transformOrigin = 'top left';
+          }
+          const el = clonedDoc.getElementById(element.id);
+          if (el) {
+            el.style.width = '794px';
+            el.style.display = 'block';
+          }
+        }
       });
       return canvas.toDataURL('image/png', 0.98);
     };
@@ -754,7 +769,7 @@ const App: React.FC = () => {
         <BottomNav activeStep={activeStep} setStep={setActiveStep} />
 
         {/* Hidden Container for high-res PDF generation using html2canvas */}
-        <div id="print-content" style={{ position: 'absolute', left: '-9999px', top: '0', width: '794px', backgroundColor: 'white' }}>
+        <div id="print-content" style={{ position: 'fixed', left: '0', top: '0', width: '794px', zIndex: -1, backgroundColor: 'white' }}>
           <PrintView />
         </div>
 
