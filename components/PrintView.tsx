@@ -2,7 +2,6 @@ import React from 'react';
 import { useFormContext } from 'react-hook-form';
 import { VPOData } from '../types';
 
-// This component replicates the visual structure of the attached image strictly
 const PrintView: React.FC = () => {
     const { watch } = useFormContext<VPOData>();
     const data = watch();
@@ -10,286 +9,260 @@ const PrintView: React.FC = () => {
     const hasOverrides = Object.keys(overrides).length > 0;
 
     const Check = ({ val }: { val: boolean }) => (
-        <span className="font-bold">{val ? 'X' : ''}</span>
+        <span style={{ fontWeight: 'bold' }}>{val ? 'X' : ''}</span>
     );
 
     const getCardioText = () => {
-        let text = "Negado";
-        if (data.cardiopatiaIsquemica) {
-            if (data.cardio_tipo_evento === 'iam') text = `IAM (${data.cardio_fecha_evento})`;
-            else if (data.cardio_tipo_evento === 'angina_inestable') text = "Angina Inestable";
-            else text = "Angina Estable";
-        }
-        return text;
+        if (!data.cardiopatiaIsquemica) return "Negado";
+        if (data.cardio_tipo_evento === 'iam') return `IAM (${data.cardio_fecha_evento})`;
+        if (data.cardio_tipo_evento === 'angina_inestable') return "Angina Inestable";
+        return "Angina Estable";
     };
 
     const getICCText = () => {
         if (!data.icc) return "Negado";
-        return `NYHA ${data.icc_nyha}, ${data.icc_evolucion === 'aguda' ? 'Aguda' : 'Crónica'} ${data.icc_historia_eap ? '(Antecedente EAP)' : ''}`;
+        return `NYHA ${data.icc_nyha}, ${data.icc_evolucion === 'aguda' ? 'Aguda' : 'Crónica'}`;
+    };
+
+    const safeStyle = {
+        fontFamily: 'Arial, sans-serif',
+        color: 'black',
+        lineHeight: '1.4',
     };
 
     return (
-        <div className="text-[10px] leading-tight font-sans text-black bg-white">
-            <div id="print-page-1" className="bg-white p-4 w-[790px]">
-                {/* Header Area */}
-                <div className="flex justify-between items-start mb-6 border-b-2 border-black pb-4 pt-4">
-                    <div className="flex items-center gap-4">
-                        <img src="/logo.png" alt="Logo" className="w-20 h-20 object-contain" />
-                        <div className="flex flex-col">
-                            <h1 className="font-bold text-xl text-blue-900 m-0 p-0">VPO Digital</h1>
-                            <p className="text-[10px] font-bold text-gray-500 uppercase mt-1">CMN SIGLO XXI</p>
-                            <p className="text-[9px] font-semibold text-gray-500">Medicina Interna</p>
-                        </div>
-                    </div>
-                    <div className="text-right">
-                        <h1 className="font-bold text-[10px] uppercase text-slate-600 mb-1">Dirección de Prestaciones Médicas</h1>
-                        <p className="text-[9px] font-bold text-slate-400 uppercase mb-4">{data.unidadMedica || 'Unidad Médica CMN S. XXI'}</p>
-                        <div className="inline-block border-b-2 border-black pb-1">
-                            <h2 className="font-bold text-xs uppercase px-2">{data.servicioSolicitante || 'SERVICIO DE MEDICINA INTERNA'}</h2>
-                            <h2 className="font-bold text-sm uppercase px-2 mt-1">Valoración Preoperatoria</h2>
-                        </div>
-                    </div>
-                </div>
+        <div style={{ ...safeStyle, background: 'white' }}>
+            {/* PAGE 1 */}
+            <div id="print-page-1" style={{ width: '794px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white' }}>
+                {/* Header Table for stability */}
+                <table style={{ width: '100%', borderBottom: '2px solid black', marginBottom: '20px' }}>
+                    <tbody>
+                        <tr>
+                            <td style={{ width: '80px', verticalAlign: 'middle' }}>
+                                <img src="/logo.png" alt="Logo" style={{ width: '70px', height: '70px', objectFit: 'contain' }} />
+                            </td>
+                            <td style={{ paddingLeft: '20px', verticalAlign: 'middle' }}>
+                                <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#1A365D' }}>VPO Digital</div>
+                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#718096', textTransform: 'uppercase' }}>CMN SIGLO XXI</div>
+                                <div style={{ fontSize: '10px', color: '#A0AEC0' }}>Medicina Interna</div>
+                            </td>
+                            <td style={{ textAlign: 'right', verticalAlign: 'top' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#4A5568', textTransform: 'uppercase' }}>Dirección de Prestaciones Médicas</div>
+                                <div style={{ fontSize: '9px', fontWeight: 'bold', color: '#A0AEC0', marginBottom: '10px' }}>{data.unidadMedica || 'CMN S. XXI'}</div>
+                                <div style={{ borderBottom: '2px solid black', display: 'inline-block', paddingBottom: '2px' }}>
+                                    <div style={{ fontSize: '11px', fontWeight: 'bold', textTransform: 'uppercase' }}>{data.servicioSolicitante || 'SERVICIO DE MEDICINA INTERNA'}</div>
+                                    <div style={{ fontSize: '13px', fontWeight: 'bold', textTransform: 'uppercase' }}>Valoración Preoperatoria</div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
-                {/* Identificación */}
-                <div className="border border-black p-1 mb-2">
-                    <div className="flex gap-2 mb-1">
-                        <div className="flex-[2] border-b border-black border-dotted pb-1">
-                            <span className="font-bold mr-2">NOMBRE:</span> {data.nombre}
-                        </div>
-                        <div className="flex-[1] border-b border-black border-dotted pb-1">
-                            <span className="font-bold mr-2">FECHA:</span> {data.fecha} {data.hora}
-                        </div>
-                    </div>
-                    <div className="flex gap-2 mb-1">
-                        <div className="flex-[2] border-b border-black border-dotted">
-                            <span className="font-bold mr-2">NSS:</span> {data.nss}
-                        </div>
-                        <div className="flex-[1] border-b border-black border-dotted">
-                            <span className="font-bold mr-2">EDAD:</span> {data.edad}
-                        </div>
-                        <div className="flex-[1] border-b border-black border-dotted">
-                            <span className="font-bold mr-2">GÉNERO:</span> {data.genero}
-                        </div>
-                        <div className="flex-[1] border-b border-black border-dotted">
-                            <span className="font-bold mr-2">CAMA:</span> {data.cama}
-                        </div>
-                    </div>
-                    <div className="flex border-b border-black border-dotted mb-1 pb-1">
-                        <span className="font-bold mr-2">DX QUIRÚRGICO:</span> {data.diagnosticoQuirurgico}
-                    </div>
-                    <div className="flex border-b border-black border-dotted mb-1 pb-1">
-                        <span className="font-bold mr-2">CIRUGÍA PROGRAMADA:</span> {data.cirugiaProgramada}
-                    </div>
-                    <div className="flex gap-2">
-                        <div className="flex-[3] border-b border-black border-dotted">
-                            <span className="font-bold mr-2">TIPO:</span> {data.tipoCirugia}
-                        </div>
-                        <div className="flex-[1] border-b border-black border-dotted text-center">
-                            <span className="font-bold mr-2">PESO:</span> {data.peso} kg
-                        </div>
-                        <div className="flex-[1] border-b border-black border-dotted text-center">
-                            <span className="font-bold mr-2">TALLA:</span> {data.talla} m
-                        </div>
-                        <div className="flex-[1] border-b border-black border-dotted bg-gray-100 text-center">
-                            <span className="font-bold mr-2">IMC:</span> {data.imc}
-                        </div>
-                    </div>
+                {/* Identificación Table */}
+                <div style={{ border: '1px solid black', padding: '10px', marginBottom: '15px' }}>
+                    <table style={{ width: '100%', marginBottom: '8px' }}>
+                        <tbody>
+                            <tr>
+                                <td style={{ width: '70%', borderBottom: '1px dotted black' }}><span style={{ fontWeight: 'bold' }}>NOMBRE:</span> {data.nombre}</td>
+                                <td style={{ width: '30%', borderBottom: '1px dotted black', paddingLeft: '10px' }}><span style={{ fontWeight: 'bold' }}>FECHA:</span> {data.fecha}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table style={{ width: '100%', marginBottom: '8px' }}>
+                        <tbody>
+                            <tr>
+                                <td style={{ width: '30%', borderBottom: '1px dotted black' }}><span style={{ fontWeight: 'bold' }}>NSS:</span> {data.nss}</td>
+                                <td style={{ width: '20%', borderBottom: '1px dotted black', paddingLeft: '10px' }}><span style={{ fontWeight: 'bold' }}>EDAD:</span> {data.edad}</td>
+                                <td style={{ width: '25%', borderBottom: '1px dotted black', paddingLeft: '10px' }}><span style={{ fontWeight: 'bold' }}>GÉNERO:</span> {data.genero}</td>
+                                <td style={{ width: '25%', borderBottom: '1px dotted black', paddingLeft: '10px' }}><span style={{ fontWeight: 'bold' }}>CAMA:</span> {data.cama}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div style={{ borderBottom: '1px dotted black', marginBottom: '8px' }}><span style={{ fontWeight: 'bold' }}>DX QUIRÚRGICO:</span> {data.diagnosticoQuirurgico}</div>
+                    <div style={{ borderBottom: '1px dotted black', marginBottom: '8px' }}><span style={{ fontWeight: 'bold' }}>CIRUGÍA PROGRAMADA:</span> {data.cirugiaProgramada}</div>
+                    <table style={{ width: '100%' }}>
+                        <tbody>
+                            <tr>
+                                <td style={{ width: '50%', borderBottom: '1px dotted black' }}><span style={{ fontWeight: 'bold' }}>TIPO:</span> {data.tipoCirugia}</td>
+                                <td style={{ width: '15%', borderBottom: '1px dotted black', textAlign: 'center' }}><span style={{ fontWeight: 'bold' }}>PESO:</span> {data.peso}kg</td>
+                                <td style={{ width: '15%', borderBottom: '1px dotted black', textAlign: 'center' }}><span style={{ fontWeight: 'bold' }}>TALLA:</span> {data.talla}m</td>
+                                <td style={{ width: '20%', borderBottom: '1px dotted black', textAlign: 'center', backgroundColor: '#EDF2F7' }}><span style={{ fontWeight: 'bold' }}>IMC:</span> {data.imc}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
 
                 {/* Riesgos */}
-                <div className="mb-3 border border-black">
-                    <h4 className="font-bold bg-gray-100 px-2 py-1.5 border-b border-black text-[11px] uppercase">Factores de Riesgo</h4>
-                    <div className="p-2">
-                        <div className="flex flex-wrap">
-                            <div className="w-1/2 pr-4 border-b border-dotted border-gray-400 flex justify-between"><span>TABAQUISMO:</span> <span>SI (<Check val={data.tabaquismo} />) IT: {data.indiceTabaquico}</span></div>
-                            <div className="w-1/2 pl-4 border-b border-dotted border-gray-400 flex justify-between"><span>ALERGIAS:</span> <span>SI (<Check val={data.alergicos} />)</span></div>
-                            <div className="w-1/2 pr-4 border-b border-dotted border-gray-400 flex justify-between">
-                                <span>HTA:</span>
-                                <span>SI (<Check val={data.hta} />) {data.hta ? `(${data.hta_control})` : ''}</span>
-                            </div>
-                            <div className="w-1/2 pl-4 border-b border-dotted border-gray-400 flex justify-between">
-                                <span>DIABETES:</span>
-                                <span>SI (<Check val={data.diabetes} />) {data.diabetes ? `Tipo: ${data.diabetesTipo}` : ''}</span>
-                            </div>
-                            <div className="w-1/2 pr-4 border-b border-dotted border-gray-400 flex justify-between">
-                                <span>CARDIOPATÍA ISQUÉMICA:</span>
-                                <span>SI (<Check val={data.cardiopatiaIsquemica} />) {getCardioText()}</span>
-                            </div>
-                            <div className="w-1/2 pl-4 border-b border-dotted border-gray-400 flex justify-between">
-                                <span>INSUF. CARDIACA:</span>
-                                <span>SI (<Check val={data.icc} />) {getICCText()}</span>
-                            </div>
-                            <div className="w-1/2 pr-4 border-b border-dotted border-gray-400 flex justify-between">
-                                <span>ENF. RENAL:</span>
-                                <span>SI (<Check val={data.enfRenalCronica} />) {data.enfRenalCronica ? `Estadio ${data.erc_estadio}` : ''} TFG: {data.tfg}</span>
-                            </div>
-                            <div className="w-1/2 pl-4 border-b border-dotted border-gray-400 flex justify-between">
-                                <span>NEUMOPATÍA:</span>
-                                <span>SI (<Check val={data.neumopatia} />) {data.neumo_tipo}</span>
-                            </div>
+                <div style={{ border: '1px solid black', marginBottom: '15px' }}>
+                    <div style={{ backgroundColor: '#EDF2F7', padding: '6px 12px', borderBottom: '1px solid black', fontWeight: 'bold', fontSize: '11px' }}>FACTORES DE RIESGO</div>
+                    <div style={{ padding: '10px' }}>
+                        <table style={{ width: '100%', fontSize: '10px' }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ width: '50%', borderBottom: '1px dotted #CBD5E0', padding: '4px 0' }}>TABAQUISMO: SI (<Check val={data.tabaquismo} />) IT: {data.indiceTabaquico}</td>
+                                    <td style={{ width: '50%', borderBottom: '1px dotted #CBD5E0', padding: '4px 0', paddingLeft: '20px' }}>ALERGIAS: SI (<Check val={data.alergicos} />)</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ borderBottom: '1px dotted #CBD5E0', padding: '4px 0' }}>HTA: SI (<Check val={data.hta} />) {data.hta ? `(${data.hta_control})` : ''}</td>
+                                    <td style={{ borderBottom: '1px dotted #CBD5E0', padding: '4px 0', paddingLeft: '20px' }}>DIABETES: SI (<Check val={data.diabetes} />)</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ borderBottom: '1px dotted #CBD5E0', padding: '4px 0' }}>CARD. ISQUÉMICA: SI (<Check val={data.cardiopatiaIsquemica} />) {getCardioText()}</td>
+                                    <td style={{ borderBottom: '1px dotted #CBD5E0', padding: '4px 0', paddingLeft: '20px' }}>I. CARDIACA: SI (<Check val={data.icc} />) {getICCText()}</td>
+                                </tr>
+                                <tr>
+                                    <td style={{ borderBottom: '1px dotted #CBD5E0', padding: '4px 0' }}>ENF. RENAL: SI (<Check val={data.enfRenalCronica} />) TFG: {data.tfg}</td>
+                                    <td style={{ borderBottom: '1px dotted #CBD5E0', padding: '4px 0', paddingLeft: '20px' }}>NEUMOPATÍA: SI (<Check val={data.neumopatia} />) {data.neumo_tipo}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                        <div style={{ marginTop: '10px', borderTop: '1px solid black', paddingTop: '5px', fontSize: '10px' }}>
+                            <div style={{ fontWeight: 'bold' }}>CIRUGÍAS PREVIAS / COMPLICACIONES:</div>
+                            <div style={{ borderBottom: '1px dotted black', minHeight: '1.5em' }}>{data.cirugiasPrevias}</div>
                         </div>
-
-                        <div className="mt-2 border-t border-black pt-1">
-                            <span className="font-bold">CIRUGÍAS PREVIAS / COMPLICACIONES:</span>
-                            <p className="border-b border-dotted border-black min-h-[1.5em] m-0">{data.cirugiasPrevias}</p>
-                        </div>
-                        <div className="mt-1">
-                            <span className="font-bold uppercase text-[9px]">Otras Enfermedades / Tratamiento Actual:</span>
-                            <p className="border-b border-dotted border-black min-h-[1.5em] m-0 leading-normal">
-                                {data.otrasEnfermedades} {data.tratamientoActual ? ` / ${data.tratamientoActual}` : ''}
-                            </p>
+                        <div style={{ marginTop: '8px', fontSize: '10px' }}>
+                            <div style={{ fontWeight: 'bold' }}>OTRAS ENFERMEDADES / TRATAMIENTO ACTUAL:</div>
+                            <div style={{ borderBottom: '1px dotted black', minHeight: '1.5em' }}>{data.otrasEnfermedades} {data.tratamientoActual}</div>
                         </div>
                     </div>
                 </div>
 
-                {/* Exploración y Labs */}
-                <div className="mb-2 border border-black p-1">
-                    <div className="flex bg-gray-100 p-1 mb-1 font-bold text-center border-b border-black text-[9px]">
-                        <div className="flex-1">TA: {data.taSistolica}/{data.taDiastolica}</div>
-                        <div className="flex-1">FC: {data.fc}</div>
-                        <div className="flex-1">FR: {data.fr}</div>
-                        <div className="flex-1">Temp: {data.temp}</div>
-                        <div className="flex-1">SatO2: {data.sato2}%</div>
-                        <div className="flex-1">Gluc: {data.glucosaCapilar}</div>
-                    </div>
+                {/* Signos y Labs */}
+                <div style={{ border: '1px solid black', marginBottom: '15px' }}>
+                    <table style={{ width: '100%', textAlign: 'center', backgroundColor: '#EDF2F7', borderBottom: '1px solid black', fontSize: '10px', fontWeight: 'bold' }}>
+                        <tbody>
+                            <tr>
+                                <td style={{ padding: '6px' }}>TA: {data.taSistolica}/{data.taDiastolica}</td>
+                                <td>FC: {data.fc}</td>
+                                <td>FR: {data.fr}</td>
+                                <td>Temp: {data.temp}</td>
+                                <td>SatO2: {data.sato2}%</td>
+                                <td>Gluc: {data.glucosaCapilar}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <table style={{ width: '100%', textAlign: 'center', fontSize: '10px', padding: '10px 0' }}>
+                        <tbody>
+                            <tr>
+                                <td style={{ width: '25%', borderRight: '1px dotted black' }}>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '4px', textDecoration: 'underline' }}>Biometría</div>
+                                    <div>Hb: {data.hb}</div>
+                                    <div>Leu: {data.leucocitos}</div>
+                                    <div>Plaq: {data.plaquetas}</div>
+                                </td>
+                                <td style={{ width: '25%', borderRight: '1px dotted black' }}>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '4px', textDecoration: 'underline' }}>Tiempos</div>
+                                    <div>TP: {data.tp}</div>
+                                    <div>TTP: {data.ttp}</div>
+                                    <div>INR: {data.inr}</div>
+                                </td>
+                                <td style={{ width: '25%', borderRight: '1px dotted black' }}>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '4px', textDecoration: 'underline' }}>Química</div>
+                                    <div>Glu: {data.glucosaCentral}</div>
+                                    <div>Urea: {data.urea}</div>
+                                    <div>Cr: {data.creatinina}</div>
+                                </td>
+                                <td style={{ width: '25%' }}>
+                                    <div style={{ fontWeight: 'bold', marginBottom: '4px', textDecoration: 'underline' }}>E.S.</div>
+                                    <div>Na: {data.na} K: {data.k}</div>
+                                    <div>Cl: {data.cl}</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
 
-                    <div className="flex text-center mt-2 text-[9px]">
-                        <div className="flex-1 border-r border-dotted border-black">
-                            <div className="font-bold border-b border-black mb-1">Biometría</div>
-                            <div>Hb: {data.hb}</div>
-                            <div>Leu: {data.leucocitos}</div>
-                            <div>Plaq: {data.plaquetas}</div>
-                        </div>
-                        <div className="flex-1 border-r border-dotted border-black">
-                            <div className="font-bold border-b border-black mb-1">Tiempos</div>
-                            <div>TP: {data.tp}</div>
-                            <div>TTP: {data.ttp}</div>
-                            <div>INR: {data.inr}</div>
-                        </div>
-                        <div className="flex-1 border-r border-dotted border-black">
-                            <div className="font-bold border-b border-black mb-1">QS</div>
-                            <div>Glu: {data.glucosaCentral}</div>
-                            <div>Urea: {data.urea}</div>
-                            <div>Cr: {data.creatinina}</div>
-                        </div>
-                        <div className="flex-1">
-                            <div className="font-bold border-b border-black mb-1">E.S.</div>
-                            <div>Na: {data.na} K: {data.k}</div>
-                            <div>Cl: {data.cl}</div>
-                        </div>
+                {/* Gabinete */}
+                <div style={{ border: '1px solid black', marginBottom: '15px' }}>
+                    <div style={{ backgroundColor: '#EDF2F7', padding: '6px 12px', borderBottom: '1px solid black', fontWeight: 'bold', fontSize: '11px' }}>GABINETE</div>
+                    <div style={{ padding: '10px' }}>
+                        <table style={{ width: '100%', fontSize: '10px' }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ width: '50%', borderRight: '1px dotted black', paddingRight: '10px' }}>
+                                        <div style={{ fontWeight: 'bold', textDecoration: 'underline' }}>ELECTROCARDIOGRAMA</div>
+                                        <div><span style={{ fontWeight: 'bold' }}>Frec:</span> {data.ecg_frecuencia || data.frecuenciaEcg} lpm</div>
+                                        <div><span style={{ fontWeight: 'bold' }}>Ritmo:</span> {data.ecg_ritmo_especifico || data.ritmo}</div>
+                                        <div style={{ marginTop: '5px' }}>
+                                            {data.ecg_hvi && <span style={{ border: '1px solid black', padding: '1px 3px', marginRight: '4px' }}>HVI</span>}
+                                            {data.ecg_isquemia && <span style={{ border: '1px solid black', padding: '1px 3px', fontWeight: 'bold' }}>ISQUEMIA</span>}
+                                        </div>
+                                    </td>
+                                    <td style={{ width: '50%', paddingLeft: '10px' }}>
+                                        <div style={{ fontWeight: 'bold', textDecoration: 'underline' }}>RADIOGRAFÍA DE TÓRAX</div>
+                                        <div style={{ borderBottom: '1px dotted black', minHeight: '1.5em' }}>{data.rx_descripcion}</div>
+                                        <div style={{ marginTop: '8px' }}><span style={{ fontWeight: 'bold' }}>ARISCAT:</span> {data.ariscat_total} pts</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                {/* GABINETE: RX & ECG */}
-                <div className="mb-3 border border-black">
-                    <h4 className="font-bold bg-gray-100 px-2 py-1.5 border-b border-black text-[11px] leading-normal uppercase">Gabinete</h4>
-                    <div className="p-2">
-                        <div className="grid grid-cols-2 gap-4">
-                            {/* ECG COLUMN */}
-                            <div className="border-r border-dotted border-black pr-2">
-                                <div className="font-bold underline text-xs">ELECTROCARDIOGRAMA:</div>
-                                <div className="grid grid-cols-2 gap-1 mt-1">
-                                    <div><span className="font-semibold">Frec:</span> {data.ecg_frecuencia || data.frecuenciaEcg} lpm</div>
-                                    <div><span className="font-semibold">Ritmo:</span> {data.ecg_ritmo_especifico || data.ritmo}</div>
-                                </div>
-                                <div className="mt-1"><span className="font-semibold">Bloqueo:</span> {data.ecg_bloqueo}</div>
-                                <div className="mt-1 flex flex-wrap gap-2 text-[9px]">
-                                    {data.ecg_hvi && <span className="border border-black px-1">HVI</span>}
-                                    {data.ecg_brihh_completo && <span className="border border-black px-1 font-bold">BRIHH</span>}
-                                    {data.ecg_isquemia && <span className="border border-black px-1 font-bold">ISQUEMIA</span>}
-                                    {data.ecg_extrasistoles && <span className="border border-black px-1">EXTRASÍS.</span>}
-                                </div>
-                                <div className="mt-1 italic">{data.ecg_otras_alteraciones}</div>
-                            </div>
-
-                            {/* RX COLUMN */}
-                            <div className="pl-2">
-                                <div className="font-bold underline text-xs">RADIOGRAFÍA DE TÓRAX:</div>
-                                <div className="mt-1 min-h-[1.5em] border-b border-dotted border-gray-400">{data.rx_descripcion}</div>
-                                <div className="mt-2 border-t border-dotted border-black pt-1">
-                                    <span className="font-bold">ARISCAT:</span> {data.ariscat_total} pts ({data.ariscat_categoria})
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                {/* INFECTOLOGÍA / ENDOCARDITIS SECTION (NEW) */}
-                <div className="mb-3 border border-black">
-                    <h4 className="font-bold bg-gray-100 px-2 py-1.5 border-b border-black text-[11px] leading-normal uppercase">Infectología (Duke)</h4>
-                    <div className="p-2">
-                        <div className="text-[9px]">
-                            <span className="font-bold">RESULTADO:</span> {data.duke_resultado || 'Rechazado'}
-                            {(data.duke_resultado === 'Definitivo' || data.duke_resultado === 'Posible') && (
-                                <div className="mt-1 font-bold text-red-700 border border-red-600 p-1 bg-red-50 uppercase text-center">
-                                    ALERTA: Riesgo de Endocarditis. Diferir cirugía electiva, iniciar protocolo de antibióticos y solicitar Ecocardiograma Transesofágico (ETE) urgente.
-                                </div>
-                            )}
-                        </div>
-                    </div>
-                </div>
-
-                {/* Escalas */}
-                <div className="mb-2 border border-black p-1 bg-gray-50 text-[9px]">
-                    <div className="flex text-center">
-                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">ASA</span> {data.asa}</div>
-                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">GOLDMAN</span> {data.goldman}</div>
-                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">DETSKY</span> {data.detsky}</div>
-                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">LEE</span> {data.lee}</div>
-                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">GUPTA</span> {data.gupta}%</div>
-                        <div className="flex-1"><span className="font-bold block border-b border-gray-300 mb-1">DUKE</span> {data.duke_resultado || '-'}</div>
-                    </div>
+                {/* Escalas Summary */}
+                <div style={{ border: '1px solid black', backgroundColor: '#F7FAFC' }}>
+                    <table style={{ width: '100%', textAlign: 'center', fontSize: '10px' }}>
+                        <tbody>
+                            <tr>
+                                <td style={{ padding: '6px', borderRight: '1px solid #E2E8F0' }}><span style={{ fontWeight: 'bold', display: 'block', borderBottom: '1px solid #CBD5E0', marginBottom: '3px' }}>ASA</span> {data.asa}</td>
+                                <td style={{ padding: '6px', borderRight: '1px solid #E2E8F0' }}><span style={{ fontWeight: 'bold', display: 'block', borderBottom: '1px solid #CBD5E0', marginBottom: '3px' }}>GOLDMAN</span> {data.goldman}</td>
+                                <td style={{ padding: '6px', borderRight: '1px solid #E2E8F0' }}><span style={{ fontWeight: 'bold', display: 'block', borderBottom: '1px solid #CBD5E0', marginBottom: '3px' }}>LEE</span> {data.lee}</td>
+                                <td style={{ padding: '6px' }}><span style={{ fontWeight: 'bold', display: 'block', borderBottom: '1px solid #CBD5E0', marginBottom: '3px' }}>DUKE</span> {data.duke_resultado || '-'}</td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
 
-            {/* PAGE 2 STARTS HERE */}
-            <div id="print-page-2" className="bg-white p-4 w-[790px] mt-8">
-                {/* PLAN DE MANEJO INTEGRAL (3 COLUMNS) */}
-                <div className="border border-black flex flex-col min-h-[400px]">
-                    <div className="bg-gray-200 font-bold border-b border-black px-2 py-1 text-center">PLAN DE MANEJO PERIOPERATORIO</div>
+            {/* PAGE 2 */}
+            <div id="print-page-2" style={{ width: '794px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white', marginTop: '20px' }}>
+                <div style={{ border: '1px solid black', minHeight: '900px', position: 'relative' }}>
+                    <div style={{ backgroundColor: '#EDF2F7', padding: '10px', borderBottom: '2px solid black', textAlign: 'center', fontWeight: 'bold', fontSize: '14px' }}>PLAN DE MANEJO PERIOPERATORIO</div>
 
-                    <div className="flex-1 grid grid-cols-3 text-[9px]">
-                        {/* PRE-QX */}
-                        <div className="border-r border-black p-2">
-                            <h5 className="font-bold underline mb-1 text-center bg-gray-100">PRE-QUIRÚRGICO</h5>
-                            <p className="whitespace-pre-wrap">{data.plan_pre || data.recomendacionesGenerales || data.ayuno}</p>
-                        </div>
+                    <table style={{ width: '100%', height: '650px', borderCollapse: 'collapse' }}>
+                        <tbody>
+                            <tr>
+                                <td style={{ width: '33.3%', borderRight: '1px solid black', verticalAlign: 'top', padding: '15px' }}>
+                                    <div style={{ fontWeight: 'bold', textDecoration: 'underline', textAlign: 'center', backgroundColor: '#F7FAFC', padding: '5px', marginBottom: '10px' }}>PRE-QUIRÚRGICO</div>
+                                    <div style={{ fontSize: '11px', whiteSpace: 'pre-wrap' }}>{data.plan_pre || data.recomendacionesGenerales || data.ayuno}</div>
+                                </td>
+                                <td style={{ width: '33.3%', borderRight: '1px solid black', verticalAlign: 'top', padding: '15px' }}>
+                                    <div style={{ fontWeight: 'bold', textDecoration: 'underline', textAlign: 'center', backgroundColor: '#F7FAFC', padding: '5px', marginBottom: '10px' }}>TRANS-QUIRÚRGICO</div>
+                                    <div style={{ fontSize: '11px', whiteSpace: 'pre-wrap' }}>{data.plan_trans || "Ver notas de Anestesiología."}</div>
+                                </td>
+                                <td style={{ width: '33.4%', verticalAlign: 'top', padding: '15px' }}>
+                                    <div style={{ fontWeight: 'bold', textDecoration: 'underline', textAlign: 'center', backgroundColor: '#F7FAFC', padding: '5px', marginBottom: '10px' }}>POST-QUIRÚRGICO</div>
+                                    <div style={{ fontSize: '11px', whiteSpace: 'pre-wrap' }}>{data.plan_post || data.tromboprofilaxis}</div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
 
-                        {/* TRANS-QX */}
-                        <div className="border-r border-black p-2">
-                            <h5 className="font-bold underline mb-1 text-center bg-gray-100">TRANS-QUIRÚRGICO</h5>
-                            <p className="whitespace-pre-wrap">{data.plan_trans || "Ver notas de Anestesiología."}</p>
-                        </div>
-
-                        {/* POST-QX */}
-                        <div className="p-2">
-                            <h5 className="font-bold underline mb-1 text-center bg-gray-100">POST-QUIRÚRGICO</h5>
-                            <p className="whitespace-pre-wrap">{data.plan_post || data.tromboprofilaxis}</p>
-                        </div>
-                    </div>
-
-                    {/* NOTAS DE AUDITORÍA (NEW SECTION) */}
-                    {hasOverrides && (
-                        <div className="border-t border-black p-2 bg-amber-50">
-                            <h5 className="font-bold text-[8px] uppercase text-amber-900 border-b border-amber-200 mb-1">NOTAS DE AUDITORÍA CLÍNICA:</h5>
-                            <p className="text-[8px] text-amber-800 italic">
-                                * Las escalas de riesgo han sido modificadas manualmente por el médico tratante, alterando la sugerencia automática basada en la evidencia clínica capturada.
-                            </p>
-                        </div>
-                    )}
-
-                    <div className="border-t border-black p-2 mt-auto">
-                        <div className="grid grid-cols-2 gap-8 mt-12 mb-4">
-                            <div className="text-center border-t border-black pt-2">
-                                <p className="font-bold text-xs uppercase">{data.elaboro || 'DR. MÉDICO INTERNISTA'}</p>
-                                <p className="text-[10px] text-gray-600">MÉDICO INTERNISTA</p>
+                    <div style={{ borderTop: '1px solid black', position: 'absolute', bottom: '0', width: '100%' }}>
+                        {hasOverrides && (
+                            <div style={{ padding: '10px', borderBottom: '1px solid black', backgroundColor: '#FFFBEB', fontSize: '9px' }}>
+                                <span style={{ fontWeight: 'bold' }}>AUDITORÍA:</span> Las escalas automáticas fueron modificadas por el médico.
                             </div>
-                            <div className="text-center border-t border-black pt-2">
-                                <p className="font-bold text-xs">{data.matricula || '----------'}</p>
-                                <p className="text-[10px] text-gray-600">MATRÍCULA</p>
-                            </div>
-                        </div>
+                        )}
+                        <table style={{ width: '100%', padding: '40px 20px 20px 20px' }}>
+                            <tbody>
+                                <tr>
+                                    <td style={{ width: '45%', textAlign: 'center', verticalAlign: 'top' }}>
+                                        <div style={{ borderTop: '1px solid black', paddingTop: '5px' }}>
+                                            <div style={{ fontWeight: 'bold', fontSize: '12px' }}>{data.elaboro || 'DR. MÉDICO INTERNISTA'}</div>
+                                            <div style={{ fontSize: '10px', color: '#718096' }}>MÉDICO INTERNISTA</div>
+                                        </div>
+                                    </td>
+                                    <td style={{ width: '10%' }}></td>
+                                    <td style={{ width: '45%', textAlign: 'center', verticalAlign: 'top' }}>
+                                        <div style={{ borderTop: '1px solid black', paddingTop: '5px' }}>
+                                            <div style={{ fontWeight: 'bold', fontSize: '12px' }}>{data.matricula || '----------'}</div>
+                                            <div style={{ fontSize: '10px', color: '#718096' }}>MATRÍCULA</div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
             </div>

@@ -282,13 +282,18 @@ const App: React.FC = () => {
     const pdfWidth = pdf.internal.pageSize.getWidth();
 
     const capturePage = async (element: HTMLElement) => {
+      // 500ms delay to ensure the browser has fully rendered the tables
+      await new Promise(resolve => setTimeout(resolve, 500));
+
       const canvas = await html2canvas(element, {
-        scale: 3,
+        scale: 2,
         useCORS: true,
         logging: false,
-        backgroundColor: '#ffffff'
+        backgroundColor: '#ffffff',
+        width: 794,
+        windowWidth: 794,
       });
-      return canvas.toDataURL('image/png', 1.0);
+      return canvas.toDataURL('image/png', 0.98);
     };
 
     // Capture and add Page 1
@@ -749,7 +754,7 @@ const App: React.FC = () => {
         <BottomNav activeStep={activeStep} setStep={setActiveStep} />
 
         {/* Hidden Container for high-res PDF generation using html2canvas */}
-        <div id="print-content" className="fixed left-[-9999px] top-0 bg-white" style={{ width: '820px' }}>
+        <div id="print-content" style={{ position: 'absolute', left: '-9999px', top: '0', width: '794px', opacity: 0, pointerEvents: 'none' }}>
           <PrintView />
         </div>
 
