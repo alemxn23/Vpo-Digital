@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { VPOData } from '../types';
-import { ClipboardList, CheckCircle2, AlertTriangle, ArrowRight, Syringe, HeartPulse, BedDouble, Stethoscope, Activity } from 'lucide-react';
+import { ClipboardList, CheckCircle2, AlertTriangle, ArrowRight, Syringe, HeartPulse, BedDouble, Stethoscope, Activity, Droplets } from 'lucide-react';
 
 const Recommendations: React.FC = () => {
     const { register, watch, setValue } = useFormContext<VPOData>();
@@ -73,6 +73,46 @@ const Recommendations: React.FC = () => {
         return "Solución Hartmann 1000cc para 8 horas.";
     };
 
+    const getThromboprophylaxisRec = () => {
+        const caprini = data.caprini || 0;
+        const tfg = data.tfg || 90;
+        const imc = data.imc || 25;
+        const weight = data.peso || 70;
+
+        // 1. Risk Stratification
+        if (caprini <= 1) return "Riesgo Muy Bajo: Deambulación temprana y frecuente.";
+
+        let drug = "Enoxaparina";
+        let dose = "40mg SC cada 24h";
+        let mechanical = "Medias de Compresión Graduada (TEDs)";
+
+        // 2. Renal Adjustment (TFG < 30)
+        if (tfg < 30) {
+            drug = "Heparina No Fraccionada (HNF) o Enoxaparina Ajustada";
+            dose = "HNF 5000 UI SC cada 12h (Preferido) o Enoxaparina 30mg SC cada 24h";
+        } else {
+            // 3. BMI Adjustment (Obesity)
+            if (imc >= 40) {
+                if (caprini >= 5) {
+                    dose = "40mg SC cada 12h o 60mg SC cada 24h (Rango Obesidad Mórbida)";
+                } else {
+                    dose = "40mg SC cada 24h";
+                }
+            } else if (weight > 100) {
+                dose = "40mg SC cada 12h o 60mg SC cada 24h";
+            }
+        }
+
+        // 4. Component Synthesis
+        if (caprini >= 5) {
+            return `Riesgo ALTO (Caprini ${caprini}): ${drug} ${dose} + ${mechanical} + CPI (Compresión Neumática Intermitente).`;
+        } else if (caprini >= 3) {
+            return `Riesgo MODERADO (Caprini ${caprini}): ${drug} ${dose} + ${mechanical}.`;
+        } else {
+            return `Riesgo BAJO (Caprini ${caprini}): ${mechanical} y Deambulación temprana.`;
+        }
+    };
+
     const generatePrePlan = () => {
         const medsPlan = selectedMeds.length > 0
             ? "\n\n--- CONCILIACIÓN DE FÁRMACOS ---\n" + selectedMeds.map(m => `• ${m.name}: ${m.action === 'stop' ? 'SUSPENDER' : m.action === 'adjust' ? 'AJUSTAR' : 'CONTINUAR'} (${m.instructions})`).join('\n')
@@ -91,11 +131,12 @@ const Recommendations: React.FC = () => {
 
         const antibioticRegimen = getAntibioticRegimen();
         const fluidRec = getFluidRecommendation();
+        const tromboRec = getThromboprophylaxisRec();
 
         return `• Ayuno: 6h para sólidos y 2h para líquidos claros.
 • ${aineInstruction}
 • Profilaxis antibiótica: ${antibioticRegimen}
-• Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas (Riesgo Alto)' : 'Según riesgo (Ver Post)'}.
+• Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas según esquema (Ver Post)' : 'Deambulación temprana / Medias TEDs'}.
 • Soluciones: ${fluidRec}${medsPlan}${dukeAlert}`;
     };
 
@@ -121,20 +162,16 @@ const Recommendations: React.FC = () => {
         return `• A cargo de Anestesiología.
 • Monitoreo cardiaco y pulsioximetría continuos.
 • METAS: Hb > ${hbTarget}. Uresis ≥ 0.5ml/kg/h.
-• METAS HEMODINÁMICAS: TA < 180/110 mmHg. Evitar hipotensión.
+• METAS HEMODINÁMICAS: TA < 140/90 mmHg. Evitar hipotensión.
 • LÍQUIDOS: ${fluidMgmt}
 • En caso de duración >4h o sangrado >1.5L, repetir dosis antibiótico.${insulinInstruction}${steroidInstruction}`;
     };
 
     const generatePostPlan = () => {
-        const trombo = capriniScore >= 5
-            ? "Riesgo ALTO (Caprini >5). HBPM dosis plena + Medias Compresión. (Extender 30 días si Onco/Orto)."
-            : capriniScore >= 3
-                ? "Riesgo MODERADO. HBPM dosis profiláctica."
-                : "Riesgo BAJO. Deambulación temprana.";
+        const trombo = getThromboprophylaxisRec();
 
         return `• Al tolerar la VO reiniciar tratamiento habitual.
-• METAS: Glucosa 70-180 mg/dL. TA < 180/110 mmHg.
+• METAS: Glucosa ${data.diabetes ? '140-180' : '70-140'} mg/dL. TA < 140/90 mmHg.
 • TROMBOPROFILAXIS: ${trombo}
 • Vigilar datos de sangrado e infección en sitio quirúrgico.
 • Deambulación temprana.
@@ -233,16 +270,41 @@ const Recommendations: React.FC = () => {
             </div>
 
             {/* FOOTER METAS */}
-            <div className="bg-gray-800 text-white p-3 flex justify-between items-center text-xs px-6">
-                <div className="flex items-center gap-4">
-                    <span className="font-bold text-gray-400">METAS GLOBALES:</span>
+            <div className="bg-gray-800 text-white p-3 flex justify-between items-center text-[10px] md:text-xs px-6">
+                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+                    <span className="font-bold text-gray-400 uppercase tracking-wider">Metas Globales:</span>
+
                     <div className="flex items-center gap-2">
                         <Activity size={14} className="text-green-400" />
-                        <span>TA &lt; 180/110 mmHg</span>
+                        <span className="font-medium text-gray-200">TA:</span>
+                        <span className="font-bold">
+                            {data.cardiopatiaIsquemica || data.icc || (data.lee && (data.lee === 'III' || data.lee === 'IV')) || data.edad > 75
+                                ? '< 140/90 mmHg'
+                                : '< 140/90 mmHg'}
+                        </span>
+                        {/* Note: Standard medical target is 140/90, 180/110 is cancelation limit. User might prefer 140/90 as 'meta' */}
                     </div>
+
                     <div className="flex items-center gap-2">
                         <Syringe size={14} className="text-blue-400" />
-                        <span>Glucosa 70-180 mg/dL</span>
+                        <span className="font-medium text-gray-200">Glucosa:</span>
+                        <span className="font-bold">
+                            {data.diabetes ? '140-180 mg/dL' : '70-140 mg/dL'}
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2 border-l border-gray-600 pl-6 ml-2">
+                        <HeartPulse size={14} className="text-red-400" />
+                        <span className="font-medium text-gray-200">Meta Hb:</span>
+                        <span className="font-bold">
+                            {isNephroCardio || data.edad > 75 ? '> 10.0 g/dL' : '> 8.0 g/dL'}
+                        </span>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <Droplets size={14} className="text-cyan-400" />
+                        <span className="font-medium text-gray-200">Uresis:</span>
+                        <span className="font-bold">≥ 0.5 ml/kg/h</span>
                     </div>
                 </div>
             </div>
