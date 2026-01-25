@@ -99,12 +99,12 @@ const Gabinete: React.FC = () => {
 
 
     // --- IMAGE UPLOAD HANDLER ---
-    const handleFile = (files: FileList | null) => {
+    const handleFile = (files: FileList | null, field: 'rx_imagen' | 'ekg_imagen') => {
         if (files && files[0]) {
             const file = files[0];
             const reader = new FileReader();
             reader.onloadend = () => {
-                setValue('rx_imagen', reader.result as string);
+                setValue(field, reader.result as string);
             };
             reader.readAsDataURL(file);
         }
@@ -144,7 +144,7 @@ const Gabinete: React.FC = () => {
                         onDrop={(e) => {
                             e.preventDefault();
                             setDragActive(false);
-                            handleFile(e.dataTransfer.files);
+                            handleFile(e.dataTransfer.files, 'rx_imagen');
                         }}
                     >
                         <input
@@ -152,7 +152,7 @@ const Gabinete: React.FC = () => {
                             id="rx-upload"
                             className="hidden"
                             accept="image/*"
-                            onChange={(e) => handleFile(e.target.files)}
+                            onChange={(e) => handleFile(e.target.files, 'rx_imagen')}
                         />
                         {watch('rx_imagen') ? (
                             <div className="relative">
@@ -238,7 +238,7 @@ const Gabinete: React.FC = () => {
                                 <div className="text-right">
                                     <span className="text-[10px] text-gray-500 block">Categoría</span>
                                     <span className={`text-sm font-bold uppercase ${(watch('ariscat_total') || 0) >= 45 ? 'text-red-600' :
-                                            (watch('ariscat_total') || 0) >= 26 ? 'text-orange-500' : 'text-green-600'
+                                        (watch('ariscat_total') || 0) >= 26 ? 'text-orange-500' : 'text-green-600'
                                         }`}>
                                         {watch('ariscat_categoria')}
                                     </span>
@@ -253,6 +253,45 @@ const Gabinete: React.FC = () => {
                     <div className="flex items-center gap-2 mb-4 text-clinical-navy border-b border-gray-100 pb-2">
                         <HeartPulse size={18} />
                         <h3 className="font-bold text-sm">Electrocardiograma</h3>
+                    </div>
+
+                    {/* Image Upload Area for EKG */}
+                    <div
+                        className={`border-2 border-dashed rounded-xl p-4 text-center mb-4 transition-colors ${dragActive ? 'border-clinical-navy bg-blue-50' : 'border-gray-300 hover:bg-gray-50'}`}
+                        onDragEnter={() => setDragActive(true)}
+                        onDragLeave={() => setDragActive(false)}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                            e.preventDefault();
+                            setDragActive(false);
+                            handleFile(e.dataTransfer.files, 'ekg_imagen');
+                        }}
+                    >
+                        <input
+                            type="file"
+                            id="ekg-upload"
+                            className="hidden"
+                            accept="image/*"
+                            onChange={(e) => handleFile(e.target.files, 'ekg_imagen')}
+                        />
+                        {watch('ekg_imagen') ? (
+                            <div className="relative">
+                                <img src={watch('ekg_imagen')} alt="EKG Preview" className="max-h-32 mx-auto rounded-lg shadow-sm" />
+                                <button
+                                    type="button"
+                                    onClick={() => setValue('ekg_imagen', '')}
+                                    className="absolute top-0 right-0 bg-red-500 text-white rounded-full p-1 m-1 shadow-md hover:bg-red-600"
+                                >
+                                    <AlertTriangle size={12} />
+                                </button>
+                            </div>
+                        ) : (
+                            <label htmlFor="ekg-upload" className="cursor-pointer flex flex-col items-center gap-1">
+                                <UploadCloud size={24} className="text-gray-400" />
+                                <span className="text-xs font-bold text-clinical-navy">Subir / Arrastrar EKG</span>
+                                <span className="text-[9px] text-gray-400">Imagen del trazo</span>
+                            </label>
+                        )}
                     </div>
 
                     <div className="grid grid-cols-2 gap-3 mb-4">

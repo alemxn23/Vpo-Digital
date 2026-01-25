@@ -18,8 +18,8 @@ export interface SelectedMed {
   steroidDurationWeeks?: number;
   isGLP1?: boolean;
   glp1Frequency?: 'daily' | 'weekly';
-  isAnticoagulant?: boolean; 
-  anticoagType?: 'AVK' | 'DOAC'; 
+  isAnticoagulant?: boolean;
+  anticoagType?: 'AVK' | 'DOAC';
   route?: 'VO' | 'IV' | 'SC' | 'Inhalada' | 'Topica' | 'Oftalmica';
   conversionMessage?: string; // To display bioequivalence notes
 }
@@ -30,36 +30,36 @@ export interface VPOData {
   hora: string;
   nombre: string;
   nss: string;
-  
+
   // Edad y Nacimiento
   fechaNacimiento: string;
   edad: number; // Calculado
-  
+
   genero: Gender;
   cama: string;
   servicioSolicitante: string;
   diagnosticoQuirurgico: string;
   cirugiaProgramada: string;
-  
+
   // Cirugía y Tiempos
   fechaQx: string;
   fechaCirugiaPendiente: boolean;
   esUrgencia: boolean; // Toggle Urgencia
   tipoCirugia: "Electiva" | "Urgencia"; // Legacy field
-  
+
   peso: number;
   talla: number;
   imc: number; // Calculado
 
   // --- FACTORES DE RIESGO (INTERROGATORIO DIRIGIDO) ---
-  
+
   // 1. Tabaquismo
   tabaquismo: boolean;
   cigarrosDia: number; // Calculadora IT
   aniosFumando: number; // Calculadora IT
   indiceTabaquico: number;
   riesgoEPOC: string; // Resultado IT
-  
+
   // 2. Alergias
   alergicos: boolean;
   alergicosDetalle: string;
@@ -77,7 +77,7 @@ export interface VPOData {
 
   // 5. Cardiopatía Isquémica
   cardiopatiaIsquemica: boolean; // Main toggle (IAM or Angina)
-  cardio_tipo_evento: "angina_estable" | "angina_inestable" | "iam"; 
+  cardio_tipo_evento: "angina_estable" | "angina_inestable" | "iam";
   cardio_fecha_evento: string; // Date picker used for calc
 
   // 6. Insuficiencia Cardiaca (ICC)
@@ -131,10 +131,10 @@ export interface VPOData {
   flag_estenosis_aortica_severa: boolean;
   flag_eap_agudo: boolean; // < 1 week
   flag_evc_agudo: boolean; // < 1 month
-  
+
   // Gupta (MICA) Specifics
   functional_status: "independent" | "partial" | "total";
-  gupta_surgical_site: "anorectal" | "aortic" | "bariatric" | "biliary" | "cardiac" | "ent" | "intestinal" | "intracranial" | "neck" | "obstetric" | "orthopedic" | "spinal" | "thoracic" | "vascular" | "other";
+  gupta_surgical_site: "anorectal" | "aortic" | "bariatric" | "biliary" | "cardiac" | "ent" | "intestinal" | "intracranial" | "neck" | "obstetric" | "orthopedic" | "spinal" | "thoracic" | "vascular" | "urologic" | "other";
 
   // Antecedentes Texto Libre
   cirugiasPrevias: string;
@@ -175,16 +175,18 @@ export interface VPOData {
   na: number;
   k: number;
   cl: number;
-  
+
   // Calculados automáticamente
   tfg: number; // Tasa Filtración Glomerular
 
   // --- GABINETE ---
   rx_fecha: string;
   rx_imagen: string; // Base64 URL
+  ekg_imagen: string; // Base64 URL
+
   rx_descripcion: string;
-  
-  ariscat_infeccion: boolean; 
+
+  ariscat_infeccion: boolean;
   ariscat_incision: "periferica" | "abdominal_sup" | "intratoracica";
   ariscat_duracion: "menos_2" | "2_a_3" | "mas_3";
   ariscat_total: number;
@@ -194,7 +196,7 @@ export interface VPOData {
   ecg_frecuencia: number;
   ecg_ritmo_especifico: "Sinusal" | "FA" | "Flutter" | "Union" | "Marcapasos";
   ecg_bloqueo: "Ninguno" | "1er_Grado" | "Mobitz_I" | "Mobitz_II" | "3er_Grado";
-  
+
   ecg_hvi: boolean;
   ecg_brihh_incompleto: boolean;
   ecg_brihh_completo: boolean;
@@ -215,17 +217,17 @@ export interface VPOData {
   duke_manual_add: boolean; // Allow manual addition of other criteria
 
   // Legacy bridging
-  ritmo: string; 
+  ritmo: string;
   frecuenciaEcg: number;
-  
+
   // Escalas
-  asa: "I" | "II" | "III" | "IV" | "E" | "I-E" | "II-E" | "III-E" | "IV-E"; 
+  asa: "I" | "II" | "III" | "IV" | "E" | "I-E" | "II-E" | "III-E" | "IV-E";
   goldman: "I" | "II" | "III" | "IV";
   detsky: "I" | "II" | "III";
   caprini: number;
   lee: "I" | "II" | "III" | "IV";
   gupta: number; // Percentage
-  
+
   // --- ASA OVERRIDE ---
   asa_manual_class: string; // If user forces class
   asa_justification: string;
@@ -240,12 +242,12 @@ export interface VPOData {
   capA_cxMayorAnt: boolean;
   capA_varices: boolean;
   capA_eii: boolean;
-  capA_iam: boolean; 
+  capA_iam: boolean;
   capA_epoc: boolean;
   capA_reposo: boolean;
-  
+
   // Group B (2 Points)
-  capB_cxMayor: boolean; 
+  capB_cxMayor: boolean;
   capB_laparoscopia: boolean;
   capB_confinado: boolean;
   capB_ferula: boolean;
@@ -260,30 +262,30 @@ export interface VPOData {
   capC_hit: boolean;
 
   // Group D (5 Points)
-  capD_evc: boolean; 
+  capD_evc: boolean;
   capD_artroplastia: boolean;
   capD_fxCadera: boolean;
   capD_trauma: boolean;
-  
+
   // Plan Estructurado
   plan_pre: string;
   plan_trans: string;
   plan_post: string;
-  
+
   // Legacy Plan Fields
   ayuno: string;
   soluciones: string;
   antibioticos: string;
   tromboprofilaxis: string;
   recomendacionesGenerales: string;
-  metasTerapeuticas: boolean; 
-  
+  metasTerapeuticas: boolean;
+
   // Esquema Insulina (Sub-sección)
   insulinaEsquema: boolean;
-  
+
   elaboro: string;
   matricula: string;
-  
+
   // External
   driveLink?: string; // To store the uploaded file URL
 }

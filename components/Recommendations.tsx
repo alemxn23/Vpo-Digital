@@ -4,217 +4,261 @@ import { VPOData } from '../types';
 import { ClipboardList, CheckCircle2, AlertTriangle, ArrowRight, Syringe, HeartPulse, BedDouble, Stethoscope, Activity } from 'lucide-react';
 
 const Recommendations: React.FC = () => {
-  const { register, watch, setValue } = useFormContext<VPOData>();
-  
-  const metasChecked = watch('metasTerapeuticas');
-  const selectedMeds = watch('selectedMeds') || [];
-  const capriniScore = watch('caprini') || 0;
-  
-  // Clinical Variables for Logic
-  const data = watch();
-  
-  // --- BUSINESS RULES & LOGIC HELPERS ---
+    const { register, watch, setValue } = useFormContext<VPOData>();
 
-  const getInsulinSchema = () => {
-    // Logic: Resistant Schema if Basal Insulin used OR BMI > 35
-    const isResistant = data.usaInsulina || (data.imc && data.imc > 35);
-    const title = isResistant ? "ESQUEMA INSULINA RÁPIDA (RESISTENTE)" : "ESQUEMA INSULINA RÁPIDA (SENSIBLE)";
-    
-    // Values: [Low, High] for each tier
-    const tiers = isResistant ? [4, 6, 8, 10, 12, 15] : [2, 4, 6, 8, 10, 12];
-    
-    return `\n\n--- ${title} ---\n` +
-           `• 140-180 mg/dL: ${tiers[0]} UI SC\n` +
-           `• 181-220 mg/dL: ${tiers[1]} UI SC\n` +
-           `• 221-260 mg/dL: ${tiers[2]} UI SC\n` +
-           `• 261-300 mg/dL: ${tiers[3]} UI SC\n` +
-           `• 301-350 mg/dL: ${tiers[4]} UI SC\n` +
-           `• > 351 mg/dL:   ${tiers[5]} UI SC + Aviso`;
-  };
+    const metasChecked = watch('metasTerapeuticas');
+    const selectedMeds = watch('selectedMeds') || [];
+    const capriniScore = watch('caprini') || 0;
 
-  const generatePrePlan = () => {
-    const medsPlan = selectedMeds.length > 0 
-        ? "\n\n--- CONCILIACIÓN DE FÁRMACOS ---\n" + selectedMeds.map(m => `• ${m.name}: ${m.action === 'stop' ? 'SUSPENDER' : m.action === 'adjust' ? 'AJUSTAR' : 'CONTINUAR'} (${m.instructions})`).join('\n')
-        : "";
-    
-    // DUKE ALERT IN PLAN
-    const dukeAlert = (data.duke_resultado === 'Definitivo' || data.duke_resultado === 'Posible') 
-        ? "\n\n⚠️ ALERTA INFECTOLOGÍA: Riesgo de Endocarditis (Duke +). Se sugiere diferir procedimiento electivo, hemocultivos y ETE." 
-        : "";
+    // Clinical Variables for Logic
+    const data = watch();
 
-    // NSAID BLOCKER LOGIC (TFG < 30)
-    const tfgVal = data.tfg || 90;
-    const aineInstruction = tfgVal < 30 
-        ? "⛔ CONTRAINDICADOS AINEs (TFG < 30). Uso estricto de analgésicos no nefrotóxicos (Paracetamol/Opioides)."
-        : "Suspender AAS/AINEs 7 días antes (Riesgo Hemorrágico).";
+    // --- BUSINESS RULES & LOGIC HELPERS ---
 
-    return `• Ayuno: 6h para sólidos y 2h para líquidos claros.
+    const getInsulinSchema = () => {
+        // Logic: Resistant Schema if Basal Insulin used OR BMI > 35
+        const isResistant = data.usaInsulina || (data.imc && data.imc > 35);
+        const title = isResistant ? "ESQUEMA INSULINA RÁPIDA (RESISTENTE)" : "ESQUEMA INSULINA RÁPIDA (SENSIBLE)";
+
+        // Values: [Low, High] for each tier
+        const tiers = isResistant ? [4, 6, 8, 10, 12, 15] : [2, 4, 6, 8, 10, 12];
+
+        return `\n\n--- ${title} ---\n` +
+            `• 140-180 mg/dL: ${tiers[0]} UI SC\n` +
+            `• 181-220 mg/dL: ${tiers[1]} UI SC\n` +
+            `• 221-260 mg/dL: ${tiers[2]} UI SC\n` +
+            `• 261-300 mg/dL: ${tiers[3]} UI SC\n` +
+            `• 301-350 mg/dL: ${tiers[4]} UI SC\n` +
+            `• > 351 mg/dL:   ${tiers[5]} UI SC + Aviso`;
+    };
+
+    const getAntibioticRegimen = () => {
+        const site = data.gupta_surgical_site || 'other';
+        const isAllergic = data.alergicos;
+        const allergyDetail = (data.alergicosDetalle || '').toLowerCase();
+
+        // Check for Penicillin/Beta-lactam allergy
+        const hasBetaLactamAllergy = isAllergic && (
+            allergyDetail.includes('penicilina') ||
+            allergyDetail.includes('betalactam') ||
+            allergyDetail.includes('cefalosporina')
+        );
+
+        if (hasBetaLactamAllergy) {
+            return "Clindamicina 600mg IV o Vancomicina 1g IV (Alergia a Penicilina).";
+        }
+
+        // Regimens by surgical site (ASHP/IDSA)
+        switch (site) {
+            case 'intestinal':
+            case 'biliary':
+            case 'anorectal':
+                return "Cefazolina (Cefalotina) 1g IV + Metronidazol 500mg IV.";
+            case 'bariatric':
+                return "Cefazolina (Cefalotina) 2g IV (Ajuste por IMC).";
+            case 'urologic':
+                return "Ciprofloxacino 400mg IV o Cefazolina 1g IV.";
+            default:
+                return "Cefazolina (Cefalotina) 1g IV en inducción.";
+        }
+    };
+
+    const getFluidRecommendation = () => {
+        const isCHF = data.icc;
+        const isHighCVRisk = data.cardiopatiaIsquemica || (data.lee && (data.lee === 'III' || data.lee === 'IV'));
+
+        if (isCHF || isHighCVRisk) {
+            return "Manejo ESTRICTO de líquidos (Mantenimiento mínimo/No soluciones de base). Mantener euvolemia.";
+        }
+        return "Solución Hartmann 1000cc para 8 horas.";
+    };
+
+    const generatePrePlan = () => {
+        const medsPlan = selectedMeds.length > 0
+            ? "\n\n--- CONCILIACIÓN DE FÁRMACOS ---\n" + selectedMeds.map(m => `• ${m.name}: ${m.action === 'stop' ? 'SUSPENDER' : m.action === 'adjust' ? 'AJUSTAR' : 'CONTINUAR'} (${m.instructions})`).join('\n')
+            : "";
+
+        // DUKE ALERT IN PLAN
+        const dukeAlert = (data.duke_resultado === 'Definitivo' || data.duke_resultado === 'Posible')
+            ? "\n\n⚠️ ALERTA INFECTOLOGÍA: Riesgo de Endocarditis (Duke +). Se sugiere diferir procedimiento electivo, hemocultivos y ETE."
+            : "";
+
+        // NSAID BLOCKER LOGIC (TFG < 30)
+        const tfgVal = data.tfg || 90;
+        const aineInstruction = tfgVal < 30
+            ? "⛔ CONTRAINDICADOS AINEs (TFG < 30). Uso estricto de analgésicos no nefrotóxicos (Paracetamol/Opioides)."
+            : "Suspender AAS/AINEs 7 días antes (Riesgo Hemorrágico).";
+
+        const antibioticRegimen = getAntibioticRegimen();
+        const fluidRec = getFluidRecommendation();
+
+        return `• Ayuno: 6h para sólidos y 2h para líquidos claros.
 • ${aineInstruction}
-• Profilaxis antibiótica: Cefalosporina 1G (Cefalotina 1g IV) en inducción.
+• Profilaxis antibiótica: ${antibioticRegimen}
 • Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas (Riesgo Alto)' : 'Según riesgo (Ver Post)'}.
-• Soluciones: Hartmann 1000cc para 8 horas.${medsPlan}${dukeAlert}`;
-  };
+• Soluciones: ${fluidRec}${medsPlan}${dukeAlert}`;
+    };
 
-  const generateTransPlan = () => {
-    // Hemodynamic Logic
-    const isHighCVRisk = data.icc || data.cardiopatiaIsquemica || data.edad > 75;
-    const hbTarget = isHighCVRisk ? "10.0 g/dL" : "8.0 g/dL";
-    const fluidMgmt = isHighCVRisk 
-        ? "Manejo ESTRICTO de líquidos. Balance neutro/negativo. Evitar sobrecarga." 
-        : "Evitar sobrecarga hídrica. Balances neutros.";
+    const generateTransPlan = () => {
+        // Hemodynamic Logic
+        const isHighCVRisk = data.icc || data.cardiopatiaIsquemica || data.edad > 75;
+        const hbTarget = isHighCVRisk ? "10.0 g/dL" : "8.0 g/dL";
+        const fluidMgmt = isHighCVRisk
+            ? "Manejo ESTRICTO de líquidos. Balance neutro/negativo. Evitar sobrecarga hídrica."
+            : "Evitar sobrecarga hídrica. Balances neutros.";
 
-    // Insulin Logic
-    const insulinInstruction = data.diabetes 
-        ? `\n• Mantener Glucemia 140-180 mg/dL.${getInsulinSchema()}` 
-        : "";
-        
-    // Steroid Stress Dose Logic (If any med has stress dose instruction)
-    const steroidMeds = selectedMeds.filter(m => m.isSteroid && m.action === 'adjust');
-    const steroidInstruction = steroidMeds.length > 0
-        ? `\n• DOSIS ESTRÉS ESTEROIDEO: ${steroidMeds[0].instructions}` // Take the first one found
-        : "";
+        // Insulin Logic
+        const insulinInstruction = data.diabetes
+            ? `\n• Mantener Glucemia 140-180 mg/dL.${getInsulinSchema()}`
+            : "";
 
-    return `• A cargo de Anestesiología.
+        // Steroid Stress Dose Logic (If any med has stress dose instruction)
+        const steroidMeds = selectedMeds.filter(m => m.isSteroid && m.action === 'adjust');
+        const steroidInstruction = steroidMeds.length > 0
+            ? `\n• DOSIS ESTRÉS ESTEROIDEO: ${steroidMeds[0].instructions}` // Take the first one found
+            : "";
+
+        return `• A cargo de Anestesiología.
 • Monitoreo cardiaco y pulsioximetría continuos.
 • METAS: Hb > ${hbTarget}. Uresis ≥ 0.5ml/kg/h.
 • METAS HEMODINÁMICAS: TA < 180/110 mmHg. Evitar hipotensión.
 • LÍQUIDOS: ${fluidMgmt}
 • En caso de duración >4h o sangrado >1.5L, repetir dosis antibiótico.${insulinInstruction}${steroidInstruction}`;
-  };
+    };
 
-  const generatePostPlan = () => {
-    const trombo = capriniScore >= 5 
-        ? "Riesgo ALTO (Caprini >5). HBPM dosis plena + Medias Compresión. (Extender 30 días si Onco/Orto)." 
-        : capriniScore >= 3 
-            ? "Riesgo MODERADO. HBPM dosis profiláctica."
-            : "Riesgo BAJO. Deambulación temprana.";
+    const generatePostPlan = () => {
+        const trombo = capriniScore >= 5
+            ? "Riesgo ALTO (Caprini >5). HBPM dosis plena + Medias Compresión. (Extender 30 días si Onco/Orto)."
+            : capriniScore >= 3
+                ? "Riesgo MODERADO. HBPM dosis profiláctica."
+                : "Riesgo BAJO. Deambulación temprana.";
 
-    return `• Al tolerar la VO reiniciar tratamiento habitual.
+        return `• Al tolerar la VO reiniciar tratamiento habitual.
 • METAS: Glucosa 70-180 mg/dL. TA < 180/110 mmHg.
 • TROMBOPROFILAXIS: ${trombo}
 • Vigilar datos de sangrado e infección en sitio quirúrgico.
 • Deambulación temprana.
 • Analgesia multimodal ahorradora de opioides.
 • Seguimiento por UMF/HGZ al alta.`;
-  };
+    };
 
-  // --- EFFECT: APPLY STANDARD GOALS ---
-  useEffect(() => {
-    if (metasChecked) {
-      // Only populate if empty or user specifically re-toggles
-      setValue('plan_pre', generatePrePlan());
-      setValue('plan_trans', generateTransPlan());
-      setValue('plan_post', generatePostPlan());
-    }
-  }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg]);
+    // --- EFFECT: APPLY STANDARD GOALS ---
+    useEffect(() => {
+        if (metasChecked) {
+            // Only populate if empty or user specifically re-toggles
+            setValue('plan_pre', generatePrePlan());
+            setValue('plan_trans', generateTransPlan());
+            setValue('plan_post', generatePostPlan());
+        }
+    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg]);
 
-  // Determine Meta Labels based on risk
-  const isNephroCardio = data.enfRenalCronica || data.icc || data.cardiopatiaIsquemica;
+    // Determine Meta Labels based on risk
+    const isNephroCardio = data.enfRenalCronica || data.icc || data.cardiopatiaIsquemica;
 
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-      
-      {/* HEADER BAR */}
-      <div className="bg-slate-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-           <ClipboardList className="text-clinical-navy" size={24} />
-           <div>
-               <h2 className="text-lg font-bold text-slate-800">Plan de Manejo Integral</h2>
-               <p className="text-xs text-slate-500">Pre, Trans y Post-Quirúrgico</p>
-           </div>
+    return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+
+            {/* HEADER BAR */}
+            <div className="bg-slate-50 px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                    <ClipboardList className="text-clinical-navy" size={24} />
+                    <div>
+                        <h2 className="text-lg font-bold text-slate-800">Plan de Manejo Integral</h2>
+                        <p className="text-xs text-slate-500">Pre, Trans y Post-Quirúrgico</p>
+                    </div>
+                </div>
+
+                {/* MASTER TOGGLE */}
+                <label className={`flex items-center gap-3 px-4 py-2 rounded-lg border cursor-pointer transition-all
+            ${metasChecked
+                        ? 'bg-green-50 border-green-200 text-green-800 shadow-sm'
+                        : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`}
+                >
+                    <div className={`w-5 h-5 rounded border flex items-center justify-center ${metasChecked ? 'bg-green-600 border-green-600' : 'bg-white border-gray-400'}`}>
+                        {metasChecked && <CheckCircle2 size={14} className="text-white" />}
+                    </div>
+                    <input type="checkbox" {...register('metasTerapeuticas')} className="sr-only" />
+                    <span className="font-bold text-sm">Aplicar Metas Institucionales</span>
+                </label>
+            </div>
+
+            {/* 3-COLUMN LAYOUT */}
+            <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+                {/* COL 1: PRE-QX */}
+                <div className="flex flex-col h-full bg-blue-50/30 rounded-xl border border-blue-100 overflow-hidden">
+                    <div className="bg-blue-100/50 p-3 border-b border-blue-200 flex items-center gap-2">
+                        <div className="bg-blue-600 text-white p-1 rounded"><Stethoscope size={14} /></div>
+                        <h3 className="font-bold text-sm text-blue-900">PRE-QUIRÚRGICO</h3>
+                    </div>
+                    <div className="p-2 flex-1">
+                        <textarea
+                            {...register('plan_pre')}
+                            className="w-full h-full min-h-[250px] bg-transparent border-none resize-none text-xs leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium"
+                            placeholder="Ayuno, Soluciones, Antibióticos..."
+                        />
+                    </div>
+                </div>
+
+                {/* COL 2: TRANS-QX */}
+                <div className="flex flex-col h-full bg-amber-50/30 rounded-xl border border-amber-100 overflow-hidden">
+                    <div className="bg-amber-100/50 p-3 border-b border-amber-200 flex items-center gap-2">
+                        <div className="bg-amber-600 text-white p-1 rounded"><HeartPulse size={14} /></div>
+                        <h3 className="font-bold text-sm text-amber-900">TRANS-QUIRÚRGICO</h3>
+                    </div>
+                    <div className="p-2 flex-1">
+                        <textarea
+                            {...register('plan_trans')}
+                            className="w-full h-full min-h-[250px] bg-transparent border-none resize-none text-xs leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium"
+                            placeholder="Metas hemodinámicas, Esquema Insulina..."
+                        />
+                    </div>
+                </div>
+
+                {/* COL 3: POST-QX */}
+                <div className="flex flex-col h-full bg-green-50/30 rounded-xl border border-green-100 overflow-hidden">
+                    <div className="bg-green-100/50 p-3 border-b border-green-200 flex items-center gap-2">
+                        <div className="bg-green-600 text-white p-1 rounded"><BedDouble size={14} /></div>
+                        <h3 className="font-bold text-sm text-green-900">POST-QUIRÚRGICO</h3>
+                    </div>
+                    <div className="p-2 flex-1">
+                        <textarea
+                            {...register('plan_post')}
+                            className="w-full h-full min-h-[250px] bg-transparent border-none resize-none text-xs leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium"
+                            placeholder="Reinicio V.O., Tromboprofilaxis, Alta..."
+                        />
+                    </div>
+                </div>
+
+            </div>
+
+            {/* FOOTER METAS */}
+            <div className="bg-gray-800 text-white p-3 flex justify-between items-center text-xs px-6">
+                <div className="flex items-center gap-4">
+                    <span className="font-bold text-gray-400">METAS GLOBALES:</span>
+                    <div className="flex items-center gap-2">
+                        <Activity size={14} className="text-green-400" />
+                        <span>TA &lt; 180/110 mmHg</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Syringe size={14} className="text-blue-400" />
+                        <span>Glucosa 70-180 mg/dL</span>
+                    </div>
+                </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border-t border-gray-200">
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Médico que Elaboró</label>
+                    <input {...register('elaboro')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" placeholder="Dr..." />
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Matrícula</label>
+                    <input {...register('matricula')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" />
+                </div>
+            </div>
         </div>
-        
-        {/* MASTER TOGGLE */}
-        <label className={`flex items-center gap-3 px-4 py-2 rounded-lg border cursor-pointer transition-all
-            ${metasChecked 
-                ? 'bg-green-50 border-green-200 text-green-800 shadow-sm' 
-                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'}`}
-        >
-            <div className={`w-5 h-5 rounded border flex items-center justify-center ${metasChecked ? 'bg-green-600 border-green-600' : 'bg-white border-gray-400'}`}>
-                {metasChecked && <CheckCircle2 size={14} className="text-white" />}
-            </div>
-            <input type="checkbox" {...register('metasTerapeuticas')} className="sr-only" />
-            <span className="font-bold text-sm">Aplicar Metas Institucionales</span>
-        </label>
-      </div>
-
-      {/* 3-COLUMN LAYOUT */}
-      <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
-        
-        {/* COL 1: PRE-QX */}
-        <div className="flex flex-col h-full bg-blue-50/30 rounded-xl border border-blue-100 overflow-hidden">
-            <div className="bg-blue-100/50 p-3 border-b border-blue-200 flex items-center gap-2">
-                <div className="bg-blue-600 text-white p-1 rounded"><Stethoscope size={14} /></div>
-                <h3 className="font-bold text-sm text-blue-900">PRE-QUIRÚRGICO</h3>
-            </div>
-            <div className="p-2 flex-1">
-                <textarea 
-                    {...register('plan_pre')} 
-                    className="w-full h-full min-h-[250px] bg-transparent border-none resize-none text-xs leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium" 
-                    placeholder="Ayuno, Soluciones, Antibióticos..."
-                />
-            </div>
-        </div>
-
-        {/* COL 2: TRANS-QX */}
-        <div className="flex flex-col h-full bg-amber-50/30 rounded-xl border border-amber-100 overflow-hidden">
-             <div className="bg-amber-100/50 p-3 border-b border-amber-200 flex items-center gap-2">
-                <div className="bg-amber-600 text-white p-1 rounded"><HeartPulse size={14} /></div>
-                <h3 className="font-bold text-sm text-amber-900">TRANS-QUIRÚRGICO</h3>
-            </div>
-            <div className="p-2 flex-1">
-                <textarea 
-                    {...register('plan_trans')} 
-                    className="w-full h-full min-h-[250px] bg-transparent border-none resize-none text-xs leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium" 
-                    placeholder="Metas hemodinámicas, Esquema Insulina..."
-                />
-            </div>
-        </div>
-
-        {/* COL 3: POST-QX */}
-        <div className="flex flex-col h-full bg-green-50/30 rounded-xl border border-green-100 overflow-hidden">
-             <div className="bg-green-100/50 p-3 border-b border-green-200 flex items-center gap-2">
-                <div className="bg-green-600 text-white p-1 rounded"><BedDouble size={14} /></div>
-                <h3 className="font-bold text-sm text-green-900">POST-QUIRÚRGICO</h3>
-            </div>
-            <div className="p-2 flex-1">
-                <textarea 
-                    {...register('plan_post')} 
-                    className="w-full h-full min-h-[250px] bg-transparent border-none resize-none text-xs leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium" 
-                    placeholder="Reinicio V.O., Tromboprofilaxis, Alta..."
-                />
-            </div>
-        </div>
-
-      </div>
-
-      {/* FOOTER METAS */}
-      <div className="bg-gray-800 text-white p-3 flex justify-between items-center text-xs px-6">
-          <div className="flex items-center gap-4">
-              <span className="font-bold text-gray-400">METAS GLOBALES:</span>
-              <div className="flex items-center gap-2">
-                  <Activity size={14} className="text-green-400" />
-                  <span>TA &lt; 180/110 mmHg</span>
-              </div>
-              <div className="flex items-center gap-2">
-                  <Syringe size={14} className="text-blue-400" />
-                  <span>Glucosa 70-180 mg/dL</span>
-              </div>
-          </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border-t border-gray-200">
-            <div>
-                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Médico que Elaboró</label>
-                 <input {...register('elaboro')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" placeholder="Dr..." />
-            </div>
-            <div>
-                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Matrícula</label>
-                 <input {...register('matricula')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" />
-            </div>
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Recommendations;

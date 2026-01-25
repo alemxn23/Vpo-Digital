@@ -318,6 +318,18 @@ const App: React.FC = () => {
     }
   };
 
+  const base64ToBlob = (base64: string): Blob => {
+    const parts = base64.split(';base64,');
+    const contentType = parts[0].split(':')[1];
+    const raw = window.atob(parts[1]);
+    const rawLength = raw.length;
+    const uInt8Array = new Uint8Array(rawLength);
+    for (let i = 0; i < rawLength; ++i) {
+      uInt8Array[i] = raw.charCodeAt(i);
+    }
+    return new Blob([uInt8Array], { type: contentType });
+  };
+
   const handleDriveUpload = () => {
     setIsUploading(true);
 
@@ -364,7 +376,29 @@ const App: React.FC = () => {
               const safeName = rawName.replace(/[^a-zA-Z0-9]/g, '_');
               const fileName = `${dateStr}_${safeName}_VPO.pdf`;
 
-              await uploadFileToDrive(tokenResponse.access_token, pdfBlob, fileName);
+              // Get Folder ID first
+              const folderId = await getOrCreateFolder(tokenResponse.access_token);
+
+              // 1. Upload PDF
+              await uploadFileToDrive(tokenResponse.access_token, pdfBlob, fileName, folderId);
+
+              // 2. Upload RX if exists
+              const rxData = methods.getValues('rx_imagen');
+              if (rxData) {
+                const rxBlob = base64ToBlob(rxData);
+                const rxName = `${dateStr}_${safeName}_RX.png`;
+                await uploadFileToDrive(tokenResponse.access_token, rxBlob, rxName, folderId);
+              }
+
+              // 3. Upload EKG if exists
+              const ekgData = methods.getValues('ekg_imagen');
+              if (ekgData) {
+                const ekgBlob = base64ToBlob(ekgData);
+                const ekgName = `${dateStr}_${safeName}_EKG.png`;
+                await uploadFileToDrive(tokenResponse.access_token, ekgBlob, ekgName, folderId);
+              }
+
+              alert(`✅ Guardado exitoso en Drive con imágenes.`);
             } catch (err) {
               console.error("Error creating PDF", err);
               alert("Error al generar el PDF.");
@@ -444,42 +478,41 @@ const App: React.FC = () => {
     }
   };
 
-  const uploadFileToDrive = async (accessToken: string, blob: Blob, fileName: string) => {
-    try {
-      // A. Search for Folder "VPO_Expedientes_MedicinaInterna"
-      let folderId = "";
+  const getOrCreateFolder = async (accessToken: string): Promise<string> => {
+    // Search for Folder "VPO_Expedientes_MedicinaInterna"
+    const qQuery = "mimeType='application/vnd.google-apps.folder' and name='VPO_Expedientes_MedicinaInterna' and trashed=false";
+    const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qQuery)}`;
 
-      // Use encodeURIComponent for 'q' parameter to prevent 400/404 errors with spaces
-      const qQuery = "mimeType='application/vnd.google-apps.folder' and name='VPO_Expedientes_MedicinaInterna' and trashed=false";
-      const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qQuery)}`;
+    const searchRes = await fetch(searchUrl, {
+      headers: { Authorization: `Bearer ${accessToken}` }
+    });
 
-      const searchRes = await fetch(searchUrl, {
-        headers: { Authorization: `Bearer ${accessToken}` }
+    if (!searchRes.ok) throw new Error(`Search Failed: ${searchRes.status}`);
+    const searchData = await searchRes.json();
+
+    if (searchData.files && searchData.files.length > 0) {
+      return searchData.files[0].id;
+    } else {
+      // Create folder if not exists
+      const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          name: 'VPO_Expedientes_MedicinaInterna',
+          mimeType: 'application/vnd.google-apps.folder'
+        })
       });
+      const createData = await createRes.json();
+      return createData.id;
+    }
+  };
 
-      if (!searchRes.ok) throw new Error(`Search Failed: ${searchRes.status}`);
-      const searchData = await searchRes.json();
-
-      if (searchData.files && searchData.files.length > 0) {
-        folderId = searchData.files[0].id;
-      } else {
-        // B. Create folder if not exists
-        const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            name: 'VPO_Expedientes_MedicinaInterna',
-            mimeType: 'application/vnd.google-apps.folder'
-          })
-        });
-        const createData = await createRes.json();
-        folderId = createData.id;
-      }
-
-      // C. Upload File to that folder
+  const uploadFileToDrive = async (accessToken: string, blob: Blob, fileName: string, folderId: string) => {
+    try {
+      // Upload File to that folder
       const metadata = {
         name: fileName,
         parents: [folderId]
@@ -502,8 +535,10 @@ const App: React.FC = () => {
 
       if (uploadRes.ok) {
         const fileData = await uploadRes.json();
-        methods.setValue('driveLink', fileData.webViewLink);
-        alert(`✅ Guardado exitoso en Drive.\nLink generado para WhatsApp.`);
+        // Only set driveLink for the PDF (first file usually or we can check filename)
+        if (fileName.endsWith('_VPO.pdf')) {
+          methods.setValue('driveLink', fileData.webViewLink);
+        }
       } else {
         const errTxt = await uploadRes.text();
         throw new Error(`Upload Failed: ${errTxt}`);
