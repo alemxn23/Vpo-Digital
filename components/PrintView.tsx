@@ -33,7 +33,7 @@ const PrintView: React.FC = () => {
             {/* Header */}
             <div className="flex justify-between items-center mb-4 border-b pb-4">
                 <div className="flex items-center gap-4">
-                    <img src="/logo.png" alt="Logo" className="w-16 h-16 object-contain" />
+                    <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain" />
                     <div className="flex flex-col">
                         <h1 className="font-black text-sm text-clinical-navy leading-none">VPO Digital</h1>
                         <p className="text-[9px] font-bold text-gray-500 uppercase tracking-widest mt-1">CMN Siglo XXI</p>

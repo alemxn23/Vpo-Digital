@@ -62,7 +62,7 @@ const StickyHeader = () => {
         <div className="flex items-center gap-3 lg:opacity-0 pointer-events-none">
           {/* Logo Hidden on Desktop via opacity since it's in Sidebar, keeps layout spacing */}
           <div className="flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-10 h-10 object-contain" />
+            <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain" />
           </div>
           <div className="flex flex-col">
             <h1 className="text-[13px] font-extrabold text-slate-900 leading-none">VPO DIGITAL</h1>
@@ -95,7 +95,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
       <div className="p-5 border-b border-gray-100 mb-2">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0">
-            <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain" />
+            <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain" />
           </div>
           <div className="flex flex-col">
             <h1 className="text-lg font-black text-clinical-navy leading-none tracking-tight">VPO Digital</h1>
