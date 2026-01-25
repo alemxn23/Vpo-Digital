@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useFormContext, UseFormRegisterReturn } from 'react-hook-form';
+import React, { useEffect } from 'react';
+import { useFormContext } from 'react-hook-form';
 import { VPOData } from '../types';
 import {
     AlertCircle, FileWarning, Cigarette, Heart, Activity, Brain, ShieldAlert,
@@ -391,6 +391,32 @@ const RiskFactors: React.FC = () => {
                         rows={3}
                         className="w-full p-3 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-clinical-navy outline-none bg-gray-50"
                         placeholder="Cirugías previas, complicaciones anestésicas..."
+                    />
+                </div>
+
+                {/* OTRAS ENFERMEDADES */}
+                <div className="bg-white p-4 border border-gray-200 rounded-xl mt-4">
+                    <label className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-2">
+                        <AlertCircle size={16} /> Otras Enfermedades / Comorbilidades
+                    </label>
+                    <textarea
+                        {...register('otrasEnfermedades')}
+                        rows={2}
+                        className="w-full p-3 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-clinical-navy outline-none bg-gray-50"
+                        placeholder="Otras enfermedades no listadas arriba..."
+                    />
+                </div>
+
+                {/* TRATAMIENTO ACTUAL */}
+                <div className="bg-white p-4 border border-gray-200 rounded-xl">
+                    <label className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-2">
+                        <Stethoscope size={16} /> Tratamiento Actual (Crónico)
+                    </label>
+                    <textarea
+                        {...register('tratamientoActual')}
+                        rows={2}
+                        className="w-full p-3 rounded-lg border border-gray-200 text-sm focus:ring-2 focus:ring-clinical-navy outline-none bg-gray-50"
+                        placeholder="Fármacos crónicos, dosis, última toma..."
                     />
                 </div>
 

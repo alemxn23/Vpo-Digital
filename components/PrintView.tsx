@@ -134,8 +134,10 @@ const PrintView: React.FC = () => {
                         <p className="border-b border-dotted border-black min-h-[1.5em]">{data.cirugiasPrevias}</p>
                     </div>
                     <div className="mt-1">
-                        <span className="font-bold">OTRAS ENFERMEDADES / TRATAMIENTO ACTUAL:</span>
-                        <p className="border-b border-dotted border-black min-h-[1.5em]">{data.tratamientoActual}</p>
+                        <span className="font-bold uppercase text-[9px]">Otras Enfermedades / Tratamiento Actual:</span>
+                        <p className="border-b border-dotted border-black min-h-[1.5em] leading-relaxed">
+                            {data.otrasEnfermedades} {data.tratamientoActual ? ` / ${data.tratamientoActual}` : ''}
+                        </p>
                     </div>
                 </div>
             </div>
