@@ -112,6 +112,7 @@ export interface VPOData {
   valvula_afectada: "aortica" | "mitral" | "tricuspide" | "pulmonar";
   valvula_patologia: "estenosis" | "insuficiencia" | "doble";
   valvula_severidad: "leve" | "moderada" | "severa";
+  valvula_protesis: boolean; // New field for Cardioembolic logic
 
   // 9. EVC (Neurología)
   evc: boolean;
@@ -242,6 +243,12 @@ export interface VPOData {
   caprini: number;
   lee: "I" | "II" | "III" | "IV";
   gupta: number; // Percentage
+
+  // Cardioembolic Scales
+  cha2ds2vasc: number;
+  hasbled: number;
+  hasbled_inr_labil: boolean; // Manual toggle
+  hasbled_alcohol: boolean; // Manual toggle
 
   // --- ASA OVERRIDE ---
   asa_manual_class: string; // If user forces class

@@ -67,14 +67,19 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
             let daysToStop = 1; // Low risk default (24h approx)
 
             if (bleedingRisk === 'high') {
-                daysToStop = 2; // 48h
+                if (crcl < 50) {
+                    daysToStop = 3; // 72h (Apixaban/Rivaroxaban High Risk + Low TFG)
+                } else {
+                    daysToStop = 2; // 48h (High Risk + Normal TFG)
+                }
+            } else {
+                daysToStop = 1; // Low Risk (24h)
             }
 
-            // Renal Adjustments
-            if (med.id === 'dabi' && crcl < 50) {
-                daysToStop += 2; // Dabigatran accumulates
-            } else if (crcl < 30) {
-                daysToStop += 1; // General safety for others
+            // Dabigatran Specifics (Accumulates more)
+            if (med.id === 'dabi') {
+                if (crcl < 50) daysToStop += 2; // +48h conservative
+                else if (bleedingRisk === 'high') daysToStop = 3; // 72h min for Dabi high risk
             }
 
             recommendation.daysPrior = daysToStop;
@@ -91,7 +96,7 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
             if (isHighThromboticRisk(patient)) {
                 recommendation.bridgeRequired = true;
                 recommendation.instructions = "Suspender 5 días antes. REQUIERE PUENTE con Heparina (Enoxaparina).";
-                recommendation.rationale = "Alto Riesgo Trombótico (Válvula Mecánica/FA de alto riesgo).";
+                recommendation.rationale = "Alto Riesgo Trombótico (Válvula Mecánica, FA CHA₂DS₂-VASc ≥ 6, o EVC reciente).";
             } else {
                 recommendation.instructions = "Suspender 5 días antes. NO requiere puente.";
                 recommendation.rationale = "Bajo riesgo trombótico. Puenteo aumenta sangrado sin beneficio.";
@@ -150,21 +155,43 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
 // --- HELPER FUNCTIONS ---
 
 const getSurgicalBleedingRisk = (patient: VPOData): 'low' | 'high' => {
-    // Simplified mapping based on Gupta site or procedure text
-    // ideally this would be a more granular selector in the UI
+    // PAUSE / EHA Mapping
+    const highRiskSites = [
+        'intracranial', 'spinal', 'cardiac', 'vascular', 'aortic',
+        'thoracic', 'abdominal', 'orthopedic', 'urologic', 'bariatric', 'reconstructive'];
 
-    const highRiskSites = ['intracranial', 'spinal', 'cardiac', 'vascular', 'urologic', 'bariatric'];
+    // Check Gupta Site or Ariscat Incision (Proxy for cavity surgery)
     if (highRiskSites.includes(patient.gupta_surgical_site)) return 'high';
+    if (patient.capB_cxMayor) return 'high'; // Major surgery generic flag
 
-    return 'low'; // Default for most general
+    return 'low'; // Default for peripheral/minor/ophthalmic
 };
 
 const isHighThromboticRisk = (patient: VPOData): boolean => {
-    // CHADS > 4, Mechanical Valve, Recent VTE
-    if (patient.valvulopatia && patient.valvula_patologia === 'estenosis' && patient.valvula_severidad === 'severa') return true;
-    if (patient.icc) return true; // simplified proxy
-    // Todo: Add explicit inputs for Mechanical Valve / VTE history
+    // 1. Mechanical Valve (Mitral/Aortic check needs strict valve type, assuming 'valvula_protesis' implies checks)
+    if (patient.valvula_protesis) return true; // Simplified: Any prosthesis is high risk for now (or at least needs bridge eval)
+
+    // 2. Atrial Fibrillation High Risk
+    if ((patient.arritmias && patient.arritmia_tipo === 'fa') || patient.ecg_ritmo_especifico === 'FA') {
+        if (patient.cha2ds2vasc >= 6) return true;
+        if (patient.evc && getMonthsDiff(patient.evc_fecha) < 3) return true; // Recent stroke
+    }
+
+    // 3. Recent VTE (< 3 months) - check Caprini history or new field
+    // (patient.capD_evc || patient.capC_historiaTVP) && recent... (Not easily available dates for VTE, defaulting safe)
+
     return false;
+};
+
+// Helper for date diff inside this scope
+const getMonthsDiff = (dateString: string) => {
+    if (!dateString) return 999;
+    const now = new Date();
+    const event = new Date(dateString);
+    let months = (now.getFullYear() - event.getFullYear()) * 12;
+    months -= event.getMonth();
+    months += now.getMonth();
+    return months <= 0 ? 0 : months;
 };
 
 const checkStentSafety = (dateStr: string, type: 'BMS' | 'DES', isUrgent: boolean): { safe: boolean, message: string } => {

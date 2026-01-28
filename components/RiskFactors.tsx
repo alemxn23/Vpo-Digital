@@ -300,6 +300,13 @@ const RiskFactors: React.FC = () => {
                                 <span className="text-[10px] text-red-600 block mt-1 font-bold">ALERTA: Estenosis Aórtica Severa = Alto Riesgo (Goldman/Detsky)</span>
                             )}
                         </div>
+                        {/* PROSTHESIS CHECKBOX */}
+                        <div className="col-span-2">
+                            <label className="flex items-center gap-2 mt-2 p-2 bg-slate-50 border border-slate-200 rounded cursor-pointer">
+                                <input type="checkbox" {...register('valvula_protesis')} className="w-4 h-4 text-clinical-navy rounded" />
+                                <span className="text-xs font-bold text-slate-700">Portador de Prótesis Valvular</span>
+                            </label>
+                        </div>
                     </div>
                 </RiskAccordion>
 

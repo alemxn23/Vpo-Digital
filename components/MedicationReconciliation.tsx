@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { VPOData, SelectedMed } from '../types';
-import { Pill, Search, X, AlertTriangle, Syringe, Tablets, RefreshCcw, CheckCircle, Ban, ArrowRightLeft, Info, ChevronRight, Activity } from 'lucide-react';
+import { Pill, Search, X, AlertTriangle, Syringe, Tablets, RefreshCcw, CheckCircle, Ban, ArrowRightLeft, Info, ChevronRight, Activity, ShieldAlert } from 'lucide-react';
 import { MEDICATIONS_DB } from '../data/medications';
 import { getMedicationRecommendation, MedicationRecommendation } from '../custom_services/PharmacologyEngine';
 
@@ -99,8 +99,58 @@ const MedicationReconciliation: React.FC = () => {
     // Auto-refresh when critical factors change? 
     // Careful with infinite loops. Let's provide a visual indicator or just do it on Mount.
 
+    // --- BRIDGE THERAPY LOGIC ---
+    const isHighRiskThrombotic = (formData.cha2ds2vasc || 0) > 5 || formData.evc || formData.valvula_protesis;
+    const hasEnoxaparin = selectedMeds.some(m => m.name.toLowerCase().includes('enoxaparina'));
+
+    const addEnoxaparinBridge = () => {
+        const weight = formData.peso || 70;
+        const renalAdjust = (formData.tfg || 90) < 30;
+        const dose = weight; // 1mg/kg
+        const freq = renalAdjust ? '24h' : '12h';
+
+        const enoxaparin: SelectedMed = {
+            id: `enox-${Date.now()}`,
+            name: "Enoxaparina (Terapia Puente)",
+            category: "Anticoagulante",
+            dose: dose,
+            route: "SC",
+            action: "continue",
+            alertLevel: "green",
+            instructions: `Dosis Terapéutica: ${dose}mg subcutánea cada ${freq}. Iniciar 24h después del procedimiento.`,
+            isAnticoagulant: true,
+            daysPrior: 0
+        };
+        setValue('selectedMeds', [...selectedMeds, enoxaparin]);
+    };
+
     return (
         <div className="space-y-6">
+
+            {/* BRIDGE THERAPY ALERT */}
+            {isHighRiskThrombotic && !hasEnoxaparin && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded-r-lg shadow-sm flex justify-between items-center animate-pulse-gentle">
+                    <div className="flex items-start gap-3">
+                        <div className="bg-red-100 p-2 rounded-full">
+                            <ShieldAlert className="text-red-600" size={24} />
+                        </div>
+                        <div>
+                            <h4 className="text-red-900 font-bold text-sm uppercase">ALTO RIESGO TROMBÓTICO DETECTADO</h4>
+                            <p className="text-red-700 text-xs mt-1 max-w-lg">
+                                Paciente con CHA₂DS₂-VASc {'>'} 5, Antecedente de EVC o Prótesis Valvular.
+                                Se recomienda considerar <b>Esquema de Puente (Bridge Therapy)</b>.
+                            </p>
+                        </div>
+                    </div>
+                    <button
+                        onClick={addEnoxaparinBridge}
+                        className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-xs font-bold shadow flex items-center gap-2 transition-colors"
+                    >
+                        <Syringe size={16} />
+                        Agregar Enoxaparina ({formData.peso || 70}mg)
+                    </button>
+                </div>
+            )}
 
             {/* --- MODAL FOR CONFIRMATION / WARNINGS --- */}
             {activeModalMed && (

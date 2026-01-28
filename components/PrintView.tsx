@@ -10,6 +10,9 @@ const PrintView: React.FC = () => {
     const overrides = data.risk_overrides || {};
     const hasOverrides = Object.keys(overrides).length > 0;
 
+    // Conditional Flags
+    const showCardioembolic = data.arritmia_tipo === 'fa' || data.valvula_protesis;
+
     // Helper functions for text display
     const getCardioText = () => {
         if (!data.cardiopatiaIsquemica) return "Negado";
@@ -345,6 +348,8 @@ const PrintView: React.FC = () => {
                             <th style={{ ...labelStyle, fontSize: '10px' }}>CAPRINI</th>
                             <th style={{ ...labelStyle, fontSize: '10px' }}>GUPTA %</th>
                             <th style={{ ...labelStyle, fontSize: '10px' }}>DUKE (METs)</th>
+                            {showCardioembolic && <th style={{ ...labelStyle, fontSize: '10px' }}>CHA₂DS₂-VASc</th>}
+                            {showCardioembolic && <th style={{ ...labelStyle, fontSize: '10px' }}>HAS-BLED</th>}
                         </tr>
                     </thead>
                     <tbody>
@@ -356,6 +361,8 @@ const PrintView: React.FC = () => {
                             <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.caprini}</td>
                             <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.gupta}%</td>
                             <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.duke_resultado || '-'}</td>
+                            {showCardioembolic && <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.cha2ds2vasc}</td>}
+                            {showCardioembolic && <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.hasbled}</td>}
                         </tr>
                     </tbody>
                 </table>
