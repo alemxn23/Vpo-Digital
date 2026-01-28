@@ -311,12 +311,20 @@ const Recommendations: React.FC = () => {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border-t border-gray-200">
                 <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Médico que Elaboró</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Médico Adscrito (Elaboró)</label>
                     <input {...register('elaboro')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" placeholder="Dr..." />
                 </div>
                 <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Matrícula</label>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Matrícula (Adscrito)</label>
                     <input {...register('matricula')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" />
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Médico Residente</label>
+                    <input {...register('residente')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" placeholder="Dr..." />
+                </div>
+                <div>
+                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Matrícula (Residente)</label>
+                    <input {...register('residente_matricula')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" />
                 </div>
             </div>
         </div>

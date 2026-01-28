@@ -7,6 +7,7 @@ export interface SelectedMed {
   id: string;
   name: string;
   category: string;
+  keywords?: string[];
   action: 'stop' | 'continue' | 'adjust';
   daysPrior: number; // 0 = Day of surgery, 1 = 24h before, 7 = 7 days before
   instructions: string;
@@ -22,6 +23,12 @@ export interface SelectedMed {
   anticoagType?: 'AVK' | 'DOAC';
   route?: 'VO' | 'IV' | 'SC' | 'Inhalada' | 'Topica' | 'Oftalmica';
   conversionMessage?: string; // To display bioequivalence notes
+
+  // New Engine Fields
+  atcCode?: string;
+  halfLifeHours?: number;
+  requiresBridging?: boolean;
+  stopTimeHours?: number; // More precise than days
 }
 
 export interface VPOData {
@@ -80,7 +87,13 @@ export interface VPOData {
   // 5. Cardiopatía Isquémica
   cardiopatiaIsquemica: boolean; // Main toggle (IAM or Angina)
   cardio_tipo_evento: "angina_estable" | "angina_inestable" | "iam";
+
   cardio_fecha_evento: string; // Date picker used for calc
+
+  // Stents (New)
+  cardio_stent: boolean;
+  stent_fecha_colocacion: string;
+  stent_tipo: "BMS" | "DES";
 
   // 6. Insuficiencia Cardiaca (ICC)
   icc: boolean;
@@ -287,6 +300,8 @@ export interface VPOData {
 
   elaboro: string;
   matricula: string;
+  residente: string;
+  residente_matricula: string;
 
   // External
   driveLink?: string; // To store the uploaded file URL

@@ -105,7 +105,23 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
-                {/* 2. HIPERTENSIÓN (HTA) */}
+                {/* 2. ALERGIAS */}
+                <RiskAccordion label="Alergias" name="alergicos" icon={AlertCircle} warningIf={watch('alergicos')}>
+                    <div>
+                        <label className="text-[10px] font-bold text-gray-500 uppercase">Detalle de Alergias</label>
+                        <textarea
+                            {...register('alergicosDetalle')}
+                            rows={2}
+                            placeholder="Medicamentos, alimentos, látex..."
+                            className="w-full mt-1 p-2 border rounded-lg text-sm focus:ring-2 focus:ring-clinical-navy outline-none bg-gray-50"
+                        />
+                        {watch('alergicos') && !watch('alergicosDetalle') && (
+                            <p className="text-[10px] text-amber-600 font-bold mt-1">⚠️ Especifique las alergias detectadas.</p>
+                        )}
+                    </div>
+                </RiskAccordion>
+
+                {/* 3. HIPERTENSIÓN (HTA) */}
                 <RiskAccordion label="Hipertensión Arterial" name="hta" icon={Activity} warningIf={watch('hta_control') === 'descontrolada'}>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -122,7 +138,7 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
-                {/* 3. DIABETES */}
+                {/* 4. DIABETES */}
                 <RiskAccordion label="Diabetes Mellitus" name="diabetes" icon={Droplets}>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -143,7 +159,7 @@ const RiskFactors: React.FC = () => {
                     </label>
                 </RiskAccordion>
 
-                {/* 4. CARDIOPATÍA ISQUÉMICA */}
+                {/* 5. CARDIOPATÍA ISQUÉMICA */}
                 <RiskAccordion
                     label="Cardiopatía Isquémica"
                     name="cardiopatiaIsquemica"
@@ -167,10 +183,31 @@ const RiskFactors: React.FC = () => {
                             <input type="date" {...register('cardio_fecha_evento')} className="w-full mt-1 p-2 border rounded-lg text-sm" />
                             <p className="text-[10px] text-gray-400 mt-1">Si es IAM {'<'} 6 meses = Alto Riesgo (Goldman/Detsky)</p>
                         </div>
+
+                        {/* STENT INPUTS */}
+                        <label className="flex items-center gap-2 mt-2 p-2 border rounded bg-indigo-50 border-indigo-100 cursor-pointer">
+                            <input type="checkbox" {...register('cardio_stent')} className="w-4 h-4 text-indigo-600 rounded" />
+                            <span className="text-sm font-bold text-indigo-900">Portador de Stent Coronario</span>
+                        </label>
+                        {watch('cardio_stent') && (
+                            <div className="pl-4 mt-2 grid grid-cols-2 gap-2 animate-fadeIn p-2 bg-indigo-50/50 rounded-lg">
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Fecha Colocación</label>
+                                    <input type="date" {...register('stent_fecha_colocacion')} className="w-full mt-1 p-2 border rounded-lg text-sm" />
+                                </div>
+                                <div>
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Tipo de Stent</label>
+                                    <select {...register('stent_tipo')} className="w-full mt-1 p-2 border rounded-lg text-sm bg-white">
+                                        <option value="DES">Farmacoactivo (DES)</option>
+                                        <option value="BMS">Metálico (BMS)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 </RiskAccordion>
 
-                {/* 5. INSUFICIENCIA CARDIACA */}
+                {/* 6. INSUFICIENCIA CARDIACA */}
                 <RiskAccordion label="Insuficiencia Cardiaca (ICC)" name="icc" icon={Heart}>
                     <div className="grid grid-cols-2 gap-3">
                         <div>
@@ -206,7 +243,7 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
-                {/* 6. ARRITMIAS */}
+                {/* 7. ARRITMIAS */}
                 <RiskAccordion label="Arritmias" name="arritmias" icon={Activity}>
                     <div className="space-y-3">
                         <div>
@@ -227,7 +264,7 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
-                {/* 7. VALVULOPATÍAS */}
+                {/* 8. VALVULOPATÍAS */}
                 <RiskAccordion
                     label="Valvulopatías"
                     name="valvulopatia"
@@ -266,7 +303,7 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
-                {/* 8. NEUROLOGÍA (EVC) */}
+                {/* 9. NEUROLOGÍA (EVC) */}
                 <RiskAccordion label="Enf. Vascular Cerebral (EVC)" name="evc" icon={Brain}>
                     <div className="space-y-3">
                         <div>
@@ -293,7 +330,7 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
-                {/* 9. NEUMOPATÍA */}
+                {/* 10. NEUMOPATÍA */}
                 <RiskAccordion label="Neumopatía (Pulmonar)" name="neumopatia" icon={Wind}>
                     <div className="space-y-3">
                         <div>
@@ -318,7 +355,7 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
-                {/* 10. RENAL (ERC) */}
+                {/* 11. RENAL (ERC) */}
                 <RiskAccordion label="Enfermedad Renal (ERC)" name="enfRenalCronica" icon={FlaskConical}>
                     <div className="space-y-3">
                         <div>
@@ -340,7 +377,7 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
-                {/* 11. HEPATOPATÍA */}
+                {/* 12. HEPATOPATÍA */}
                 <RiskAccordion label="Hepatopatía" name="hepatopatia" icon={Activity} warningIf={watch('hepato_child') === 'C'}>
                     <div className="space-y-3">
                         <div className="grid grid-cols-2 gap-3">
@@ -373,7 +410,7 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
-                {/* 12. HEMATOLOGÍA */}
+                {/* 13. HEMATOLOGÍA */}
                 <RiskAccordion label="Coagulopatía" name="coagulopatia" icon={Droplets}>
                     <div>
                         <label className="text-[10px] font-bold text-gray-500 uppercase">Tipo</label>

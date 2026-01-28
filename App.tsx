@@ -67,9 +67,9 @@ const StickyHeader = () => {
             <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain" />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-[13px] font-extrabold text-slate-900 leading-none">VPO DIGITAL</h1>
-            <p className="text-[9px] text-clinical-navy font-bold tracking-tighter mt-0.5">
-              {servicioSolicitante || 'Medicina Interna'} CMN S. XXI
+            <h1 className="text-lg font-black text-clinical-navy leading-none tracking-tight">VPO Digital</h1>
+            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
+              {servicioSolicitante || 'Medicina Interna'} • CMN S. XXI
             </p>
           </div>
         </div>
@@ -291,12 +291,54 @@ const App: React.FC = () => {
         logging: true,
         backgroundColor: '#ffffff',
         width: 794,
-        windowWidth: 800,
+        windowWidth: 794,
         scrollX: 0,
         scrollY: 0,
+        onclone: (clonedDoc) => {
+          // ROOT EXTRACTION STRATEGY
+          const clonedEl = clonedDoc.getElementById(element.id);
+          const body = clonedDoc.body;
+
+          if (clonedEl) {
+            // 1. Clear body
+            while (body.firstChild) {
+              body.removeChild(body.firstChild);
+            }
+            // 2. Move element to root
+            body.appendChild(clonedEl);
+
+            // 3. Force clean context on element
+            clonedEl.style.width = '794px';
+            clonedEl.style.margin = '0 auto';
+            clonedEl.style.padding = '0';
+            clonedEl.style.position = 'static';
+            clonedEl.style.transform = 'none';
+          }
+
+          // 4. Force clean context on body
+          body.style.width = '100%';
+          body.style.margin = '0';
+          body.style.padding = '0';
+          body.style.backgroundColor = '#ffffff';
+
+          // Inject CSS to stabilize fonts and rendering in the clone
+          const style = clonedDoc.createElement('style');
+          style.innerHTML = `
+            * {
+              -webkit-print-color-adjust: exact !important;
+              font-family: Arial, sans-serif !important;
+              text-rendering: optimizeLegibility !important;
+              -webkit-font-smoothing: antialiased !important;
+            }
+            td, th { padding: 0 !important; margin: 0 !important; }
+            table { border-collapse: collapse !important; border-spacing: 0 !important; }
+          `;
+          clonedDoc.head.appendChild(style);
+        }
       });
-      return canvas.toDataURL('image/png', 0.98);
+      return canvas.toDataURL('image/png', 1.0);
     };
+
 
     // Capture and add Page 1
     const imgData1 = await capturePage(page1);
@@ -329,9 +371,19 @@ const App: React.FC = () => {
         const safeName = rawName.replace(/[^a-zA-Z0-9]/g, '_');
         doc.save(`VPO_${safeName}_${dateStr}.pdf`);
       } else {
-        // En Desktop, abrir nueva pestaña con diálogo de impresión
+        // En Desktop, intentar abrir nueva pestaña con diálogo de impresión
         doc.autoPrint();
-        window.open(doc.output('bloburl'), '_blank');
+        const blobUrl = doc.output('bloburl');
+        const printWindow = window.open(blobUrl, '_blank');
+
+        // Detectar bloqueo de Pop-up
+        if (!printWindow || printWindow.closed || typeof printWindow.closed === 'undefined') {
+          alert("⚠️ Ventana emergente bloqueada.\n\nSe descargará el PDF automáticamente. Ábralo manualmante para imprimir.");
+          const dateStr = new Date().toISOString().split('T')[0];
+          const rawName = methods.getValues().nombre || 'Paciente';
+          const safeName = rawName.replace(/[^a-zA-Z0-9]/g, '_');
+          doc.save(`VPO_${safeName}_${dateStr}.pdf`);
+        }
       }
     } catch (e) {
       console.error("Error generating PDF", e);
@@ -756,9 +808,18 @@ const App: React.FC = () => {
         <BottomNav activeStep={activeStep} setStep={setActiveStep} />
 
         {/* Hidden Container for high-res PDF generation using html2canvas */}
-        <div id="print-content" style={{ position: 'fixed', left: '0', top: '0', width: '794px', zIndex: -1, backgroundColor: 'white' }}>
+        <div id="print-content" style={{
+          position: 'fixed',
+          left: '-10000px',
+          top: '0',
+          width: '794px',
+          zIndex: -1000,
+          visibility: 'visible',
+          pointerEvents: 'none'
+        }}>
           <PrintView />
         </div>
+
 
       </div>
     </FormProvider>
