@@ -98,8 +98,8 @@ const PrintView: React.FC = () => {
                                 <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px' }} />
                             </td>
                             <td width="344" valign="middle" style={{ paddingLeft: '15px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
-                                <div style={{ fontSize: '22px', fontWeight: 'bold', color: '#1e3a8a', lineHeight: '1.2' }}>VPO Digital</div>
-                                <div style={{ fontSize: '11px', fontWeight: 'bold', color: '#444' }}>{data.unidadMedica || 'CMN SIGLO XXI'} - MEDICINA INTERNA</div>
+                                <div style={{ fontSize: '24px', fontWeight: 900, color: '#1e3a8a', lineHeight: '1', letterSpacing: '-0.02em' }}>VPO Digital</div>
+                                <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', marginTop: '4px', letterSpacing: '0.1em' }}>{data.unidadMedica || 'CMN SIGLO XXI'} • {(data.servicioSolicitante || 'MEDICINA INTERNA').toUpperCase()}</div>
                             </td>
                             <td width="300" align="right" valign="top" style={{ borderBottom: '2px solid black', paddingBottom: '10px' }}>
                                 <div style={{ fontSize: '10px', fontWeight: 'bold' }}>DIRECCIÓN DE PRESTACIONES MÉDICAS</div>

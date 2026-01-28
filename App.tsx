@@ -87,6 +87,7 @@ const StickyHeader = () => {
 const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: number) => void }) => {
   const { watch } = useFormContext<VPOData>();
   const unidadMedica = watch('unidadMedica');
+  const servicioSolicitante = watch('servicioSolicitante');
 
   const navItems = [
     { icon: User, label: "Paciente", step: 0 },
@@ -105,8 +106,13 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
             <img src="/logo.png" alt="Logo" className="w-24 h-24 object-contain" />
           </div>
           <div className="flex flex-col">
-            <h1 className="text-lg font-black text-clinical-navy leading-none tracking-tight">VPO Digital</h1>
-            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest mt-1">CMN S. XXI</p>
+            <h1 className="text-xl font-black text-clinical-navy leading-none tracking-tight">VPO Digital</h1>
+            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-[0.15em] mt-1 whitespace-nowrap">
+              {servicioSolicitante || 'Medicina Interna'}
+            </p>
+            <p className="text-[9px] text-indigo-400 font-black uppercase tracking-widest mt-0.5 opacity-70">
+              CMN S. XXI
+            </p>
           </div>
         </div>
       </div>
