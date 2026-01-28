@@ -142,8 +142,8 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
       <div className="p-6 mt-auto">
         <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
           <p className="text-xs text-slate-500 text-center font-medium">
-            VPO Digital v2.0
-            <span className="block text-[10px] text-slate-400 mt-1">Responsive Suite</span>
+            VPO Digital v2.1 PRO
+            <span className="block text-[10px] text-slate-400 mt-1">Ultima Act: {new Date().toLocaleDateString()}</span>
           </p>
         </div>
       </div>
