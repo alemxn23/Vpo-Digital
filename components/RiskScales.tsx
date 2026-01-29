@@ -862,6 +862,9 @@ const RiskScales: React.FC = () => {
                         <div className="text-center">
                             <span className="text-2xl font-bold text-clinical-navy">{watch('goldman')}</span>
                             <p className="text-[10px] text-gray-400">Clase I-IV</p>
+                            {watch('eco_fevi') < 40 && (
+                                <p className="text-[9px] font-bold text-red-600 mt-1 animate-pulse">FEVI {watch('eco_fevi')}%: Clase IV</p>
+                            )}
                         </div>
                     </ScaleCard>
 

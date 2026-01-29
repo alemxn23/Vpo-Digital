@@ -104,12 +104,11 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                 <table border={0} cellPadding={0} cellSpacing={0} style={baseTable}>
                     <tbody>
                         <tr>
-                            <td width="70" valign="middle" style={{ width: '70px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
-                                <img src="/logo.png" alt="Logo" style={{ width: '60px', height: '60px' }} />
+                            <td width="100" valign="middle" style={{ width: '100px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
+                                <img src="/logo.png" alt="Logo" style={{ width: 'auto', height: '70px' }} />
                             </td>
-                            <td width="344" valign="middle" style={{ paddingLeft: '15px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
-                                <div style={{ fontSize: '24px', fontWeight: 900, color: '#1e3a8a', lineHeight: '1', letterSpacing: '-0.02em' }}>VPO Digital</div>
-                                <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', marginTop: '4px', letterSpacing: '0.1em' }}>{data.unidadMedica || 'CMN SIGLO XXI'} • {(data.servicioSolicitante || 'MEDICINA INTERNA').toUpperCase()}</div>
+                            <td width="314" valign="bottom" style={{ paddingLeft: '10px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.1em', marginBottom: '5px' }}>{data.unidadMedica || 'CMN SIGLO XXI'} • {(data.servicioSolicitante || 'MEDICINA INTERNA').toUpperCase()}</div>
                             </td>
                             <td width="300" align="right" valign="top" style={{ borderBottom: '2px solid black', paddingBottom: '10px' }}>
                                 <div style={{ fontSize: '10px', fontWeight: 'bold' }}>DIRECCIÓN DE PRESTACIONES MÉDICAS</div>

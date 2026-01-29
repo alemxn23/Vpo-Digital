@@ -310,6 +310,58 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
+                {/* --- DATOS ECOCARDIOGRÁFICOS (CONDITIONAL) --- */}
+                {(watch('icc') || watch('valvulopatia') || ['vascular', 'aortic', 'amputation', 'cardiac'].includes(watch('gupta_surgical_site'))) && (
+                    <div className="bg-blue-50 border border-blue-200 rounded-xl mt-2 overflow-hidden animate-fadeIn shadow-sm">
+                        <div className="bg-blue-100/50 p-3 border-b border-blue-200 flex items-center gap-2">
+                            <Activity className="text-blue-700" size={18} />
+                            <h3 className="text-sm font-bold text-blue-900">Módulo Ecocardiográfico</h3>
+                        </div>
+                        <div className="p-3 space-y-3">
+                            {/* FEVI */}
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">FEVI (%)</label>
+                                <div className="flex items-center gap-3">
+                                    <input
+                                        type="number"
+                                        {...register('eco_fevi', { valueAsNumber: true })}
+                                        className="w-20 p-2 border border-blue-200 rounded text-center font-bold text-blue-900 focus:ring-2 focus:ring-blue-400 outline-none"
+                                        placeholder="60"
+                                    />
+                                    <span className="text-[10px] text-gray-500 font-medium italic">Fracción de Eyección Ventrículo Izquierdo</span>
+                                </div>
+                                {(watch('eco_fevi') || 60) < 35 && (
+                                    <p className="text-[9px] text-red-600 font-bold mt-1 animate-pulse">
+                                        ⚠️ FEVI MUY BAJA: Riesgo Choque Cardiogénico.
+                                    </p>
+                                )}
+                            </div>
+
+                            {/* CHECKBOXES */}
+                            <div className="grid grid-cols-2 gap-2">
+                                <label className="flex items-center gap-2 p-2 bg-white border border-blue-100 rounded cursor-pointer hover:bg-blue-50 transition-colors">
+                                    <input type="checkbox" {...register('eco_disfuncion_diastolica')} className="w-4 h-4 text-blue-600 rounded" />
+                                    <span className="text-[10px] font-bold text-slate-700">Disfunción Diastólica</span>
+                                </label>
+                                <label className="flex items-center gap-2 p-2 bg-white border border-blue-100 rounded cursor-pointer hover:bg-blue-50 transition-colors">
+                                    <input type="checkbox" {...register('eco_psap_elevada')} className="w-4 h-4 text-blue-600 rounded" />
+                                    <span className="text-[10px] font-bold text-slate-700">PSAP {'>'} 45mmHg</span>
+                                </label>
+                            </div>
+
+                            {/* VALVULOPATIA */}
+                            <div>
+                                <label className="text-[10px] font-bold text-gray-500 uppercase">Valvulopatía Significativa (Eco)</label>
+                                <select {...register('eco_valvulopatia')} className="w-full mt-1 p-2 border border-blue-200 rounded text-xs bg-white focus:ring-2 focus:ring-blue-400 outline-none font-bold">
+                                    <option value="ninguna">Ninguna / No Significativa</option>
+                                    <option value="estenosis_aortica_severa">Estenosis Aórtica Severa</option>
+                                    <option value="insuficiencia_mitral_severa">Insuficiencia Mitral Severa</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* 9. NEUROLOGÍA (EVC) */}
                 <RiskAccordion label="Enf. Vascular Cerebral (EVC)" name="evc" icon={Brain}>
                     <div className="space-y-3">
@@ -525,62 +577,7 @@ const RiskFactors: React.FC = () => {
 
             </div>
 
-            {/* --- DATOS ECOCARDIOGRÁFICOS (CONDITIONAL) --- */}
-            {(watch('icc') || watch('valvulopatia') || ['vascular', 'aortic', 'amputation', 'cardiac'].includes(watch('gupta_surgical_site'))) && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl mt-4 overflow-hidden animate-fadeIn shadow-sm">
-                    <div className="bg-blue-100/50 p-4 border-b border-blue-200 flex items-center gap-2">
-                        <Activity className="text-blue-700" size={20} />
-                        <h3 className="text-base font-bold text-blue-900">Datos Ecocardiográficos</h3>
-                    </div>
-                    <div className="p-4 space-y-4">
-                        {/* FEVI */}
-                        <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">FEVI (%)</label>
-                            <div className="flex items-center gap-3">
-                                <input
-                                    type="number"
-                                    {...register('eco_fevi', { valueAsNumber: true })}
-                                    className="w-24 p-2 border border-blue-200 rounded text-center font-bold text-blue-900 focus:ring-2 focus:ring-blue-400 outline-none"
-                                    placeholder="60"
-                                />
-                                <span className="text-xs text-gray-500 font-medium">Fracción de Eyección del Ventrículo Izquierdo</span>
-                            </div>
-                            {(watch('eco_fevi') || 60) < 35 && (
-                                <p className="text-[10px] text-red-600 font-bold mt-1 animate-pulse">
-                                    ⚠️ FEVI MUY BAJA: Alto riesgo de choque cardiogénico.
-                                </p>
-                            )}
-                        </div>
-
-                        {/* CHECKBOXES */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <label className="flex items-center gap-2 p-3 bg-white border border-blue-100 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors shadow-sm">
-                                <input type="checkbox" {...register('eco_disfuncion_diastolica')} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
-                                <span className="text-xs font-bold text-slate-700">Disfunción Diastólica Severa</span>
-                            </label>
-                            <label className="flex items-center gap-2 p-3 bg-white border border-blue-100 rounded-lg cursor-pointer hover:bg-blue-50 transition-colors shadow-sm">
-                                <input type="checkbox" {...register('eco_psap_elevada')} className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500" />
-                                <span className="text-xs font-bold text-slate-700">Hipertensión Pulmonar (PSAP {'>'} 45mmHg)</span>
-                            </label>
-                        </div>
-
-                        {/* VALVULOPATIA */}
-                        <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase">Valvulopatía Significativa</label>
-                            <select {...register('eco_valvulopatia')} className="w-full mt-1 p-2 border border-blue-200 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-400 outline-none">
-                                <option value="ninguna">Ninguna / No Significativa</option>
-                                <option value="estenosis_aortica_severa">Estenosis Aórtica Severa</option>
-                                <option value="insuficiencia_mitral_severa">Insuficiencia Mitral Severa</option>
-                            </select>
-                            {watch('eco_valvulopatia') === 'estenosis_aortica_severa' && (
-                                <p className="text-[10px] text-red-600 font-bold mt-1">
-                                    ⚠️ ALERTA CRÍTICA: Mantener Precarga y RVS.
-                                </p>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            )}
+            {/* --- DATOS ECOCARDIOGRÁFICOS (MOVED TO SECTION 8) --- */}
 
         </div>
     );
