@@ -380,8 +380,14 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                                 <br />
                                 <span style={{ fontSize: '8px' }}>{(data.stopbang_risk || 'Bajo').toUpperCase()}</span>
                             </td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: data.vrc_total >= 4 ? '#fecaca' : 'transparent' }}>
-                                {(data.vrc_total !== undefined && data.vrc_total !== -1) ? data.vrc_total : '-'}
+                            <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: (data.vrc_total || 0) >= 4 ? '#fecaca' : 'transparent' }}>
+                                {(data.vrc_total !== undefined && data.vrc_total !== -1) ?
+                                    <>
+                                        {data.vrc_total} pts
+                                        <br />
+                                        <span style={{ fontSize: '8px' }}>{(data.vrc_riesgo || 'Bajo').toUpperCase()}</span>
+                                    </>
+                                    : '-'}
                             </td>
                             <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: (data.fragilidad_score || 1) >= 5 ? '#fecaca' : 'transparent' }}>
                                 {data.fragilidad_score || 1}

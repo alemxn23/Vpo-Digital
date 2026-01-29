@@ -25,6 +25,7 @@ const MedicationReconciliation: React.FC = () => {
     const [isLoadingInteractions, setIsLoadingInteractions] = useState(false);
 
     const [activeModalMed, setActiveModalMed] = useState<{ med: SelectedMed, rec: MedicationRecommendation, fda?: FDASafetyInfo | null, loadingFda?: boolean, isChronic?: boolean, fdaWarning?: string, dose?: number } | null>(null);
+    const [isBlackBoxOpen, setIsBlackBoxOpen] = useState(false);
 
     // FDA Verification Handler
     // -------------------------------------------------------------------------
@@ -526,7 +527,7 @@ const MedicationReconciliation: React.FC = () => {
                                             onClick={handleVerifyFDA}
                                             className="text-[10px] bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-2 py-1 rounded transition-colors"
                                         >
-                                            Consultar Boxed Warning
+                                            Consultar Advertencias
                                         </button>
                                     )}
                                 </div>
@@ -540,18 +541,34 @@ const MedicationReconciliation: React.FC = () => {
                                 {activeModalMed.fda && (
                                     <div className="space-y-2 animate-fadeIn">
                                         {activeModalMed.fda.hasBoxedWarning ? (
-                                            <div className="p-3 bg-black text-white rounded border border-gray-800">
-                                                <div className="flex items-center gap-2 mb-1">
-                                                    <AlertTriangle size={16} className="text-red-500" />
-                                                    <span className="font-bold text-xs uppercase tracking-wider text-red-500">Black Box Warning Detectado</span>
+                                            <div className="border border-red-800 rounded overflow-hidden">
+                                                {/* Collapsible Header */}
+                                                <div
+                                                    onClick={() => setIsBlackBoxOpen(!isBlackBoxOpen)}
+                                                    className="p-3 bg-black text-white flex items-center justify-between cursor-pointer hover:bg-gray-900 transition-colors"
+                                                >
+                                                    <div className="flex items-center gap-2">
+                                                        <AlertTriangle size={16} className="text-red-500 animate-pulse" />
+                                                        <span className="font-bold text-xs uppercase tracking-wider text-red-500">
+                                                            ⚠️ BLACK BOX WARNING DETECTADO
+                                                        </span>
+                                                    </div>
+                                                    <ChevronRight size={16} className={`text-gray-400 transition-transform ${isBlackBoxOpen ? 'rotate-90' : ''}`} />
                                                 </div>
-                                                <p className="text-[10px] leading-relaxed opacity-90">
-                                                    {activeModalMed.fda.boxedWarning[0]}
-                                                </p>
+
+                                                {/* Collapsible Content */}
+                                                {isBlackBoxOpen && (
+                                                    <div className="p-3 bg-gray-900 text-gray-300 text-[10px] leading-relaxed border-t border-gray-800 animate-slideDown">
+                                                        <p className="opacity-90">{activeModalMed.fda.boxedWarning[0]}</p>
+                                                        <p className="mt-2 text-xs italic text-gray-500">
+                                                            *Texto original de la FDA (Inglés).
+                                                        </p>
+                                                    </div>
+                                                )}
                                             </div>
                                         ) : (
                                             <div className="p-2 bg-green-50 text-green-800 rounded text-center text-xs font-bold border border-green-100">
-                                                ✓ No se detectó Boxed Warning oficial.
+                                                ✓ No se detectó Advertencia de Recuadro Negro (Black Box).
                                             </div>
                                         )}
 

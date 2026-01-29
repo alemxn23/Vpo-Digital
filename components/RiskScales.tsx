@@ -191,11 +191,14 @@ const RiskScales: React.FC = () => {
         if (data.detsky !== detskyClass) setValue('detsky', detskyClass);
 
         // --- 6. GUPTA ---
+        // --- 6. GUPTA ---
         const intercept = -5.31;
-        const coeffAge = 0.003 * data.edad;
-        const coeffCr = data.creatinina > 1.5 ? 0.6 : 0;
+        const parse = (val: number) => (typeof val === 'number' && !isNaN(val)) ? val : 0;
+
+        const coeffAge = 0.003 * parse(data.edad);
+        const coeffCr = parse(data.creatinina) > 1.5 ? 0.6 : 0;
         let coeffAsa = 0;
-        // We use calculated ASA base for Gupta to avoid circular logic or user error, or use current ASA
+        // We use calculated ASA base for Gupta to avoid circular logic
         const asaVal = data.asa ? data.asa.replace('-E', '') : 'I';
         if (asaVal === "II") coeffAsa = 0.11;
         if (asaVal === "III") coeffAsa = 0.69;
@@ -206,7 +209,8 @@ const RiskScales: React.FC = () => {
         if (data.functional_status === 'total') coeffFunc = 0.88;
 
         let coeffSite = 0;
-        switch (data.gupta_surgical_site) {
+        const site = data.gupta_surgical_site || 'other';
+        switch (site) {
             case 'anorectal': coeffSite = -1.5; break;
             case 'orthopedic': coeffSite = 0.2; break;
             case 'bariatric': coeffSite = 0.3; break;
@@ -215,16 +219,47 @@ const RiskScales: React.FC = () => {
             case 'vascular': coeffSite = 0.9; break;
             case 'aortic': coeffSite = 1.2; break;
             case 'intracranial': coeffSite = 0.9; break;
+            case 'other': coeffSite = 0; break;
             default: coeffSite = 0;
         }
+
         const logit = intercept + coeffAge + coeffCr + coeffAsa + coeffFunc + coeffSite;
         const risk = Math.exp(logit) / (1 + Math.exp(logit));
         const riskPercent = parseFloat((risk * 100).toFixed(1));
 
-        if (data.gupta !== riskPercent) setValue('gupta', riskPercent);
+        // Prevent NaN loop
+        if (!isNaN(riskPercent) && data.gupta !== riskPercent) {
+            setValue('gupta', riskPercent);
+        }
 
+        // --- 6.1 VRC SCORE (Vascular Only) ---
+        // Reference: VSGNE Risk Score for In-Hospital Mortality
+        // Age>70(+2), COPD(+2), Cr>1.8(+2), CAD(+2), CHF(+3), DMInsulin(+1), BetaBlocker Preop(+1)
+        if (['vascular', 'aortic', 'amputation'].includes(site)) {
+            let vrcPoints = 0;
+            if (parse(data.edad) >= 70) vrcPoints += 2;
+            if (data.neumopatia || data.vrc_epoc) vrcPoints += 2; // COPD
+            if (parse(data.creatinina) > 1.8) vrcPoints += 2;
+            if (data.cardiopatiaIsquemica || isIAMAntiguo || isIAMReciente) vrcPoints += 2; // CAD
+            if (data.icc) vrcPoints += 3; // CHF
+            if (data.diabetes && data.usaInsulina) vrcPoints += 1; // DM Insulin
+            if (data.vrc_beta_blocker) vrcPoints += 1; // Preop BB
 
-        if (data.gupta !== riskPercent) setValue('gupta', riskPercent);
+            if (data.vrc_total !== vrcPoints) setValue('vrc_total', vrcPoints);
+
+            // Set Risk Interpretation
+            let vrcRisk = "Bajo";
+            // Using approximate quintiles or standard VSGNE buckets
+            if (vrcPoints >= 7) vrcRisk = "Alto (>8% Mortalidad)";
+            else if (vrcPoints >= 4) vrcRisk = "Moderado (4-8% Mortalidad)";
+            else vrcRisk = "Bajo (<4% Mortalidad)";
+
+            if (data.vrc_riesgo !== vrcRisk) setValue('vrc_riesgo', vrcRisk);
+
+        } else {
+            if (data.vrc_total !== -1) setValue('vrc_total', -1);
+            if (data.vrc_riesgo !== '') setValue('vrc_riesgo', '');
+        }
 
         // --- 7. CHA2DS2-VASc ---
         let chaPoints = 0;
@@ -765,77 +800,6 @@ const RiskScales: React.FC = () => {
                         </div>
                     </div>
 
-                    {/* --- SPECIALTY SCALES --- */}
-                    <div className="grid grid-cols-2 gap-3">
-                        {/* CLINICAL FRAILTY SCALE */}
-                        <ScaleCard label="Fragilidad" desc="CFS (1-9)" autoCalc={false}>
-                            <div className="p-2">
-                                <input
-                                    type="range"
-                                    min="1"
-                                    max="9"
-                                    step="1"
-                                    value={watch('fragilidad_score') || 1}
-                                    onChange={(e) => setValue('fragilidad_score', parseInt(e.target.value))}
-                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-clinical-navy"
-                                />
-                                <div className="flex justify-between items-center mt-2">
-                                    <span className="text-xl font-bold text-clinical-navy">{watch('fragilidad_score') || 1}</span>
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded 
-                                    ${(watch('fragilidad_score') || 1) <= 3 ? 'bg-green-100 text-green-800' :
-                                            (watch('fragilidad_score') || 1) <= 6 ? 'bg-amber-100 text-amber-800' :
-                                                'bg-red-100 text-red-800'}`}>
-                                        {(watch('fragilidad_score') || 1) <= 3 ? 'ROBUSTO' :
-                                            (watch('fragilidad_score') || 1) <= 6 ? 'VULNERABLE' :
-                                                'FRAGILIDAD SEVERA'}
-                                    </span>
-                                </div>
-                                <p className="text-[9px] text-gray-400 mt-1 text-center">
-                                    {(watch('fragilidad_score') || 1) >= 7 ? 'Alto riesgo de delirio y estancia prolongada.' :
-                                        (watch('fragilidad_score') || 1) >= 4 ? 'Reserva funcional disminuida.' : 'Buen estado funcional.'}
-                                </p>
-                            </div>
-                        </ScaleCard>
-
-                        {/* METs ESTIMATION */}
-                        <ScaleCard label="METs" desc="Capacidad Funcional" autoCalc={false}>
-                            <div className="p-2">
-                                <input
-                                    type="number"
-                                    min="1"
-                                    max="20"
-                                    step="0.5"
-                                    placeholder="4"
-                                    value={watch('mets_estimated') || ''}
-                                    onChange={(e) => setValue('mets_estimated', parseFloat(e.target.value))}
-                                    className="w-full p-1 border rounded text-lg font-bold text-center text-clinical-navy mb-2"
-                                />
-                                <div className="text-center">
-                                    <span className={`text-[10px] font-bold px-2 py-1 rounded 
-                                    ${(watch('mets_estimated') || 4) >= 10 ? 'bg-green-100 text-green-800' :
-                                            (watch('mets_estimated') || 4) >= 4 ? 'bg-amber-100 text-amber-800' :
-                                                'bg-red-100 text-red-800'}`}>
-                                        {(watch('mets_estimated') || 4) >= 10 ? 'EXCELENTE' :
-                                            (watch('mets_estimated') || 4) >= 4 ? 'MODERADA' :
-                                                'MALA (<4)'}
-                                    </span>
-                                </div>
-                            </div>
-                        </ScaleCard>
-
-                        {/* VRC SCALE (Conditional) */}
-                        {(watch('gupta_surgical_site') === 'vascular' || watch('gupta_surgical_site') === 'aortic' || watch('gupta_surgical_site') === 'amputation') && (
-                            <ScaleCard label="VRC Score" desc="VSGNE Vascular" autoCalc={true}>
-                                <div className="text-center flex flex-col items-center justify-center">
-                                    <span className={`text-xl font-bold ${(watch('vrc_total') || 0) >= 4 ? 'text-red-600' : 'text-clinical-navy'}`}>
-                                        {watch('vrc_total') !== -1 ? watch('vrc_total') : '-'}
-                                    </span>
-                                    <p className="text-[10px] text-gray-400">Puntos (Mortalidad Intra-hosp)</p>
-                                </div>
-                            </ScaleCard>
-                        )}
-                    </div>
-                    {/* Dedicated Button for Caprini - Z-Index 20 to sit above overlay */}
                     <button
                         type="button"
                         onClick={(e) => {
@@ -848,6 +812,81 @@ const RiskScales: React.FC = () => {
                         Abrir Checklist Completo
                     </button>
                 </ScaleCard>
+
+                {/* --- SPECIALTY SCALES --- */}
+                <div className="grid grid-cols-2 gap-3">
+                    {/* CLINICAL FRAILTY SCALE */}
+                    <ScaleCard label="Fragilidad" desc="CFS (1-9)" autoCalc={false}>
+                        <div className="p-2">
+                            <input
+                                type="range"
+                                min="1"
+                                max="9"
+                                step="1"
+                                value={watch('fragilidad_score') || 1}
+                                onChange={(e) => setValue('fragilidad_score', parseInt(e.target.value))}
+                                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-clinical-navy"
+                            />
+                            <div className="flex justify-between items-center mt-2">
+                                <span className="text-xl font-bold text-clinical-navy">{watch('fragilidad_score') || 1}</span>
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded 
+                                    ${(watch('fragilidad_score') || 1) <= 3 ? 'bg-green-100 text-green-800' :
+                                        (watch('fragilidad_score') || 1) <= 6 ? 'bg-amber-100 text-amber-800' :
+                                            'bg-red-100 text-red-800'}`}>
+                                    {(watch('fragilidad_score') || 1) <= 3 ? 'ROBUSTO' :
+                                        (watch('fragilidad_score') || 1) <= 6 ? 'VULNERABLE' :
+                                            'FRAGILIDAD SEVERA'}
+                                </span>
+                            </div>
+                            <p className="text-[9px] text-gray-400 mt-1 text-center">
+                                {(watch('fragilidad_score') || 1) >= 7 ? 'Alto riesgo de delirio y estancia prolongada.' :
+                                    (watch('fragilidad_score') || 1) >= 4 ? 'Reserva funcional disminuida.' : 'Buen estado funcional.'}
+                            </p>
+                        </div>
+                    </ScaleCard>
+
+                    {/* METs ESTIMATION */}
+                    <ScaleCard label="METs" desc="Capacidad Funcional" autoCalc={false}>
+                        <div className="p-2">
+                            <input
+                                type="number"
+                                min="1"
+                                max="20"
+                                step="0.5"
+                                placeholder="4"
+                                value={watch('mets_estimated') || ''}
+                                onChange={(e) => setValue('mets_estimated', parseFloat(e.target.value))}
+                                className="w-full p-1 border rounded text-lg font-bold text-center text-clinical-navy mb-2"
+                            />
+                            <div className="text-center">
+                                <span className={`text-[10px] font-bold px-2 py-1 rounded 
+                                    ${(watch('mets_estimated') || 4) >= 10 ? 'bg-green-100 text-green-800' :
+                                        (watch('mets_estimated') || 4) >= 4 ? 'bg-amber-100 text-amber-800' :
+                                            'bg-red-100 text-red-800'}`}>
+                                    {(watch('mets_estimated') || 4) >= 10 ? 'EXCELENTE' :
+                                        (watch('mets_estimated') || 4) >= 4 ? 'MODERADA' :
+                                            'MALA (<4)'}
+                                </span>
+                            </div>
+                        </div>
+                    </ScaleCard>
+
+                    {/* VRC SCALE (Conditional) */}
+                    {(watch('gupta_surgical_site') === 'vascular' || watch('gupta_surgical_site') === 'aortic' || watch('gupta_surgical_site') === 'amputation') && (
+                        <ScaleCard label="VRC Score" desc="VSGNE Vascular" autoCalc={true}>
+                            <div className="text-center flex flex-col items-center justify-center">
+                                <span className={`text-xl font-bold ${(watch('vrc_total') || 0) >= 4 ? 'text-red-600' : 'text-clinical-navy'}`}>
+                                    {watch('vrc_total') !== -1 ? watch('vrc_total') : '-'}
+                                </span>
+                                <p className="text-[10px] text-gray-400">Puntos (Mortalidad Intra-hosp)</p>
+                                <p className={`text-[10px] font-bold ${(watch('vrc_total') || 0) >= 4 ? 'text-red-600' : 'text-green-600'}`}>
+                                    {watch('vrc_riesgo') || 'Bajo'}
+                                </p>
+                            </div>
+                        </ScaleCard>
+                    )}
+                </div>
+
 
                 {/* --- CARDIAC SCALES GRID (CLICKABLE AUDIT) --- */}
                 <div className="grid grid-cols-2 gap-3">
@@ -933,7 +972,7 @@ const RiskScales: React.FC = () => {
                 </div>
 
             </div>
-        </div>
+        </div >
     );
 };
 
