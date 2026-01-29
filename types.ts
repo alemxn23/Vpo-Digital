@@ -9,8 +9,12 @@ export interface SelectedMed {
   category: string;
   keywords?: string[];
   action: 'stop' | 'continue' | 'adjust';
-  daysPrior: number; // 0 = Day of surgery, 1 = 24h before, 7 = 7 days before
+  daysPrior?: number; // 0 = Day of surgery, 1 = 24h before, 7 = 7 days before
   instructions: string;
+  englishName?: string; // For OpenFDA queries
+  isChronic?: boolean;
+  stressDoseRecommendation?: string;
+  fdaWarning?: string;
   alertLevel: 'red' | 'yellow' | 'green';
   // Specific properties for logic
   dose?: number; // Generic dose for calculations
@@ -68,6 +72,7 @@ export interface VPOData {
   aniosFumando: number; // Calculadora IT
   indiceTabaquico: number;
   riesgoEPOC: string; // Resultado IT
+  active_smoking: boolean; // Tabaquismo Activo vs Histórico (Para ARISCAT/VRC)
 
   // 2. Alergias
   alergicos: boolean;
@@ -123,6 +128,7 @@ export interface VPOData {
   // 10. Neumopatía
   neumopatia: boolean;
   neumo_tipo: string; // EPOC, ASMA, SAOHS
+  diagnosed_osa: boolean; // Apnea diagnosticada
   neumo_o2: boolean;
 
   // 11. Renal (ERC)
@@ -150,7 +156,7 @@ export interface VPOData {
 
   // Gupta (MICA) Specifics
   functional_status: "independent" | "partial" | "total";
-  gupta_surgical_site: "anorectal" | "aortic" | "bariatric" | "biliary" | "cardiac" | "ent" | "intestinal" | "intracranial" | "neck" | "obstetric" | "orthopedic" | "spinal" | "thoracic" | "vascular" | "urologic" | "other";
+  gupta_surgical_site: "anorectal" | "aortic" | "amputation" | "bariatric" | "biliary" | "cardiac" | "ent" | "intestinal" | "intracranial" | "neck" | "obstetric" | "orthopedic" | "spinal" | "thoracic" | "vascular" | "urologic" | "other";
 
   // Antecedentes Texto Libre
   cirugiasPrevias: string;
@@ -220,6 +226,12 @@ export interface VPOData {
   ecg_extrasistoles: boolean;
   ecg_otras_alteraciones: string;
 
+  // --- DATOS ECOCARDIOGRÁFICOS (MODULO NUEVO) ---
+  eco_fevi: number; // %
+  eco_disfuncion_diastolica: boolean;
+  eco_psap_elevada: boolean; // > 45mmHg
+  eco_valvulopatia: "ninguna" | "estenosis_aortica_severa" | "insuficiencia_mitral_severa";
+
   // --- ENDOCARDITIS (DUKE) ---
   duke_mayor_hemocultivo: boolean;
   duke_mayor_eco: boolean;
@@ -249,6 +261,29 @@ export interface VPOData {
   hasbled: number;
   hasbled_inr_labil: boolean; // Manual toggle
   hasbled_alcohol: boolean; // Manual toggle
+
+
+
+
+  // --- PULMONAR & VÍA AÉREA (STOP-BANG) ---
+  stopBang_snoring: boolean;
+  stopBang_tired: boolean;
+  stopBang_observed: boolean;
+  stopBang_neck: boolean; // > 40cm
+  stopbang_total: number;
+  stopbang_risk: "Bajo" | "Intermedio" | "Alto";
+  neck_circumference: number; // For manual input
+
+  // --- RESERVA FUNCIONAL & FRAGILIDAD & VRC ---
+  fragilidad_score: number; // 1-9 Clinical Frailty Scale
+  vrc_total: number; // Vascular Risk (VSGNE)
+  vrc_riesgo: string;
+  riesgo_vrc_renal: boolean; // Auto flag Cr > 1.8
+  vrc_epoc: boolean;
+  vrc_beta_blocker: boolean;
+
+  mets_estimated: number; // METs
+  mets_method: "biometric" | "duke_dasi" | "manual";
 
   // --- ASA OVERRIDE ---
   asa_manual_class: string; // If user forces class

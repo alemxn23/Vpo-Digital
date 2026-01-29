@@ -28,9 +28,10 @@ import RiskScales from './components/RiskScales';
 import Recommendations from './components/Recommendations';
 import PrintView from './components/PrintView';
 import Gabinete from './components/Gabinete';
+import MedicalNoteGenerator from './components/MedicalNoteGenerator';
 
 // --- Configuration ---
-// Default ID (may not work on all dynamic WebContainer origins)
+// Google Drive Client ID. Sigue los pasos en GOOGLE_DRIVE_SETUP.md para configurar el tuyo.
 const DEFAULT_CLIENT_ID = '147428616428-bafn28uqehgsdhivcs766t6f49o6gpl6.apps.googleusercontent.com';
 
 // --- Badge Component for Header ---
@@ -50,7 +51,6 @@ const StickyHeader = () => {
   const unidadMedica = watch('unidadMedica');
   const servicioSolicitante = watch('servicioSolicitante');
 
-  // Determine colors based on severity (simple logic)
   const getSeverityColor = (val: string | number | undefined) => {
     if (!val) return 'bg-gray-400';
     if (val === 'IV' || (typeof val === 'number' && val > 5)) return 'bg-clinical-red';
@@ -62,7 +62,6 @@ const StickyHeader = () => {
     <header className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-200 z-30 shadow-sm transition-all duration-200 no-print">
       <div className="w-full max-w-md md:max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 lg:opacity-0 pointer-events-none">
-          {/* Logo Hidden on Desktop via opacity since it's in Sidebar, keeps layout spacing */}
           <div className="flex items-center justify-center">
             <img src="/logo.png" alt="Logo" className="w-14 h-14 object-contain" />
           </div>
@@ -95,7 +94,8 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
     { icon: FileImage, label: "Gabinete", step: 2 },
     { icon: Pill, label: "Fármacos", step: 3 },
     { icon: ClipboardCheck, label: "Escalas", step: 4 },
-    { icon: FileText, label: "Reporte", step: 5 },
+    { icon: FileText, label: "Nota Médica", step: 5 },
+    { icon: Printer, label: "Reporte", step: 6 },
   ];
 
   return (
@@ -151,7 +151,6 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
   );
 };
 
-// --- Bottom Navigation ---
 const BottomNav = ({ activeStep, setStep }: { activeStep: number, setStep: (s: number) => void }) => {
   const navItems = [
     { icon: User, label: "Paciente", step: 0 },
@@ -159,7 +158,8 @@ const BottomNav = ({ activeStep, setStep }: { activeStep: number, setStep: (s: n
     { icon: FileImage, label: "Gabinete", step: 2 },
     { icon: Pill, label: "Fármacos", step: 3 },
     { icon: ClipboardCheck, label: "Escalas", step: 4 },
-    { icon: FileText, label: "Reporte", step: 5 },
+    { icon: FileText, label: "Nota", step: 5 },
+    { icon: Printer, label: "PDF", step: 6 },
   ];
 
   return (
@@ -183,7 +183,6 @@ const BottomNav = ({ activeStep, setStep }: { activeStep: number, setStep: (s: n
   );
 };
 
-// --- Helper to Generate Plain Text Note ---
 const generateClinicalNote = (data: VPOData): string => {
   const risks = [];
   if (data.tabaquismo) risks.push(`Tabaquismo (IT: ${data.indiceTabaquico || '-'})`);
@@ -201,22 +200,18 @@ Cirugía: ${data.cirugiaProgramada} (${data.tipoCirugia})
 
 FACTORES DE RIESGO:
 ${risks.length > 0 ? risks.join(', ') : 'Negados'}
+${data.cardio_stent ? `• Stent ${data.stent_tipo} (${data.stent_fecha_colocacion})` : ''}
 ${data.cirugiasPrevias ? `Antecedentes: ${data.cirugiasPrevias}` : ''}
 
 LABORATORIOS:
 ${labs}
 ECG: ${data.ecg_ritmo_especifico || data.ritmo}, Frec: ${data.ecg_frecuencia || data.frecuenciaEcg} lpm.
-RX: ${data.rx_descripcion || 'Sin alteraciones'}
 ARISCAT: ${data.ariscat_total} pts (${data.ariscat_categoria}).
 
 ESCALAS DE RIESGO:
-• ASA: ${data.asa || '-'}
-• GOLDMAN: Clase ${data.goldman || '-'}
-• DETSKY: Clase ${data.detsky || '-'}
-• LEE (RCRI): ${data.lee || '-'}
-• CAPRINI: ${data.caprini || '-'} pts
-• GUPTA (MICA): ${data.gupta || 0}% Riesgo IAM/Paro.
-• DUKE (Endocarditis): ${data.duke_resultado || 'Rechazado'}
+• ASA: ${data.asa || '-'} | Goldman: ${data.goldman || '-'} | Lee: ${data.lee || '-'}
+• Caprini: ${data.caprini || '-'} pts | Gupta: ${data.gupta || 0}% | Duke: ${data.duke_resultado || '-'}
+${data.arritmia_tipo === 'fa' || data.valvula_protesis ? `• CHA₂DS₂-VASc: ${data.cha2ds2vasc} | HAS-BLED: ${data.hasbled}` : ''}
 
 PLAN / RECOMENDACIONES:
 ${data.recomendacionesGenerales || 'Sin recomendaciones específicas.'}
@@ -251,11 +246,9 @@ const App: React.FC = () => {
       unidadMedica: "CMN SIGLO XXI",
       selectedMeds: []
     },
-    mode: "onBlur"
+    mode: "onChange"
   });
 
-  // --- PERSISTENCE LOGIC (LOCALSTORAGE) ---
-  // 1. Load Data on Mount
   useEffect(() => {
     const savedData = localStorage.getItem('vpo_current_data');
     if (savedData) {
@@ -266,9 +259,8 @@ const App: React.FC = () => {
         console.error("Failed to load saved data", e);
       }
     }
-  }, []); // Run once on mount
+  }, []);
 
-  // 2. Save Data on Change
   useEffect(() => {
     const subscription = methods.watch((value) => {
       localStorage.setItem('vpo_current_data', JSON.stringify(value));
@@ -278,81 +270,50 @@ const App: React.FC = () => {
 
 
   const generatePDFDoc = async (): Promise<jsPDF> => {
-    // 1. Get the Hidden Report Elements
     const page1 = document.getElementById('print-page-1');
     const page2 = document.getElementById('print-page-2');
-
     if (!page1 || !page2) throw new Error("Report pages not found");
 
     const pdf = new jsPDF('p', 'mm', 'letter');
     const pdfWidth = pdf.internal.pageSize.getWidth();
 
     const capturePage = async (element: HTMLElement) => {
-      // 2500ms delay for categorical rendering safety on legacy tables
-      await new Promise(resolve => setTimeout(resolve, 2500));
-
+      await new Promise(resolve => setTimeout(resolve, 2000));
       const canvas = await html2canvas(element, {
-        scale: 2,
+        scale: 3,
         useCORS: true,
-        logging: true,
+        logging: false,
         backgroundColor: '#ffffff',
         width: 794,
         windowWidth: 794,
         scrollX: 0,
         scrollY: 0,
         onclone: (clonedDoc) => {
-          // ROOT EXTRACTION STRATEGY
           const clonedEl = clonedDoc.getElementById(element.id);
           const body = clonedDoc.body;
-
           if (clonedEl) {
-            // 1. Clear body
-            while (body.firstChild) {
-              body.removeChild(body.firstChild);
-            }
-            // 2. Move element to root
+            while (body.firstChild) body.removeChild(body.firstChild);
             body.appendChild(clonedEl);
-
-            // 3. Force clean context on element
             clonedEl.style.width = '794px';
             clonedEl.style.margin = '0 auto';
             clonedEl.style.padding = '0';
             clonedEl.style.position = 'static';
             clonedEl.style.transform = 'none';
           }
-
-          // 4. Force clean context on body
-          body.style.width = '100%';
+          body.style.width = '794px';
           body.style.margin = '0';
           body.style.padding = '0';
           body.style.backgroundColor = '#ffffff';
-
-          // Inject CSS to stabilize fonts and rendering in the clone
-          const style = clonedDoc.createElement('style');
-          style.innerHTML = `
-            * {
-              -webkit-print-color-adjust: exact !important;
-              font-family: Arial, sans-serif !important;
-              text-rendering: optimizeLegibility !important;
-              -webkit-font-smoothing: antialiased !important;
-            }
-            td, th { padding: 0 !important; margin: 0 !important; }
-            table { border-collapse: collapse !important; border-spacing: 0 !important; }
-          `;
-          clonedDoc.head.appendChild(style);
         }
       });
       return canvas.toDataURL('image/png', 1.0);
     };
 
-
-    // Capture and add Page 1
     const imgData1 = await capturePage(page1);
     const imgProps1 = pdf.getImageProperties(imgData1);
     const imgHeight1 = (imgProps1.height * pdfWidth) / imgProps1.width;
     pdf.addImage(imgData1, 'PNG', 0, 0, pdfWidth, imgHeight1);
 
-    // Add Page 2
     pdf.addPage();
     const imgData2 = await capturePage(page2);
     const imgProps2 = pdf.getImageProperties(imgData2);
@@ -365,34 +326,25 @@ const App: React.FC = () => {
   const handlePrintPDF = async () => {
     try {
       const doc = await generatePDFDoc();
-
-      // Detectar si es dispositivo móvil
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-
       if (isMobile) {
-        // En móviles, autoPrint no funciona bien. Mejor guardar/descargar.
-        // El visor nativo del celular (iOS/Android) tiene su propia opción de imprimir.
         const dateStr = new Date().toISOString().split('T')[0];
         const rawName = methods.getValues().nombre || 'Paciente';
         const safeName = rawName.replace(/[^a-zA-Z0-9]/g, '_');
         doc.save(`VPO_${safeName}_${dateStr}.pdf`);
       } else {
-        // En Desktop, intentar abrir nueva pestaña con diálogo de impresión
         doc.autoPrint();
         const blobUrl = doc.output('bloburl');
         const printWindow = window.open(blobUrl, '_blank');
-
-        // Detectar bloqueo de Pop-up
-        if (!printWindow || printWindow.closed || typeof printWindow.closed === 'undefined') {
-          alert("⚠️ Ventana emergente bloqueada.\n\nSe descargará el PDF automáticamente. Ábralo manualmante para imprimir.");
+        if (!printWindow || printWindow.closed) {
+          alert("⚠️ Ventana emergente bloqueada. Se descargará el PDF.");
           const dateStr = new Date().toISOString().split('T')[0];
-          const rawName = methods.getValues().nombre || 'Paciente';
-          const safeName = rawName.replace(/[^a-zA-Z0-9]/g, '_');
+          const safeName = (methods.getValues().nombre || 'Paciente').replace(/[^a-zA-Z0-9]/g, '_');
           doc.save(`VPO_${safeName}_${dateStr}.pdf`);
         }
       }
     } catch (e) {
-      console.error("Error generating PDF", e);
+      console.error(e);
       alert("Error al generar vista de impresión.");
     }
   };
@@ -401,67 +353,43 @@ const App: React.FC = () => {
     const parts = base64.split(';base64,');
     const contentType = parts[0].split(':')[1];
     const raw = window.atob(parts[1]);
-    const rawLength = raw.length;
-    const uInt8Array = new Uint8Array(rawLength);
-    for (let i = 0; i < rawLength; ++i) {
-      uInt8Array[i] = raw.charCodeAt(i);
-    }
+    const uInt8Array = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; ++i) uInt8Array[i] = raw.charCodeAt(i);
     return new Blob([uInt8Array], { type: contentType });
   };
 
   const handleDriveUpload = () => {
     setIsUploading(true);
-
-    // Safety Timeout: Reset loading state if nothing happens in 60s
-    // useful if popup is blocked without event or network hangs
     const safetyTimeout = setTimeout(() => {
-      setIsUploading((current) => {
-        if (current) {
-          alert("Tiempo de espera agotado. Verifique si hay ventanas emergentes bloqueadas.");
-          return false;
-        }
-        return current;
-      });
+      setIsUploading(false);
     }, 60000);
 
-    // Check if Google Scripts loaded
-    if (!window.google || !window.google.accounts || !window.google.accounts.oauth2) {
-      alert("Los servicios de Google no están listos. Por favor verifique su conexión o recargue la página.");
-      clearTimeout(safetyTimeout);
+    if (!window.google || !window.google.accounts) {
+      alert("Servicios de Google no listos.");
       setIsUploading(false);
       return;
     }
 
-    // Determine Client ID
-    const storedClientId = localStorage.getItem('vpo_google_client_id_v2');
-    const clientId = storedClientId || DEFAULT_CLIENT_ID;
-
-    // Init Client logic is synchronous to prevent popup blocking
+    const clientId = localStorage.getItem('vpo_google_client_id_v2') || DEFAULT_CLIENT_ID;
     try {
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: 'https://www.googleapis.com/auth/drive.file',
         callback: async (tokenResponse: any) => {
-          clearTimeout(safetyTimeout); // Clear safety timer on success callback
-
+          clearTimeout(safetyTimeout);
           if (tokenResponse && tokenResponse.access_token) {
-            // PDF Generation happens AFTER auth success
             try {
               const doc = await generatePDFDoc();
               const pdfBlob = doc.output('blob');
-
               const dateStr = new Date().toISOString().split('T')[0];
-              const rawName = methods.getValues().nombre || 'Paciente';
-              const safeName = rawName.replace(/[^a-zA-Z0-9]/g, '_');
+              const safeName = (methods.getValues().nombre || 'Paciente').replace(/[^a-zA-Z0-9]/g, '_');
               const fileName = `${dateStr}_${safeName}_VPO.pdf`;
-
-              // Get Folder ID first
               const folderId = await getOrCreateFolder(tokenResponse.access_token);
 
-              // 1. Upload PDF
+              // 1. Subir PDF
               await uploadFileToDrive(tokenResponse.access_token, pdfBlob, fileName, folderId);
 
-              // 2. Upload RX if exists
+              // 2. Subir RX si existe
               const rxData = methods.getValues('rx_imagen');
               if (rxData) {
                 const rxBlob = base64ToBlob(rxData);
@@ -469,7 +397,7 @@ const App: React.FC = () => {
                 await uploadFileToDrive(tokenResponse.access_token, rxBlob, rxName, folderId);
               }
 
-              // 3. Upload EKG if exists
+              // 3. Subir EKG si existe
               const ekgData = methods.getValues('ekg_imagen');
               if (ekgData) {
                 const ekgBlob = base64ToBlob(ekgData);
@@ -477,197 +405,58 @@ const App: React.FC = () => {
                 await uploadFileToDrive(tokenResponse.access_token, ekgBlob, ekgName, folderId);
               }
 
-              alert(`✅ Guardado exitoso en Drive con imágenes.`);
+              alert("✅ Guardado exitoso en Drive (Reporte + Imágenes).");
             } catch (err) {
-              console.error("Error creating PDF", err);
-              alert("Error al generar el PDF.");
+              console.error(err);
+              alert("Error al guardar.");
+            } finally {
               setIsUploading(false);
             }
-          } else {
-            // Auth failed (denied or error)
-            // Error object usually not passed here in implicit flow but check just in case
-            if (tokenResponse && tokenResponse.error) {
-              console.error("Auth Token Error:", tokenResponse);
-              alert(`Error de Autenticación: ${tokenResponse.error.message || tokenResponse.error}`);
-            }
-            setIsUploading(false);
           }
-        },
-        error_callback: (err: any) => {
-          clearTimeout(safetyTimeout); // Clear safety timer on error
-          setIsUploading(false); // Stop loading
-
-          // Ignore manual closure
-          if (err.type === 'popup_closed_by_user') {
-            console.warn("Auth: User closed popup.");
-            return;
-          }
-
-          // Handle browser blocks
-          if (err.type === 'popup_blocked_by_browser') {
-            alert("El navegador bloqueó la ventana de Google. Por favor permita ventanas emergentes e intente de nuevo.");
-            return;
-          }
-
-          // HANDLE INVALID CLIENT (401 / 403 / invalid_client)
-          // The error object might be structured differently depending on the library version, 
-          // usually err.type or err.message contains helpful info.
-          console.error("Auth Error Callback:", err);
-
-          const isInvalidClient = err.type === 'invalid_client' || (err.message && err.message.includes('invalid_client'));
-
-          if (isInvalidClient) {
-            const newId = prompt(
-              `⚠️ ERROR CRÍTICO DE CONFIGURACIÓN\n\n` +
-              `El "Client ID" configurado no es válido o fue eliminado.\n` +
-              `Debe ingresar uno nuevo generado en Google Cloud Console para autorizar este dominio.\n\n` +
-              `Ingrese nuevo Client ID:`,
-              clientId
-            );
-            if (newId && newId.trim() !== clientId) {
-              localStorage.setItem('vpo_google_client_id_v2', newId.trim());
-              alert("✅ Client ID actualizado correctamente.\n\nIntente presionar el botón DRIVE nuevamente.");
-            }
-            return;
-          }
-
-          // Generic Fallback
-          alert(`Error de Google Auth: ${err.type || err.message || JSON.stringify(err)}`);
         }
       });
-
-      // Trigger Auth Flow IMMEDIATELY on click
-      // Use explicit error handling for the prompt trigger itself
-      setTimeout(() => {
-        try {
-          client.requestAccessToken();
-        } catch (reqErr) {
-          clearTimeout(safetyTimeout);
-          setIsUploading(false);
-          console.error("RequestAccessToken Error", reqErr);
-          alert("Error al solicitar acceso. Verifique consola.");
-        }
-      }, 0);
-
+      client.requestAccessToken();
     } catch (e) {
-      clearTimeout(safetyTimeout);
-      console.error("Init Error", e);
-      alert("Error al iniciar servicio de autenticación.");
       setIsUploading(false);
     }
   };
 
   const getOrCreateFolder = async (accessToken: string): Promise<string> => {
-    // Search for Folder "VPO_Expedientes_MedicinaInterna"
-    const qQuery = "mimeType='application/vnd.google-apps.folder' and name='VPO_Expedientes_MedicinaInterna' and trashed=false";
-    const searchUrl = `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(qQuery)}`;
-
-    const searchRes = await fetch(searchUrl, {
+    const q = "mimeType='application/vnd.google-apps.folder' and name='VPO_Expedientes_MedicinaInterna' and trashed=false";
+    const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
-
-    if (!searchRes.ok) throw new Error(`Search Failed: ${searchRes.status}`);
-    const searchData = await searchRes.json();
-
-    if (searchData.files && searchData.files.length > 0) {
-      return searchData.files[0].id;
-    } else {
-      // Create folder if not exists
-      const createRes = await fetch('https://www.googleapis.com/drive/v3/files', {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          name: 'VPO_Expedientes_MedicinaInterna',
-          mimeType: 'application/vnd.google-apps.folder'
-        })
-      });
-      const createData = await createRes.json();
-      return createData.id;
-    }
+    const data = await res.json();
+    if (data.files && data.files.length > 0) return data.files[0].id;
+    const create = await fetch('https://www.googleapis.com/drive/v3/files', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: 'VPO_Expedientes_MedicinaInterna', mimeType: 'application/vnd.google-apps.folder' })
+    });
+    const folder = await create.json();
+    return folder.id;
   };
 
-  const uploadFileToDrive = async (accessToken: string, blob: Blob, fileName: string, folderId: string) => {
-    try {
-      // Upload File to that folder
-      const metadata = {
-        name: fileName,
-        parents: [folderId]
-      };
-
-      const form = new FormData();
-      form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-      form.append('file', blob);
-
-      // Upload URL construction
-      const uploadUrl = new URL('https://www.googleapis.com/upload/drive/v3/files');
-      uploadUrl.searchParams.append('uploadType', 'multipart');
-      uploadUrl.searchParams.append('fields', 'id,webViewLink');
-
-      const uploadRes = await fetch(uploadUrl.toString(), {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${accessToken}` },
-        body: form
-      });
-
-      if (uploadRes.ok) {
-        const fileData = await uploadRes.json();
-        // Only set driveLink for the PDF (first file usually or we can check filename)
-        if (fileName.endsWith('_VPO.pdf')) {
-          methods.setValue('driveLink', fileData.webViewLink);
-        }
-      } else {
-        const errTxt = await uploadRes.text();
-        throw new Error(`Upload Failed: ${errTxt}`);
-      }
-    } catch (error) {
-      console.error(error);
-      alert(`Error de conexión con Google Drive: ${error}`);
-    } finally {
-      setIsUploading(false);
+  const uploadFileToDrive = async (token: string, blob: Blob, name: string, folder: string) => {
+    const metadata = { name, parents: [folder] };
+    const form = new FormData();
+    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+    form.append('file', blob);
+    const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}` },
+      body: form
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (name.endsWith('_VPO.pdf')) methods.setValue('driveLink', data.webViewLink);
     }
-  };
-
-  // --- EXECUTIVE SUMMARY GENERATOR ---
-  const generateExecutiveSummary = (data: VPOData): string => {
-    // Goldman Risks Mapping
-    const goldmanMap: Record<string, string> = { "I": "0.2%", "II": "1%", "III": "7%", "IV": "22%" };
-    const goldmanRisk = goldmanMap[data.goldman || "I"];
-
-    // Logic for dynamic text
-    const tfg = data.tfg || 0;
-    const tfgNote = tfg < 60 ? `TFG Disminuida: ${tfg} ml/min (Ajuste renal fármacos).` : "";
-
-    const meds = data.selectedMeds || [];
-    const steroids = meds.filter(m => m.isSteroid && m.action === 'adjust');
-    const steroidNote = steroids.length > 0 ? "Dosis de Estrés con Hidrocortisona INDICADA." : "";
-    const anticoagNote = meds.some(m => m.isAnticoagulant) ? "Anticoagulación: Ver puenteo/suspensión." : "";
-
-    // Required Template
-    const base = `Paciente ${data.edad} años, programado para ${data.cirugiaProgramada || 'Cirugía'}.`;
-    const risks = `Riesgo Cardiovascular: Goldman Clase ${data.goldman} (${goldmanRisk}), Lee Clase ${data.lee}. ASA: ${data.asa}. Criterios de Duke: ${data.duke_resultado || 'Rechazado'}.`;
-
-    const recs = `Recomendaciones clave: Metas TA < 180/110, Glu 70-180. ${data.tfg < 30 ? 'AINEs Contraindicados' : 'Suspender AINEs 7 días'}. ${steroidNote} ${anticoagNote} ${tfgNote}`.trim();
-
-    return `${base}\n${risks}\n${recs}`;
   };
 
   const handleWhatsApp = () => {
     const data = methods.getValues();
-    const summary = generateExecutiveSummary(data);
-
-    let text = `*IMPRESIÓN DIAGNÓSTICA VPO*\n${summary}`;
-
-    if (data.driveLink) {
-      text += `\n\n📄 *Descargar VPO Oficial (PDF):*\n${data.driveLink}`;
-    } else {
-      text += `\n\n(Nota: Sube el PDF a Drive para incluir el enlace aquí).`;
-    }
-
-    const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
-    window.open(url, '_blank');
+    const summary = `VALORACIÓN VPO\nPaciente: ${data.nombre}\nASA: ${data.asa}\nLee: ${data.lee}\nGoldman: ${data.goldman}\nLink: ${data.driveLink || '(Sube a Drive primero)'}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(summary)}`, '_blank');
   };
 
   const handleCopyNote = () => {
@@ -681,152 +470,52 @@ const App: React.FC = () => {
   return (
     <FormProvider {...methods}>
       <div className="min-h-screen bg-clinical-bg font-sans pb-20 lg:pb-0 lg:flex items-start">
-
         <Sidebar activeStep={activeStep} setStep={setActiveStep} />
-
         <div className="flex-1 min-w-0 flex flex-col min-h-screen">
           <StickyHeader />
-
           <main className="pt-4 md:pt-8 pb-8 px-4 w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto flex-1">
-            {/* Step 0: Patient */}
-            <div className={activeStep === 0 ? 'block animate-fadeIn' : 'hidden'}>
-              <PatientInfo />
+            <div className={activeStep === 0 ? 'block' : 'hidden'}><PatientInfo /></div>
+            <div className={activeStep === 1 ? 'block' : 'hidden'}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><RiskFactors /><LabsAndVitals /></div>
             </div>
-
-            {/* Step 1: Clinical (Risk & Labs) */}
-            <div className={activeStep === 1 ? 'block animate-fadeIn space-y-6' : 'hidden'}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                <RiskFactors />
-                <LabsAndVitals />
-              </div>
+            <div className={activeStep === 2 ? 'block' : 'hidden'}><Gabinete /></div>
+            <div className={activeStep === 3 ? 'block' : 'hidden'}><MedicationReconciliation /></div>
+            <div className={activeStep === 4 ? 'block' : 'hidden'}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><RiskScales /><Recommendations /></div>
             </div>
-
-            {/* Step 2: Gabinete (NEW) */}
-            <div className={activeStep === 2 ? 'block animate-fadeIn space-y-6' : 'hidden'}>
-              <Gabinete />
-            </div>
-
-            {/* Step 3: Medication Reconciliation */}
-            <div className={activeStep === 3 ? 'block animate-fadeIn space-y-6' : 'hidden'}>
-              <MedicationReconciliation />
-            </div>
-
-            {/* Step 4: Scales & Plan */}
-            <div className={activeStep === 4 ? 'block animate-fadeIn space-y-6' : 'hidden'}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                <RiskScales />
-                <Recommendations />
-              </div>
-            </div>
-
-            {/* Step 5: Report & Actions */}
-            <div className={activeStep === 5 ? 'block animate-fadeIn' : 'hidden'}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4 mb-6">
-                  <h3 className="font-bold text-clinical-navy mb-2 flex items-center gap-2">
-                    <Printer size={16} /> Vista Previa
-                  </h3>
-                  <div className="border border-gray-100 rounded bg-gray-50 p-2 overflow-x-auto h-[400px] text-[8px] no-scrollbar shadow-inner">
-                    <div className="min-w-[500px] bg-white p-4 shadow scale-75 origin-top-left">
-                      <PrintView />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Actions */}
-                <div className="space-y-4 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                  <h3 className="font-bold text-slate-800 mb-2">Acciones de Exportación</h3>
-                  <button
-                    onClick={handlePrintPDF}
-                    className="w-full bg-clinical-navy text-white py-4 rounded-xl font-bold shadow-lg shadow-clinical-navy/20 active:scale-95 transition-all flex items-center justify-center gap-2 hover:bg-slate-800"
-                  >
-                    <Printer size={20} />
-                    IMPRIMIR PDF OFICIAL
-                  </button>
-
+            <div className={activeStep === 5 ? 'block h-full' : 'hidden'}><MedicalNoteGenerator /></div>
+            <div className={activeStep === 6 ? 'block' : 'hidden'}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="bg-white p-4 rounded-xl shadow-sm border h-[500px] overflow-auto"><PrintView /></div>
+                <div className="space-y-4 bg-white p-6 rounded-xl shadow-sm border">
+                  <button onClick={handlePrintPDF} className="w-full bg-clinical-navy text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2"><Printer size={20} /> IMPRIMIR PDF</button>
                   <div className="grid grid-cols-2 gap-3">
-                    <button
-                      onClick={handleDriveUpload}
-                      disabled={isUploading}
-                      className="w-full bg-white border-2 border-clinical-navy text-clinical-navy py-3 rounded-xl font-bold shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 text-xs hover:bg-slate-50"
-                    >
-                      {isUploading ? <Loader2 className="animate-spin" size={16} /> : <Save size={16} />}
-                      {isUploading ? "..." : "DRIVE"}
-                    </button>
-
-                    <button
-                      onClick={handleWhatsApp}
-                      className="w-full bg-[#25D366] text-white py-3 rounded-xl font-bold shadow-sm active:scale-95 transition-transform flex items-center justify-center gap-2 text-xs hover:bg-[#1fa851]"
-                    >
-                      <MessageCircle size={16} />
-                      WHATSAPP
-                    </button>
-                  </div>
-
-                  <div className="pt-2">
-                    {methods.watch('driveLink') && (
-                      <div className="p-3 bg-green-50 text-green-800 text-xs rounded-lg border border-green-200 text-center animate-fadeIn flex items-center justify-center gap-2">
-                        <CheckCircle2 size={14} />
-                        Link de Drive generado correctamente.
-                      </div>
-                    )}
-
-                    {/* Manual Config Trigger */}
-                    <button
-                      onClick={() => {
-                        const current = localStorage.getItem('vpo_google_client_id_v2') || DEFAULT_CLIENT_ID;
-                        const newId = prompt("Configuración Manual de Client ID (Google Cloud):\n\nIngrese el Client ID autorizado para este dominio:", current);
-                        if (newId && newId.trim() !== current) {
-                          localStorage.setItem('vpo_google_client_id_v2', newId.trim());
-                          alert("Configuración actualizada.");
-                        }
-                      }}
-                      className="w-full mt-2 text-[10px] text-gray-400 underline hover:text-clinical-navy flex items-center justify-center gap-1"
-                    >
-                      <Settings size={10} /> Configurar Google ID
-                    </button>
+                    <button onClick={handleDriveUpload} className="bg-white border-2 border-clinical-navy text-clinical-navy py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-xs"><Save size={16} /> DRIVE</button>
+                    <button onClick={handleWhatsApp} className="bg-[#25D366] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-xs"><MessageCircle size={16} /> WHATSAPP</button>
                   </div>
                 </div>
               </div>
             </div>
           </main>
         </div>
-
-        {/* Floating Action Button (Only on Report Step) */}
-        {activeStep === 5 && (
-          <button
-            onClick={handleCopyNote}
-            className="fixed bottom-24 right-4 md:bottom-8 md:right-8 bg-green-600 hover:bg-green-700 text-white p-4 rounded-full shadow-xl z-40 transition-transform active:scale-90 flex items-center gap-2 no-print"
-          >
-            <Copy size={24} />
-            <span className="font-bold text-sm hidden sm:inline">Copiar Nota</span>
+        {activeStep === 6 && (
+          <button onClick={handleCopyNote} className="fixed bottom-24 right-4 bg-green-600 text-white p-4 rounded-full shadow-xl z-40 flex items-center gap-2">
+            <Copy size={24} /><span className="hidden md:inline font-bold">Copiar Texto</span>
           </button>
         )}
+      </div>
+      {showToast && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full z-50 animate-bounce">Nota copiada</div>}
+      <BottomNav activeStep={activeStep} setStep={setActiveStep} />
 
-        {/* Toast Notification */}
-        {showToast && (
-          <div className="fixed bottom-24 left-1/2 -translate-x-1/2 md:bottom-10 bg-gray-900/90 text-white px-6 py-3 rounded-full shadow-xl z-50 flex items-center gap-2 text-sm font-medium animate-bounce-short">
-            <CheckCircle2 size={18} className="text-green-400" />
-            Nota copiada al portapapeles
-          </div>
-        )}
-
-        <BottomNav activeStep={activeStep} setStep={setActiveStep} />
-
-        {/* Hidden Container for high-res PDF generation using html2canvas */}
-        <div id="print-content" style={{
-          position: 'fixed',
-          left: '-10000px',
-          top: '0',
-          width: '794px',
-          zIndex: -1000,
-          visibility: 'visible',
-          pointerEvents: 'none'
-        }}>
-          <PrintView />
-        </div>
-
-
+      {/* Hidden Container for high-res PDF generation - THIS IS THE ONLY ONE WITH IDs print-page-1/2 */}
+      <div id="print-content" style={{
+        position: 'fixed',
+        left: '-10000px',
+        top: '0',
+        width: '794px',
+        zIndex: -1000
+      }}>
+        <PrintView isPrintMode={true} />
       </div>
     </FormProvider>
   );

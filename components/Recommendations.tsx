@@ -36,30 +36,57 @@ const Recommendations: React.FC = () => {
         const site = data.gupta_surgical_site || 'other';
         const isAllergic = data.alergicos;
         const allergyDetail = (data.alergicosDetalle || '').toLowerCase();
+        const weight = data.peso || 70;
+        const imc = data.imc || 25;
 
         // Check for Penicillin/Beta-lactam allergy
         const hasBetaLactamAllergy = isAllergic && (
             allergyDetail.includes('penicilina') ||
             allergyDetail.includes('betalactam') ||
-            allergyDetail.includes('cefalosporina')
+            allergyDetail.includes('cefalosporina') ||
+            allergyDetail.includes('penicilin')
         );
 
+        // Cefazolin Dosing Logic (ASHP 2024)
+        const cefazolinDose = (weight >= 120 || imc >= 35) ? '3g' : '2g';
+        const standardInduction = `Cefazolina ${cefazolinDose} IV (Inducción 60 min previos).`;
+        const vancomycinRegimen = "Vancomicina 15mg/kg (Máx 2g) IV (Inducción 120 min previos).";
+        const clindaRegimen = "Clindamicina 900mg IV (Inducción 60 min previos).";
+
         if (hasBetaLactamAllergy) {
-            return "Clindamicina 600mg IV o Vancomicina 1g IV (Alergia a Penicilina).";
+            return `${vancomycinRegimen} o ${clindaRegimen} (Alergia a Beta-lactámicos).`;
         }
 
-        // Regimens by surgical site (ASHP/IDSA)
+        // Regimens by surgical site (ASHP/IDSA/SIS/SHEA 2024)
         switch (site) {
+            case 'cardiac':
+            case 'aortic':
+            case 'vascular':
+                return `${standardInduction} Redosificar cada 4h (2h si CEC).`;
             case 'intestinal':
             case 'biliary':
             case 'anorectal':
-                return "Cefazolina (Cefalotina) 1g IV + Metronidazol 500mg IV.";
+                return `Cefazolina ${cefazolinDose} IV + Metronidazol 500mg IV. Alt: Ertapenem 1g IV.`;
             case 'bariatric':
-                return "Cefazolina (Cefalotina) 2g IV (Ajuste por IMC).";
+                return `Cefazolina 3g IV (Ajuste por IMC/Peso).`;
             case 'urologic':
-                return "Ciprofloxacino 400mg IV o Cefazolina 1g IV.";
+                return `Ciprofloxacino 400mg IV o Cefazolina ${cefazolinDose} IV.`;
+            case 'thoracic':
+            case 'orthopedic':
+            case 'spinal':
+            case 'intracranial':
+                return standardInduction;
+            case 'neck':
+            case 'ent':
+                // Note: ASHP recommends no prophylaxis for clean ENT without implants
+                const dx = (data.diagnosticoQuirurgico || '').toLowerCase();
+                const isContaminated = dx.includes('cancer') || dx.includes('neoplasia') || dx.includes('reconstruccion') || dx.includes('colgajo');
+                if (isContaminated) {
+                    return `Cefazolina ${cefazolinDose} IV + Metronidazol 500mg IV.`;
+                }
+                return "NO SE REQUIERE PROFILAXIS (Cirugía Limpia de Cabeza y Cuello sin prótesis).";
             default:
-                return "Cefazolina (Cefalotina) 1g IV en inducción.";
+                return `${standardInduction} (Protocolo Estándar).`;
         }
     };
 
@@ -133,11 +160,39 @@ const Recommendations: React.FC = () => {
         const fluidRec = getFluidRecommendation();
         const tromboRec = getThromboprophylaxisRec();
 
+        // Frailty Alert
+        const frailtyScore = data.fragilidad_score || 1;
+        const frailtyRec = frailtyScore >= 5
+            ? "\n\n⚠️ FRAGILIDAD (CFS >= 5): Protocolo de prevención de Delirio y manejo geriátrico temprano sugerido."
+            : "";
+
         return `• Ayuno: 6h para sólidos y 2h para líquidos claros.
 • ${aineInstruction}
 • Profilaxis antibiótica: ${antibioticRegimen}
 • Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas según esquema (Ver Post)' : 'Deambulación temprana / Medias TEDs'}.
-• Soluciones: ${fluidRec}${medsPlan}${dukeAlert}`;
+• Soluciones: ${fluidRec}${medsPlan}${dukeAlert}${frailtyRec}`;
+    };
+
+    const getEcoRecommendations = () => {
+        const parts = [];
+        // A. FEVI Low
+        if ((data.eco_fevi || 60) < 35) {
+            parts.push("RESERVA CARDIACA DISMINUIDA (<35%). Alto riesgo de hipotensión a la inducción. Se sugiere evitar inotrópicos negativos y manejar líquidos con extrema precaución.");
+        }
+        // B. Estenosis Aortica (From Eco or Antecedents)
+        if (data.eco_valvulopatia === 'estenosis_aortica_severa' || data.flag_estenosis_aortica_severa) {
+            parts.push("ESTENOSIS AÓRTICA SEVERA: ALERTA CRÍTICA. Mantener precarga y RVS. Evitar hipotensión y taquicardia. Anestesia neuroaxial puede precipitar colapso.");
+        }
+        // C. Hipertension Pulmonar
+        if (data.eco_psap_elevada) {
+            parts.push("HIPERTENSIÓN PULMONAR: Riesgo de falla ventricular derecha. Evitar hipoxia, hipercapnia y acidosis intraoperatoria.");
+        } // D. Disfuncion Diastolica
+        if (data.eco_disfuncion_diastolica) {
+            parts.push("DISFUNCIÓN DIASTÓLICA SEVERA: La taquicardia y la fibrilación auricular son mal toleradas. Mantener ritmo sinusal.");
+        }
+
+        if (parts.length === 0) return "";
+        return "\n\n⚠️ SUGERENCIAS ECOCARDIOGRÁFICAS:\n• " + parts.join("\n• ");
     };
 
     const generateTransPlan = () => {
@@ -147,6 +202,13 @@ const Recommendations: React.FC = () => {
         const fluidMgmt = isHighCVRisk
             ? "Manejo ESTRICTO de líquidos. Balance neutro/negativo. Evitar sobrecarga hídrica."
             : "Evitar sobrecarga hídrica. Balances neutros.";
+
+        // Antibiotic Redosing logic based on site
+        const site = data.gupta_surgical_site || 'other';
+        const redoseInterval = site === 'cardiac' ? '2-4h' : '4h';
+        const antibioticInstructions = getAntibioticRegimen().includes('NO SE REQUIERE')
+            ? ""
+            : `\n• ANTIBIÓTICO: Redosificar cada ${redoseInterval} si duración > 4h o sangrado > 1.5L.`;
 
         // Insulin Logic
         const insulinInstruction = data.diabetes
@@ -159,20 +221,25 @@ const Recommendations: React.FC = () => {
             ? `\n• DOSIS ESTRÉS ESTEROIDEO: ${steroidMeds[0].instructions}` // Take the first one found
             : "";
 
+        // Eco Logic
+        const ecoRecs = getEcoRecommendations();
+
         return `• A cargo de Anestesiología.
 • Monitoreo cardiaco y pulsioximetría continuos.
 • METAS: Hb > ${hbTarget}. Uresis ≥ 0.5ml/kg/h.
 • METAS HEMODINÁMICAS: TA < 140/90 mmHg. Evitar hipotensión.
-• LÍQUIDOS: ${fluidMgmt}
-• En caso de duración >4h o sangrado >1.5L, repetir dosis antibiótico.${insulinInstruction}${steroidInstruction}`;
+• LÍQUIDOS: ${fluidMgmt}${antibioticInstructions}${insulinInstruction}${steroidInstruction}${ecoRecs}`;
     };
 
     const generatePostPlan = () => {
         const trombo = getThromboprophylaxisRec();
+        const site = data.gupta_surgical_site || 'other';
+        const antibioticDuration = (site === 'cardiac' || site === 'aortic') ? '48h' : '24h';
 
         return `• Al tolerar la VO reiniciar tratamiento habitual.
 • METAS: Glucosa ${data.diabetes ? '140-180' : '70-140'} mg/dL. TA < 140/90 mmHg.
 • TROMBOPROFILAXIS: ${trombo}
+• ANTIBIÓTICO: Suspender en <${antibioticDuration} postoperatorias si no hay evidencia de infección.
 • Vigilar datos de sangrado e infección en sitio quirúrgico.
 • Deambulación temprana.
 • Analgesia multimodal ahorradora de opioides.
@@ -187,7 +254,7 @@ const Recommendations: React.FC = () => {
             setValue('plan_trans', generateTransPlan());
             setValue('plan_post', generatePostPlan());
         }
-    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg]);
+    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica, data.flag_estenosis_aortica_severa]);
 
     // Determine Meta Labels based on risk
     const isNephroCardio = data.enfRenalCronica || data.icc || data.cardiopatiaIsquemica;

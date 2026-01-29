@@ -2,11 +2,6 @@
 import { SelectedMed } from '../types';
 
 export const MEDICATIONS_DB: SelectedMed[] = [
-    // =========================================================================
-    //  1. SISTEMA CARDIOVASCULAR (ATC C)
-    // =========================================================================
-
-    // --- C07. BETA-BLOQUEADORES ---
     {
         id: 'meto',
         name: 'Metoprolol',
@@ -77,8 +72,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'CONTINUAR.',
         atcCode: 'C07AG01'
     },
-
-    // --- C09. IECA / ARA-II ---
     {
         id: 'losa',
         name: 'Losartán',
@@ -189,8 +182,182 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'SUSPENDER 24h antes.',
         atcCode: 'C09AA04'
     },
-
-    // --- C08. CALCIOANTAGONISTAS ---
+    {
+        id: 'valpro',
+        name: 'Ácido Valproico',
+        englishName: 'Valproic Acid',
+        category: 'Antiepiléptico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR ESTRICTAMENTE. Riesgo crisis.',
+        atcCode: 'N03AG01'
+    },
+    {
+        id: 'carba',
+        name: 'Carbamazepina',
+        englishName: 'Carbamazepine',
+        category: 'Antiepiléptico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Inductor enzimático (afecta anestésicos).',
+        atcCode: 'N03AF01'
+    },
+    {
+        id: 'fenito',
+        name: 'Fenitoína',
+        englishName: 'Phenytoin',
+        category: 'Antiepiléptico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Riesgo arritmias si infusión rápida.',
+        atcCode: 'N03AB02'
+    },
+    {
+        id: 'leveti',
+        name: 'Levetiracetam',
+        englishName: 'Levetiracetam',
+        category: 'Antiepiléptico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'N03AX14'
+    },
+    {
+        id: 'lamo',
+        name: 'Lamotrigina',
+        englishName: 'Lamotrigine',
+        category: 'Antiepiléptico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'N03AX09'
+    },
+    {
+        id: 'levo_carbi',
+        name: 'Levodopa/Carbidopa',
+        englishName: 'Levodopa Carbidopa',
+        category: 'Antiparkinsoniano',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR HASTA INDUCCIÓN. Reiniciar apenas tolere VO (Riesgo rigidez).',
+        atcCode: 'N04BA02'
+    },
+    {
+        id: 'litio',
+        name: 'Litio',
+        englishName: 'Lithium',
+        category: 'Litio',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24-72h antes (Potencia bloqueantes neuromusculares). Check niveles.',
+        atcCode: 'N05AN01'
+    },
+    {
+        id: 'cloza',
+        name: 'Clozapina',
+        englishName: 'Clozapine',
+        category: 'Antipsicótico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'yellow',
+        instructions: 'CONTINUAR. Aumenta riesgo ileo paralítico.',
+        atcCode: 'N05AH02'
+    },
+    {
+        id: 'biktarvy',
+        name: 'Biktarvy (Bictegravir/Emtric/Tenofovir)',
+        englishName: 'Biktarvy',
+        category: 'Antirretroviral',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J05AR20'
+    },
+    {
+        id: 'truvada',
+        name: 'Truvada (Emtricitabina/Tenofovir)',
+        englishName: 'Truvada',
+        category: 'Antirretroviral',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J05AR03'
+    },
+    {
+        id: 'dovato',
+        name: 'Dovato (Dolutegravir/Lamivudina)',
+        englishName: 'Dovato',
+        category: 'Antirretroviral',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J05AR25'
+    },
+    {
+        id: 'atripla',
+        name: 'Atripla (Efavirenz/Emtric/Tenofovir)',
+        englishName: 'Atripla',
+        category: 'Antirretroviral',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J05AR06'
+    },
+    {
+        id: 'triumeq',
+        name: 'Triumeq (Dolute/Abaca/Lami)',
+        englishName: 'Triumeq',
+        category: 'Antirretroviral',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J05AR13'
+    },
+    {
+        id: 'tacro',
+        name: 'Tacrolimus',
+        englishName: 'Tacrolimus',
+        category: 'Inmunosupresor',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Dosis exacta matutina.',
+        atcCode: 'L04AD02'
+    },
+    {
+        id: 'ciclo',
+        name: 'Ciclosporina',
+        englishName: 'Cyclosporine',
+        category: 'Inmunosupresor',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'L04AD01'
+    },
+    {
+        id: 'micofen',
+        name: 'Micofenolato',
+        englishName: 'Mycophenolate',
+        category: 'Inmunosupresor',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'L04AA06'
+    },
     {
         id: 'amlo',
         name: 'Amlodipino',
@@ -241,8 +408,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'CONTINUAR.',
         atcCode: 'C08DB01'
     },
-
-    // --- C03. DIURÉTICOS ---
     {
         id: 'hctz',
         name: 'Hidroclorotiazida',
@@ -303,15 +468,10 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'SUSPENDER día de cirugía.',
         atcCode: 'C03DA04'
     },
-
-    // =========================================================================
-    //  2. HEMOSTASIA Y TROMBOSIS (ATC B)
-    // =========================================================================
-
-    // --- B01AC. ANTIAGREGANTES ---
     {
         id: 'asa',
         name: 'Aspirina (AAS)',
+        englishName: 'Aspirin',
         category: 'Antiagregante',
         action: 'adjust',
         daysPrior: 7, // Default if not sec prev
@@ -379,11 +539,10 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'SUSPENDER 48h antes.',
         atcCode: 'B01AC07'
     },
-
-    // --- ANTICOAGULANTES ORALES (DOACs / AVK) ---
     {
         id: 'warfa',
         name: 'Warfarina',
+        englishName: 'Warfarin',
         category: 'Anticoagulante',
         anticoagType: 'AVK',
         isAnticoagulant: true,
@@ -408,6 +567,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'riva',
         name: 'Rivaroxaban',
+        englishName: 'Rivaroxaban',
         category: 'Anticoagulante',
         anticoagType: 'DOAC',
         isAnticoagulant: true,
@@ -420,6 +580,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'api',
         name: 'Apixaban',
+        englishName: 'Apixaban',
         category: 'Anticoagulante',
         anticoagType: 'DOAC',
         isAnticoagulant: true,
@@ -432,6 +593,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'dabi',
         name: 'Dabigatran',
+        englishName: 'Dabigatran',
         category: 'Anticoagulante',
         anticoagType: 'DOAC',
         isAnticoagulant: true,
@@ -453,15 +615,10 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'SUSPENDER 48h antes.',
         atcCode: 'B01AF03'
     },
-
-    // =========================================================================
-    //  3. ENDOCRINOLOGÍA (ATC A / H)
-    // =========================================================================
-
-    // --- A10BK. iSGLT2 (Glifozinas) ---
     {
         id: 'dapa',
         name: 'Dapagliflozina',
+        englishName: 'Dapagliflozin',
         category: 'iSGLT2',
         action: 'stop',
         daysPrior: 3,
@@ -472,6 +629,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'empa',
         name: 'Empagliflozina',
+        englishName: 'Empagliflozin',
         category: 'iSGLT2',
         action: 'stop',
         daysPrior: 3,
@@ -482,6 +640,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'cana',
         name: 'Canagliflozina',
+        englishName: 'Canagliflozin',
         category: 'iSGLT2',
         action: 'stop',
         daysPrior: 3,
@@ -499,11 +658,10 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'SUSPENDER 4 DÍAS ANTES.',
         atcCode: 'A10BK04'
     },
-
-    // --- GLP-1 AGONISTAS ---
     {
         id: 'sema',
         name: 'Semaglutida (Ozempic/Wegovy)',
+        englishName: 'Semaglutide',
         category: 'GLP-1',
         isGLP1: true,
         glp1Frequency: 'weekly',
@@ -516,6 +674,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'rybelsus',
         name: 'Semaglutida Oral (Rybelsus)',
+        englishName: 'Semaglutide',
         category: 'GLP-1',
         isGLP1: true,
         glp1Frequency: 'daily',
@@ -528,6 +687,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'lira',
         name: 'Liraglutida',
+        englishName: 'Liraglutide',
         category: 'GLP-1',
         isGLP1: true,
         glp1Frequency: 'daily',
@@ -540,6 +700,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'dula',
         name: 'Dulaglutida',
+        englishName: 'Dulaglutide',
         category: 'GLP-1',
         isGLP1: true,
         glp1Frequency: 'weekly',
@@ -552,6 +713,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'tirze',
         name: 'Tirzepatida (Mounjaro)',
+        englishName: 'Tirzepatide',
         category: 'GLP-1', // Dual GIP/GLP-1
         isGLP1: true,
         glp1Frequency: 'weekly',
@@ -561,8 +723,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'SUSPENDER 1 SEMANA ANTES.',
         atcCode: 'A10BX16'
     },
-
-    // --- INSULINAS ---
     {
         id: 'ins_glar',
         name: 'Insulina Glargina',
@@ -623,11 +783,10 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'OMITIR mañana de cirugía.',
         atcCode: 'A10AD01'
     },
-
-    // --- ADOs TRADICIONALES ---
     {
         id: 'metf',
         name: 'Metformina',
+        englishName: 'Metformin',
         category: 'Antidiabético',
         action: 'stop',
         daysPrior: 1,
@@ -675,11 +834,10 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'Omitir dosis de la mañana.',
         atcCode: 'A10BH01'
     },
-
-    // --- CORTICOSTEROIDES ---
     {
         id: 'pred',
         name: 'Prednisona',
+        englishName: 'Prednisone',
         category: 'Corticoides',
         isSteroid: true,
         action: 'adjust', // Engine will check chronic use
@@ -691,6 +849,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'hidro',
         name: 'Hidrocortisona',
+        englishName: 'Hydrocortisone',
         category: 'Corticoides',
         isSteroid: true,
         action: 'adjust',
@@ -702,6 +861,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'dexa',
         name: 'Dexametasona',
+        englishName: 'Dexamethasone',
         category: 'Corticoides',
         isSteroid: true,
         action: 'adjust',
@@ -713,6 +873,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'metil',
         name: 'Metilprednisolona',
+        englishName: 'Methylprednisolone',
         category: 'Corticoides',
         isSteroid: true,
         action: 'adjust',
@@ -721,12 +882,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'Valorar dosis estrés.',
         atcCode: 'H02AB04'
     },
-
-    // =========================================================================
-    //  4. SISTEMA NERVIOSO (ATC N)
-    // =========================================================================
-
-    // --- ANTIDEPRESIVOS ---
     {
         id: 'sertra',
         name: 'Sertralina',
@@ -807,8 +962,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'CONTINUAR.',
         atcCode: 'N06AA02'
     },
-
-    // --- IMAO (Peligro) ---
     {
         id: 'fenel',
         name: 'Fenelzina (IMAO)',
@@ -839,8 +992,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'Suspender 24h antes (Reversible).',
         atcCode: 'N06AG02'
     },
-
-    // --- LITIO ---
     {
         id: 'litio',
         name: 'Carbonato de Litio',
@@ -851,8 +1002,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'SUSPENDER 24-72h antes (Según función renal). Riesgo toxicidad/interacción BNM.',
         atcCode: 'N05AN01'
     },
-
-    // --- ANTIEPILÉPTICOS ---
     {
         id: 'valpro',
         name: 'Valproato de Magnesio/Sódico',
@@ -862,46 +1011,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         alertLevel: 'green',
         instructions: 'CONTINUAR. Riesgo leve sangrado, pero convulsión intraop es peor.',
         atcCode: 'N03AG01'
-    },
-    {
-        id: 'carba',
-        name: 'Carbamazepina',
-        category: 'Antiepiléptico',
-        action: 'continue',
-        daysPrior: 0,
-        alertLevel: 'green',
-        instructions: 'CONTINUAR.',
-        atcCode: 'N03AF01'
-    },
-    {
-        id: 'leve',
-        name: 'Levetiracetam',
-        category: 'Antiepiléptico',
-        action: 'continue',
-        daysPrior: 0,
-        alertLevel: 'green',
-        instructions: 'CONTINUAR.',
-        atcCode: 'N03AX14'
-    },
-    {
-        id: 'fenito',
-        name: 'Fenitoína',
-        category: 'Antiepiléptico',
-        action: 'continue',
-        daysPrior: 0,
-        alertLevel: 'green',
-        instructions: 'CONTINUAR.',
-        atcCode: 'N03AB02'
-    },
-    {
-        id: 'lamo',
-        name: 'Lamotrigina',
-        category: 'Antiepiléptico',
-        action: 'continue',
-        daysPrior: 0,
-        alertLevel: 'green',
-        instructions: 'CONTINUAR.',
-        atcCode: 'N03AX09'
     },
     {
         id: 'gaba',
@@ -923,8 +1032,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'CONTINUAR.',
         atcCode: 'N03AX16'
     },
-
-    // --- ANTIPARKINSONIANOS ---
     {
         id: 'levo_carbi',
         name: 'Levodopa / Carbidopa',
@@ -935,12 +1042,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'CONTINUAR ESTRICTAMENTE. Riesgo rigidez severa.',
         atcCode: 'N04BA02'
     },
-
-    // =========================================================================
-    //  5. REUMATOLOGÍA Y BIOLÓGICOS (ATC L)
-    // =========================================================================
-
-    // --- FAMEs SINTÉTICOS ---
     {
         id: 'mtx',
         name: 'Metotrexato',
@@ -1001,9 +1102,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'CONTINUAR (En LES severo).',
         atcCode: 'L04AA06'
     },
-
-    // --- BIOLÓGICOS (ANTI-TNF, ETC) ---
-    // Regla: 1 ciclo de dosis
     {
         id: 'ada',
         name: 'Adalimumab',
@@ -1044,8 +1142,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'Suspender 1 ciclo.',
         atcCode: 'L04AC07'
     },
-
-    // --- JAK INHIBITORS ---
     {
         id: 'tofa',
         name: 'Tofacitinib',
@@ -1066,10 +1162,6 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         instructions: 'SUSPENDER 3 días antes.',
         atcCode: 'L04AA37'
     },
-
-    // =========================================================================
-    //  6. FITOTERAPIA Y SUPLEMENTOS
-    // =========================================================================
     {
         id: 'ajo',
         name: 'Ajo (Suplemento)',
@@ -1125,13 +1217,10 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         alertLevel: 'yellow',
         instructions: 'Suspender 7-14 días antes. Efecto antiplaquetario.',
     },
-
-    // =========================================================================
-    //  7. OTROS (Antibióticos, Analgésicos básicos)
-    // =========================================================================
     {
         id: 'parac',
         name: 'Paracetamol',
+        englishName: 'Acetaminophen',
         category: 'Analgésico',
         action: 'continue',
         daysPrior: 0,
@@ -1142,6 +1231,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
     {
         id: 'ketor',
         name: 'Ketorolaco',
+        englishName: 'Ketorolac',
         category: 'AINE',
         action: 'stop',
         daysPrior: 1,
@@ -1158,5 +1248,1170 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         alertLevel: 'green',
         instructions: 'CONTINUAR tratamiento.',
         atcCode: 'J01CA04'
+    },
+    {
+        id: 'atorva',
+        name: 'Atorvastatina',
+        category: 'Estatina',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Efecto pleiotrópico protector vascular.',
+        atcCode: 'C10AA05'
+    },
+    {
+        id: 'rosuva',
+        name: 'Rosuvastatina',
+        category: 'Estatina',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'C10AA07'
+    },
+    {
+        id: 'simva',
+        name: 'Simvastatina',
+        category: 'Estatina',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'C10AA01'
+    },
+    {
+        id: 'ezetimiba',
+        name: 'Ezetimiba',
+        category: 'Hipolipemiante',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'C10AX09'
+    },
+    {
+        id: 'beza',
+        name: 'Bezafibrato',
+        category: 'Fibrato',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'yellow',
+        instructions: 'SUSPENDER 24h antes (Riesgo miopatía si asoc. estatinas + estrés qx).',
+        atcCode: 'C10AB02'
+    },
+    {
+        id: 'omepra',
+        name: 'Omeprazol',
+        category: 'IBP',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Profilaxis úlcera estrés.',
+        atcCode: 'A02BC01'
+    },
+    {
+        id: 'panto',
+        name: 'Pantoprazol',
+        category: 'IBP',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A02BC02'
+    },
+    {
+        id: 'eso',
+        name: 'Esomeprazol',
+        category: 'IBP',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A02BC05'
+    },
+    {
+        id: 'metoclo',
+        name: 'Metoclopramida',
+        category: 'Procinético',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Puede ayudar vaciamiento gástrico.',
+        atcCode: 'A03FA01'
+    },
+    {
+        id: 'levo',
+        name: 'Levotiroxina',
+        category: 'Tiroideo',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Vida media muy larga (7 días), saltar 1 dosis no es crítico, pero mejor dar.',
+        atcCode: 'H03AA01'
+    },
+    {
+        id: 'metima',
+        name: 'Metimazol',
+        category: 'Antitiroideo',
+        action: 'stop',
+        daysPrior: 0,
+        alertLevel: 'yellow',
+        instructions: 'Omtiir dosis mañana de cirugía (Riesgo sangrado mínimo, pero evitar intraop).',
+        atcCode: 'H03BB02'
+    },
+    {
+        id: 'allo',
+        name: 'Alopurinol',
+        category: 'Antigotoso',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'M04AA01'
+    },
+    {
+        id: 'colchi',
+        name: 'Colchicina',
+        category: 'Antigotoso',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'M04AC01'
+    },
+    {
+        id: 'tamsulo',
+        name: 'Tamsulosina',
+        category: 'Alfa-Bloq',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Riesgo Síndrome Iris Flácido (Avisar a oftalmólogo).',
+        atcCode: 'G04CA02'
+    },
+    {
+        id: 'ibu',
+        name: 'Ibuprofeno',
+        englishName: 'Ibuprofen',
+        category: 'AINE',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'yellow',
+        instructions: 'SUSPENDER 24h antes (Riesgo sangrado reversible).',
+        atcCode: 'M01AE01'
+    },
+    {
+        id: 'napro',
+        name: 'Naproxeno',
+        englishName: 'Naproxen',
+        category: 'AINE',
+        action: 'stop',
+        daysPrior: 2,
+        alertLevel: 'yellow',
+        instructions: 'SUSPENDER 48h antes (Vida media más larga).',
+        atcCode: 'M01AE02'
+    },
+    {
+        id: 'diclo',
+        name: 'Diclofenaco',
+        englishName: 'Diclofenac',
+        category: 'AINE',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'yellow',
+        instructions: 'SUSPENDER 24h antes.',
+        atcCode: 'M01AB05'
+    },
+    {
+        id: 'cele',
+        name: 'Celecoxib',
+        category: 'AINE (COX-2)',
+        action: 'continue', // Controversial, but often safe. Or stop 1 day.
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR (Menor efecto antiplaquetario).',
+        atcCode: 'M01AH01'
+    },
+    {
+        id: 'indometa',
+        name: 'Indometacina',
+        category: 'AINE',
+        action: 'stop',
+        daysPrior: 2,
+        alertLevel: 'yellow',
+        instructions: 'SUSPENDER 48h antes.',
+        atcCode: 'M01AB01'
+    },
+    {
+        id: 'trama',
+        name: 'Tramadol',
+        englishName: 'Tramadol',
+        category: 'Opioide',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Evitar abstinencia.',
+        atcCode: 'N02AX02'
+    },
+    {
+        id: 'bupre',
+        name: 'Buprenorfina',
+        category: 'Opioide',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR (Parches o SL). ¡Avisar Anestesia! (Afinidad alta receptores).',
+        atcCode: 'N02AE01'
+    },
+    {
+        id: 'morfina',
+        name: 'Morfina',
+        englishName: 'Morphine',
+        category: 'Opioide',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'N02AA01'
+    },
+    {
+        id: 'oxy',
+        name: 'Oxicodona',
+        category: 'Opioide',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'N02AA05'
+    },
+    {
+        id: 'salbu',
+        name: 'Salbutamol',
+        category: 'Broncodilatador',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Administrar puff previo a inducción.',
+        atcCode: 'R03AC02'
+    },
+    {
+        id: 'ipra',
+        name: 'Bromuro de Ipratropio',
+        category: 'Broncodilatador',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'R03BB01'
+    },
+    {
+        id: 'fluti',
+        name: 'Fluticasona (Inhalado)',
+        category: 'Corticoide Inhalado',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. No suspender (riesgo hiperreactividad).',
+        atcCode: 'R03BA05'
+    },
+    {
+        id: 'teo',
+        name: 'Teofilina',
+        category: 'Xantina',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'yellow',
+        instructions: 'CONTINUAR. Controlar niveles (Riesgo arritmias).',
+        atcCode: 'R03DA04'
+    },
+    {
+        id: 'alpraz',
+        name: 'Alprazolam',
+        category: 'Benzodiacepina',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Si uso crónico, no suspender (abstinencia).',
+        atcCode: 'N05BA12'
+    },
+    {
+        id: 'clona',
+        name: 'Clonazepam',
+        category: 'Benzodiacepina',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Si uso crónico, mantener dosis.',
+        atcCode: 'N05BA08'
+    },
+    {
+        id: 'lora',
+        name: 'Lorazepam',
+        category: 'Benzodiacepina',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'N05BA06'
+    },
+    {
+        id: 'diaze',
+        name: 'Diazepam',
+        category: 'Benzodiacepina',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'N05BA01'
+    },
+    {
+        id: 'qu etia',
+        name: 'Quetiapina',
+        category: 'Antipsicótico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Ojo: Prolongación QT.',
+        atcCode: 'N05AH04'
+    },
+    {
+        id: 'olanza',
+        name: 'Olanzapina',
+        category: 'Antipsicótico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR. Ojo: Sedación y QT.',
+        atcCode: 'N05AH03'
+    },
+    {
+        id: 'haloperidol',
+        name: 'Haloperidol',
+        category: 'Antipsicótico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'yellow',
+        instructions: 'CONTINUAR. Alto riesgo QT y extrapiramidalismo con antieméticos.',
+        atcCode: 'N05AD01'
+    },
+    {
+        id: 'risperidona',
+        name: 'Risperidona',
+        category: 'Antipsicótico',
+        action: 'continue',
+        daysPrior: 0,
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'N05AX08'
+    },
+    {
+        id: 'cefalex',
+        name: 'Cefalexina',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01DB01'
+    },
+    {
+        id: 'cipro',
+        name: 'Ciprofloxacino',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01MA02'
+    },
+    {
+        id: 'azitro',
+        name: 'Azitromicina',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01FA10'
+    },
+    {
+        id: 'clari',
+        name: 'Claritromicina',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01FA09'
+    },
+    {
+        id: 'doxi',
+        name: 'Doxiciclina',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01AA02'
+    },
+    {
+        id: 'nitrofu',
+        name: 'Nitrofurantoína',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01XE01'
+    },
+    {
+        id: 'clinda',
+        name: 'Clindamicina',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01FF01'
+    },
+    {
+        id: 'levoflo',
+        name: 'Levofloxacino',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01MA12'
+    },
+    {
+        id: 'trimetro',
+        name: 'Trimetoprima/Sulfametoxazol',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01EE01'
+    },
+    {
+        id: 'lanso',
+        name: 'Lansoprazol',
+        category: 'IBP',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A02BC03'
+    },
+    {
+        id: 'rabe',
+        name: 'Rabeprazol',
+        category: 'IBP',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A02BC04'
+    },
+    {
+        id: 'famo',
+        name: 'Famotidina',
+        category: 'Antihistamínico H2',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A02BA03'
+    },
+    {
+        id: 'sucral',
+        name: 'Sucralfato',
+        category: 'Gastroprotector',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A02BX02'
+    },
+    {
+        id: 'lope',
+        name: 'Loperamida',
+        category: 'Antidiarreico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A07DA03'
+    },
+    {
+        id: 'fina',
+        name: 'Finasterida',
+        category: 'Urológico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'G04CB01'
+    },
+    {
+        id: 'duta',
+        name: 'Dutasterida',
+        category: 'Urológico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'G04CB02'
+    },
+    {
+        id: 'soli',
+        name: 'Solifenacina',
+        category: 'Urológico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'G04BD08'
+    },
+    {
+        id: 'oxybu',
+        name: 'Oxibutinina',
+        category: 'Urológico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'G04BD04'
+    },
+    {
+        id: 'timo',
+        name: 'Timolol (Oftálmico)',
+        category: 'Oftalmológico',
+        action: 'continue',
+        
+        alertLevel: 'yellow',
+        instructions: 'CONTINUAR. Vigilar bradicardia por absorción sistémica.',
+        atcCode: 'S01ED01'
+    },
+    {
+        id: 'latano',
+        name: 'Latanoprost',
+        category: 'Oftalmológico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'S01EE01'
+    },
+    {
+        id: 'brimo',
+        name: 'Brimonidina',
+        category: 'Oftalmológico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'S01EA05'
+    },
+    {
+        id: 'melo',
+        name: 'Meloxicam',
+        category: 'AINE',
+        action: 'stop',
+        daysPrior: 2,
+        alertLevel: 'yellow',
+        instructions: 'SUSPENDER 48h antes.',
+        atcCode: 'M01AC06'
+    },
+    {
+        id: 'etori',
+        name: 'Etoricoxib',
+        category: 'AINE (COX-2)',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'M01AH05'
+    },
+    {
+        id: 'piro',
+        name: 'Piroxicam',
+        category: 'AINE',
+        action: 'stop',
+        daysPrior: 7,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 7 días antes (Vida media muy larga).',
+        atcCode: 'M01AC01'
+    },
+    {
+        id: 'sulindaco',
+        name: 'Sulindaco',
+        category: 'AINE',
+        action: 'stop',
+        daysPrior: 2,
+        alertLevel: 'yellow',
+        instructions: 'SUSPENDER 48h antes.',
+        atcCode: 'M01AB02'
+    },
+    {
+        id: 'vitc',
+        name: 'Vitamina C (PURA)',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A11GA01'
+    },
+    {
+        id: 'vitd',
+        name: 'Vitamina D',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A11CC05'
+    },
+    {
+        id: 'hierro',
+        name: 'Sulfato Ferroso',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'B03AA07'
+    },
+    {
+        id: 'calcio',
+        name: 'Carbonato de Calcio',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A12AA04'
+    },
+    {
+        id: 'magne',
+        name: 'Magnesio',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A12CC'
+    },
+    {
+        id: 'modafi',
+        name: 'Modafinilo',
+        category: 'Estimulante',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24h antes (Riesgo inestabilidad CV).',
+        atcCode: 'N06BA07'
+    },
+    {
+        id: 'silde',
+        name: 'Sildenafil (Viagra)',
+        category: 'Disfución Eréctil',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24h antes (Riesgo hipotensión severa si se usan nitratos).',
+        atcCode: 'G04BE03'
+    },
+    {
+        id: 'tada',
+        name: 'Tadalafil (Cialis)',
+        category: 'Disfución Eréctil',
+        action: 'stop',
+        daysPrior: 2,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 48h antes (Vida media larga).',
+        atcCode: 'G04BE08'
+    },
+    {
+        id: 'aripi',
+        name: 'Aripiprazol',
+        category: 'Antipsicótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'N05AX12'
+    },
+    {
+        id: 'zipra',
+        name: 'Ziprasidona',
+        category: 'Antipsicótico',
+        action: 'continue',
+        
+        alertLevel: 'yellow',
+        instructions: 'CONTINUAR. Ojo: Prolongación QT.',
+        atcCode: 'N05AE04'
+    },
+    {
+        id: 'pali',
+        name: 'Paliperidona',
+        category: 'Antipsicótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'N05AX13'
+    },
+    {
+        id: 'aco',
+        name: 'Anticonceptivos Orales (Combinados)',
+        category: 'Hormonal',
+        action: 'stop',
+        daysPrior: 28,
+        alertLevel: 'red',
+        instructions: 'VALORAR SUSPENSIÓN 4 SEMANAS antes en cirugía de alto riesgo trombótico.',
+        atcCode: 'G03AA'
+    },
+    {
+        id: 'thn',
+        name: 'Terapia de Reemplazo Hormonal',
+        category: 'Hormonal',
+        action: 'stop',
+        daysPrior: 28,
+        alertLevel: 'red',
+        instructions: 'VALORAR SUSPENSIÓN 4 SEMANAS antes.',
+        atcCode: 'G03C'
+    },
+    {
+        id: 'ralo',
+        name: 'Raloxifeno',
+        category: 'Modulador Estrogénico',
+        action: 'stop',
+        daysPrior: 7,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 7 días antes (Riesgo TVP).',
+        atcCode: 'G03XC01'
+    },
+    {
+        id: 'tamoxi',
+        name: 'Tamoxifeno',
+        category: 'Antiestrógenos',
+        action: 'continue',
+        
+        alertLevel: 'yellow',
+        instructions: 'CONTINUAR (En cáncer de mama). Vigilancia TVP.',
+        atcCode: 'L02BA01'
+    },
+    {
+        id: 'vosc',
+        name: 'Voscina (Buscapina)',
+        category: 'Antiespasmódico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A03BB01'
+    },
+    {
+        id: 'pinaverio',
+        name: 'Bromuro de Pinaverio',
+        category: 'Antiespasmódico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A03AX04'
+    },
+    {
+        id: 'trimebutina',
+        name: 'Trimebutina',
+        category: 'Antiespasmódico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A03AA05'
+    },
+    {
+        id: 'simeticona',
+        name: 'Simeticona',
+        category: 'Antiflatulento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A03AX13'
+    },
+    {
+        id: 'psyllium',
+        name: 'Psyllium Plantago',
+        category: 'Laxante',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'yellow',
+        instructions: 'SUSPENDER 24h antes (Evitar masa fecal indeseada).',
+        atcCode: 'A06AC01'
+    },
+    {
+        id: 'senosidos',
+        name: 'Senósidos A-B',
+        category: 'Laxante',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'yellow',
+        instructions: 'SUSPENDER día previo.',
+        atcCode: 'A06AB06'
+    },
+    {
+        id: 'cefadrox',
+        name: 'Cefadroxilo',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01DB05'
+    },
+    {
+        id: 'cefuro',
+        name: 'Cefuroxima',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01DC02'
+    },
+    {
+        id: 'cefdinir',
+        name: 'Cefdinir',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01DD15'
+    },
+    {
+        id: 'amoxiclav',
+        name: 'Amoxicilina / Ácido Clavulánico',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01CR02'
+    },
+    {
+        id: 'fosfo',
+        name: 'Fosfomicina',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01XX01'
+    },
+    {
+        id: 'metroni',
+        name: 'Metronidazol',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01XD01'
+    },
+    {
+        id: 'vanco',
+        name: 'Vancomicina',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01XA01'
+    },
+    {
+        id: 'linezolid',
+        name: 'Linezolid',
+        category: 'Antibiótico',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'J01XX08'
+    },
+    {
+        id: 'irbe_hctz',
+        name: 'Irbesartán / Hidroclorotiazida',
+        category: 'ARA-II + Diurético',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24h antes (Ambos componentes requieren suspensión).',
+        atcCode: 'C09DA04'
+    },
+    {
+        id: 'losa_hctz',
+        name: 'Losartán / Hidroclorotiazida',
+        category: 'ARA-II + Diurético',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24h antes.',
+        atcCode: 'C09DA01'
+    },
+    {
+        id: 'telmi_hctz',
+        name: 'Telmisartán / Hidroclorotiazida',
+        category: 'ARA-II + Diurético',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24h antes.',
+        atcCode: 'C09DA07'
+    },
+    {
+        id: 'valsa_hctz',
+        name: 'Valsartán / Hidroclorotiazida',
+        category: 'ARA-II + Diurético',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24h antes.',
+        atcCode: 'C09DA03'
+    },
+    {
+        id: 'spirono_hctz',
+        name: 'Espironolactona / Hidroclorotiazida',
+        category: 'Diuréticos',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24h antes.',
+        atcCode: 'C03EA01'
+    },
+    {
+        id: 'triamterene',
+        name: 'Triamtereno / Hidroclorotiazida',
+        category: 'Diuréticos',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24h antes.',
+        atcCode: 'C03EA01'
+    },
+    {
+        id: 'montelu',
+        name: 'Montelukast',
+        category: 'Antileucotrieno',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'R03DC03'
+    },
+    {
+        id: 'bud_form',
+        name: 'Budesonida / Formoterol (Symbicort)',
+        category: 'Combinación Respiratoria',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'R03AK07'
+    },
+    {
+        id: 'flut_salm',
+        name: 'Fluticasona / Salmeterol (Seretide/Advair)',
+        category: 'Combinación Respiratoria',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'R03AK06'
+    },
+    {
+        id: 'umec_vilan',
+        name: 'Umeclidinio / Vilanterol (Anoro)',
+        category: 'LAMA/LABA',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'R03AL03'
+    },
+    {
+        id: 'tio_olod',
+        name: 'Tiotropio / Olodaterol (Stiolto)',
+        category: 'LAMA/LABA',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'R03AL06'
+    },
+    {
+        id: 'febuxo',
+        name: 'Febuxostat',
+        category: 'Antigotoso',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'M04AA03'
+    },
+    {
+        id: 'raniti',
+        name: 'Ranitidina',
+        category: 'Anti-H2',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A02BA02'
+    },
+    {
+        id: 'cimetidina',
+        name: 'Cimetidina',
+        category: 'Anti-H2',
+        action: 'continue',
+        
+        alertLevel: 'yellow',
+        instructions: 'CONTINUAR. Ojo con interacciones citocromo P450.',
+        atcCode: 'A02BA01'
+    },
+    {
+        id: 'dompe',
+        name: 'Domperidona',
+        category: 'Procinético',
+        action: 'continue',
+        
+        alertLevel: 'yellow',
+        instructions: 'CONTINUAR. Ojo: Prolongación del intervalo QT.',
+        atcCode: 'A03FA03'
+    },
+    {
+        id: 'itoprida',
+        name: 'Itoprida',
+        category: 'Procinético',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A03FA'
+    },
+    {
+        id: 'vitb12',
+        name: 'Vitamina B12 (Cianocobalamina)',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'B03BA01'
+    },
+    {
+        id: 'vitb6',
+        name: 'Vitamina B6 (Piridoxina)',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A11HA02'
+    },
+    {
+        id: 'vitb1',
+        name: 'Vitamina B1 (Tiamina)',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A11DA01'
+    },
+    {
+        id: 'folico',
+        name: 'Ácido Fólico',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'B03BB01'
+    },
+    {
+        id: 'zinc',
+        name: 'Zinc (Suplemento)',
+        category: 'Suplemento',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'A12CB'
+    },
+    {
+        id: 'terazo',
+        name: 'Terazosina',
+        category: 'Alfa-Bloq (HBP)',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'G04CA03'
+    },
+    {
+        id: 'alfuzo',
+        name: 'Alfuzosina',
+        category: 'Alfa-Bloq (HBP)',
+        action: 'continue',
+        
+        alertLevel: 'green',
+        instructions: 'CONTINUAR.',
+        atcCode: 'G04CA01'
+    },
+    {
+        id: 'armodaf',
+        name: 'Armodafinilo',
+        category: 'Psicoestimulante',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 24h antes.',
+        atcCode: 'N06BA13'
+    },
+    {
+        id: 'metilf',
+        name: 'Metilfenidato (Ritalin/Concerta)',
+        category: 'Psicoestimulante',
+        action: 'stop',
+        daysPrior: 1,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER día de la cirugía (Riesgo hipertensión/arritmias con anestésicos).',
+        atcCode: 'N06BA04'
+    },
+    {
+        id: 'phenter',
+        name: 'Fentermina',
+        category: 'Anorexigénico',
+        action: 'stop',
+        daysPrior: 7,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 7 días antes (Riesgo crisis hipertensiva e inestabilidad CV importante).',
+        atcCode: 'A08AA01'
+    },
+    {
+        id: 'mazindol',
+        name: 'Mazindol',
+        category: 'Anorexigénico',
+        action: 'stop',
+        daysPrior: 7,
+        alertLevel: 'red',
+        instructions: 'SUSPENDER 7 días antes.',
+        atcCode: 'A08AA05'
     }
 ];

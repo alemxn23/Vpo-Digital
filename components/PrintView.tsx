@@ -4,11 +4,15 @@ import { VPOData } from '../types';
 
 // PDF Version: 2026-01-25.10 (Signature & Alignment Fix)
 
-const PrintView: React.FC = () => {
+const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
     const { watch } = useFormContext<VPOData>();
     const data = watch();
     const overrides = data.risk_overrides || {};
     const hasOverrides = Object.keys(overrides).length > 0;
+
+    // IDs should only be present in Print Mode to avoid html2canvas capturing the truncated preview
+    const page1Id = isPrintMode ? "print-page-1" : undefined;
+    const page2Id = isPrintMode ? "print-page-2" : undefined;
 
     // Conditional Flags
     const showCardioembolic = data.arritmia_tipo === 'fa' || data.valvula_protesis;
@@ -16,9 +20,15 @@ const PrintView: React.FC = () => {
     // Helper functions for text display
     const getCardioText = () => {
         if (!data.cardiopatiaIsquemica) return "Negado";
-        if (data.cardio_tipo_evento === 'iam') return `IAM (${data.cardio_fecha_evento})`;
-        if (data.cardio_tipo_evento === 'angina_inestable') return "Angina Inestable - CCS IV";
-        return "Angina Estable";
+        let text = "";
+        if (data.cardio_tipo_evento === 'iam') text = `IAM (${data.cardio_fecha_evento})`;
+        else if (data.cardio_tipo_evento === 'angina_inestable') text = "Angina Inestable - CCS IV";
+        else text = "Angina Estable";
+
+        if (data.cardio_stent) {
+            text += ` / Stent ${data.stent_tipo || ''} (${data.stent_fecha_colocacion || 'S/F'})`;
+        }
+        return text;
     };
 
     const getIccText = () => {
@@ -49,13 +59,13 @@ const PrintView: React.FC = () => {
     const baseTable: React.CSSProperties = {
         borderCollapse: 'collapse',
         tableLayout: 'fixed',
-        width: '714px',
+        width: '774px',
         margin: '0 auto',
         fontFamily: 'Arial, sans-serif',
         color: 'black',
         backgroundColor: 'white',
-        lineHeight: '1.2',
-        fontSize: '10px'
+        lineHeight: '1.3',
+        fontSize: '11px'
     };
 
     const labelStyle: React.CSSProperties = {
@@ -88,7 +98,7 @@ const PrintView: React.FC = () => {
     return (
         <div style={{ background: 'white', width: '794px', paddingBottom: '40px' }}>
             {/* PAGE 1 */}
-            <div id="print-page-1" style={{ width: '794px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white' }}>
+            <div id={page1Id} style={{ width: '794px', minHeight: '1050px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white' }}>
 
                 {/* HEADER SECTION */}
                 <table border={0} cellPadding={0} cellSpacing={0} style={baseTable}>
@@ -338,41 +348,77 @@ const PrintView: React.FC = () => {
                 <table width="714" height="15"><tbody><tr><td></td></tr></tbody></table>
 
                 {/* SCALES SUMMARY TABLE */}
-                <table border={1} cellPadding={5} cellSpacing={0} style={{ ...baseTable, border: '1px solid black', backgroundColor: '#fafafa' }}>
+                <table border={1} cellPadding={4} cellSpacing={0} style={{ ...baseTable, border: '1px solid black', backgroundColor: '#fafafa' }}>
                     <thead>
                         <tr bgcolor="#f3f4f6" height="25">
-                            <th style={{ ...labelStyle, fontSize: '10px' }}>ASA</th>
-                            <th style={{ ...labelStyle, fontSize: '10px' }}>GOLDMAN</th>
-                            <th style={{ ...labelStyle, fontSize: '10px' }}>DETSKY</th>
-                            <th style={{ ...labelStyle, fontSize: '10px' }}>LEE</th>
-                            <th style={{ ...labelStyle, fontSize: '10px' }}>CAPRINI</th>
-                            <th style={{ ...labelStyle, fontSize: '10px' }}>GUPTA %</th>
-                            <th style={{ ...labelStyle, fontSize: '10px' }}>DUKE (METs)</th>
-                            {showCardioembolic && <th style={{ ...labelStyle, fontSize: '10px' }}>CHA₂DS₂-VASc</th>}
-                            {showCardioembolic && <th style={{ ...labelStyle, fontSize: '10px' }}>HAS-BLED</th>}
+                            <th style={{ ...labelStyle, fontSize: '9px', width: '35px' }}>ASA</th>
+                            <th style={{ ...labelStyle, fontSize: '9px' }}>GOLDMAN</th>
+                            <th style={{ ...labelStyle, fontSize: '9px' }}>DETSKY</th>
+                            <th style={{ ...labelStyle, fontSize: '9px' }}>LEE</th>
+                            <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>CAPRINI</th>
+                            <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>GUPTA</th>
+                            <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>METs</th>
+                            <th style={{ ...labelStyle, fontSize: '9px' }}>CHADSVASC</th>
+                            <th style={{ ...labelStyle, fontSize: '9px' }}>HASBLED</th>
+                            <th style={{ ...labelStyle, fontSize: '9px' }}>STOP-BANG</th>
+                            <th style={{ ...labelStyle, fontSize: '9px', backgroundColor: '#e0f2fe' }}>VRC</th>
+                            <th style={{ ...labelStyle, fontSize: '9px', backgroundColor: '#fef3c7' }}>CFS (1-9)</th>
                         </tr>
                     </thead>
                     <tbody>
                         <tr align="center" height="30">
-                            <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.asa}</td>
-                            <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.goldman}</td>
-                            <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.detsky}</td>
-                            <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.lee}</td>
-                            <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.caprini}</td>
-                            <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.gupta}%</td>
-                            <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.duke_resultado || '-'}</td>
-                            {showCardioembolic && <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.cha2ds2vasc}</td>}
-                            {showCardioembolic && <td style={{ fontSize: '12px', fontWeight: 'bold' }}>{data.hasbled}</td>}
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.asa}</td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.goldman}</td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.detsky}</td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.lee}</td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.caprini}</td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.gupta || 0}%</td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.mets_estimated || 4}</td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.cha2ds2vasc || 0}</td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.hasbled || 0}</td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>
+                                {typeof data.stopbang_total === 'number' ? data.stopbang_total : 0} pts
+                                <br />
+                                <span style={{ fontSize: '8px' }}>{(data.stopbang_risk || 'Bajo').toUpperCase()}</span>
+                            </td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: data.vrc_total >= 4 ? '#fecaca' : 'transparent' }}>
+                                {(data.vrc_total !== undefined && data.vrc_total !== -1) ? data.vrc_total : '-'}
+                            </td>
+                            <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: (data.fragilidad_score || 1) >= 5 ? '#fecaca' : 'transparent' }}>
+                                {data.fragilidad_score || 1}
+                            </td>
                         </tr>
                     </tbody>
                 </table>
+
+                {/* DYNAMIC ALERTS */}
+                {(data.stopbang_total >= 5 || (data.fragilidad_score || 1) >= 5 || data.mets_estimated < 4) && (
+                    <div style={{ marginTop: '10px', border: '1px solid #b91c1c', borderRadius: '4px', overflow: 'hidden' }}>
+                        <div style={{ backgroundColor: '#fee2e2', color: '#7f1d1d', fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', borderBottom: '1px solid #fecaca' }}>
+                            ALERTA CLÍNICA: ESTRATIFICACIÓN DE ALTO RIESGO
+                        </div>
+                        <div style={{ padding: '8px', fontSize: '9px', color: '#7f1d1d', backgroundColor: '#fff5f5' }}>
+                            <ul style={{ margin: 0, paddingLeft: '15px' }}>
+                                {data.stopbang_total >= 5 && (
+                                    <li><b>STOP-BANG ALTO ({data.stopbang_total} pts):</b> Alta probabilidad de SAOS moderado-severo. Se sugiere <b>extubación paciente despierto</b> y monitoreo continuo de oximetría postoperatoria. Considere CPAP si dispone.</li>
+                                )}
+                                {(data.fragilidad_score || 1) >= 5 && (
+                                    <li><b>FRAGILIDAD (CFS {data.fragilidad_score}):</b> Reserva fisiológica disminuida. Alto riesgo de delirium postoperatorio y estancia prolongada. Considere protocolo de prevención de delirium y movilización temprana.</li>
+                                )}
+                                {data.mets_estimated < 4 && (
+                                    <li><b>CAPACIDAD FUNCIONAL BAJA ({`<`} 4 METs):</b> Pobre reserva cardiorrespiratoria. Mayor riesgo de complicaciones isquémicas y respiratorias.</li>
+                                )}
+                            </ul>
+                        </div>
+                    </div>
+                )}
             </div>
 
             {/* PAGE BREAK (Visual representation) */}
             <div style={{ height: '2px', backgroundColor: '#eee', margin: '20px 0', borderStyle: 'dashed', borderWidth: '1px 0' }}></div>
 
             {/* PAGE 2 */}
-            <div id="print-page-2" style={{ width: '794px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white' }}>
+            <div id={page2Id} style={{ width: '794px', minHeight: '1050px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white' }}>
                 <table border={1} cellPadding={0} cellSpacing={0} style={{ ...baseTable, border: '2px solid black', minHeight: '850px' }}>
                     <tbody>
                         <tr><td height="40" bgcolor="#1e3a8a" align="center" style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>PLAN DE MANEJO PERIOPERATORIO</td></tr>

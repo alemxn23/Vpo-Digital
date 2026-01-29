@@ -71,7 +71,7 @@ const RiskScales: React.FC = () => {
         const isIAMAntiguo = monthsPostIAM >= 6 && monthsPostIAM < 999;
 
         const isAnginaInestable = data.cardiopatiaIsquemica && data.cardio_tipo_evento === 'angina_inestable';
-        const isEstenosisSevera = (data.valvulopatia && data.valvula_afectada === 'aortica' && data.valvula_patologia === 'estenosis' && data.valvula_severidad === 'severa') || data.exploracion_estenosis_aortica;
+        const isEstenosisSevera = (data.valvulopatia && data.valvula_afectada === 'aortica' && data.valvula_patologia === 'estenosis' && data.valvula_severidad === 'severa') || data.exploracion_estenosis_aortica || data.eco_valvulopatia === 'estenosis_aortica_severa';
         const weeksPostEAP = data.icc && data.icc_historia_eap ? getWeeksDiff(data.icc_fecha_eap) : 999;
         const isEAPAgudo = weeksPostEAP < 1;
         const monthsPostEVC = data.evc ? getMonthsDiff(data.evc_fecha) : 999;
@@ -91,7 +91,7 @@ const RiskScales: React.FC = () => {
         let leePoints = 0;
         if (getVal('lee_cx_high', data.capB_cxMayor)) leePoints++;
         if (getVal('lee_ischem', data.cardiopatiaIsquemica || data.capA_iam || data.ecg_isquemia || data.ecg_brihh_completo)) leePoints++;
-        if (getVal('lee_icc', data.icc || data.exploracion_s3 || data.exploracion_ingurgitacion)) leePoints++;
+        if (getVal('lee_icc', data.icc || data.exploracion_s3 || data.exploracion_ingurgitacion || (data.eco_fevi && data.eco_fevi < 40))) leePoints++;
         if (getVal('lee_evc', data.evc || data.capD_evc)) leePoints++;
         if (getVal('lee_insulin', data.diabetes && data.usaInsulina)) leePoints++;
         if (getVal('lee_renal', data.creatinina > 2.0 || (data.tfg && data.tfg < 60))) leePoints++;
@@ -153,7 +153,7 @@ const RiskScales: React.FC = () => {
 
         // --- 4. GOLDMAN ---
         let goldmanPoints = 0;
-        if (getVal('gold_s3', data.exploracion_s3 || data.exploracion_ingurgitacion || data.exploracion_estertores || (data.icc && (data.icc_nyha === 'IV' || data.icc_evolucion === 'aguda')))) goldmanPoints += 11;
+        if (getVal('gold_s3', data.exploracion_s3 || data.exploracion_ingurgitacion || data.exploracion_estertores || (data.icc && (data.icc_nyha === 'IV' || data.icc_evolucion === 'aguda')) || (data.eco_fevi && data.eco_fevi < 40))) goldmanPoints += 11;
         if (getVal('gold_iam', isIAMReciente)) goldmanPoints += 10;
         if (getVal('gold_ritmo', (data.arritmias && data.arritmia_tipo !== 'otra') || (data.ecg_ritmo_especifico && data.ecg_ritmo_especifico !== 'Sinusal'))) goldmanPoints += 7;
         if (getVal('gold_pvc', (data.arritmias && data.arritmia_tipo === 'extrasistoles') || data.ecg_extrasistoles)) goldmanPoints += 7;
@@ -251,7 +251,26 @@ const RiskScales: React.FC = () => {
         // Note: 'Drugs' part of D is medications which we might check from meds list, but for now manual or proxy. 
         // We will rely on manual toggle/logic if we want strictly 'Alcohol'. Here combining.
 
+
         if (data.hasbled !== hasbledPoints) setValue('hasbled', hasbledPoints);
+
+        // --- 9. STOP-BANG ---
+        let sbPoints = 0;
+        // Manual inputs
+        if (data.stopBang_snoring) sbPoints += 1;
+        if (data.stopBang_tired) sbPoints += 1;
+        if (data.stopBang_observed) sbPoints += 1;
+        if (data.stopBang_neck) sbPoints += 1;
+
+        // Auto inputs
+        if (data.hta) sbPoints += 1; // Pressure
+        if (data.imc > 35) sbPoints += 1; // BMI
+        if (data.edad > 50) sbPoints += 1; // Age
+        if (data.genero === 'Masc') sbPoints += 1; // Gender
+
+        // Note: stopBang_risk is manually updated if needed or we can auto-calc it too.
+        // We only store the total score if it changed.
+        if (data.stopbang_total !== sbPoints) setValue('stopbang_total', sbPoints);
 
     }, [data, setValue]);
 
@@ -572,6 +591,73 @@ const RiskScales: React.FC = () => {
                     </div>
                 );
             }
+            else if (selectedScale === 'stopBang') {
+                title = "STOP-BANG (SAOS)";
+                const sb_score = data.stopbang_total || 0;
+                let sb_risk = "Bajo";
+                if (sb_score >= 3) sb_risk = "Intermedio";
+                if (sb_score >= 5) sb_risk = "Alto";
+                riskStr = `Riesgo: ${sb_risk} (${sb_score}/8 pts)`;
+
+                content = (
+                    <div className="space-y-4">
+                        <div className={`p-2 rounded text-xs border ${sb_score >= 5 ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50 border-blue-200 text-blue-900'}`}>
+                            <p>Cuestionario validado para tamizaje de Apnea Obstructiva del Sueño.</p>
+                            {sb_score >= 5 && <p className="mt-1 font-bold">⚠️ ALTO RIESGO: Considere vía aérea difícil y extubación despierto.</p>}
+                        </div>
+
+                        <div className="space-y-2">
+                            <div className="bg-gray-100 p-2 rounded text-[10px] space-y-1 mb-2">
+                                <p className="font-bold text-gray-500 uppercase">Factores Automáticos:</p>
+                                <div className="grid grid-cols-2 gap-2">
+                                    <div className="flex justify-between"><span>Pressure (HTA):</span> <b>{data.hta ? '+1' : '0'}</b></div>
+                                    <div className="flex justify-between"><span>BMI ({'>'}35):</span> <b>{data.imc > 35 ? '+1' : '0'}</b></div>
+                                    <div className="flex justify-between"><span>Age ({'>'}50):</span> <b>{data.edad > 50 ? '+1' : '0'}</b></div>
+                                    <div className="flex justify-between"><span>Gender (Masc):</span> <b>{data.genero === 'Masc' ? '+1' : '0'}</b></div>
+                                </div>
+                            </div>
+
+                            <p className="font-bold text-xs text-clinical-navy border-b pb-1">Cuestionario (Interrogatorio):</p>
+
+                            <label className={`flex justify-between items-center p-2 rounded border cursor-pointer ${watch('stopBang_snoring') ? 'bg-blue-50 border-blue-200' : 'bg-white hover:bg-gray-50'}`}>
+                                <span className="text-xs font-bold flex items-center gap-2">
+                                    <input type="checkbox" {...register('stopBang_snoring')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    S (Snoring): ¿Ronca fuerte?
+                                </span>
+                                <span className="text-xs font-bold">{watch('stopBang_snoring') ? '+1' : '0'}</span>
+                            </label>
+
+                            <label className={`flex justify-between items-center p-2 rounded border cursor-pointer ${watch('stopBang_tired') ? 'bg-blue-50 border-blue-200' : 'bg-white hover:bg-gray-50'}`}>
+                                <span className="text-xs font-bold flex items-center gap-2">
+                                    <input type="checkbox" {...register('stopBang_tired')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    T (Tired): ¿Cansado/Soñoliento de día?
+                                </span>
+                                <span className="text-xs font-bold">{watch('stopBang_tired') ? '+1' : '0'}</span>
+                            </label>
+
+                            <label className={`flex justify-between items-center p-2 rounded border cursor-pointer ${watch('stopBang_observed') ? 'bg-blue-50 border-blue-200' : 'bg-white hover:bg-gray-50'}`}>
+                                <span className="text-xs font-bold flex items-center gap-2">
+                                    <input type="checkbox" {...register('stopBang_observed')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    O (Observed): ¿Alguien le ha visto dejar de respirar?
+                                </span>
+                                <span className="text-xs font-bold">{watch('stopBang_observed') ? '+1' : '0'}</span>
+                            </label>
+
+                            <label className={`flex justify-between items-center p-2 rounded border cursor-pointer ${watch('stopBang_neck') ? 'bg-blue-50 border-blue-200' : 'bg-white hover:bg-gray-50'}`}>
+                                <span className="text-xs font-bold flex items-center gap-2">
+                                    <input type="checkbox" {...register('stopBang_neck')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    N (Neck): ¿Cuello {'>'} 40cm?
+                                </span>
+                                <span className="text-xs font-bold">{watch('stopBang_neck') ? '+1' : '0'}</span>
+                            </label>
+
+                            <div className="mt-2 text-xs text-gray-400 italic">
+                                *Si no se conoce el cuello, usar talla de camisa {'>'} 43cm (hombre) o {'>'} 41cm (mujer).
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
 
             if (!content) {
                 content = (
@@ -678,6 +764,77 @@ const RiskScales: React.FC = () => {
                             </div>
                         </div>
                     </div>
+
+                    {/* --- SPECIALTY SCALES --- */}
+                    <div className="grid grid-cols-2 gap-3">
+                        {/* CLINICAL FRAILTY SCALE */}
+                        <ScaleCard label="Fragilidad" desc="CFS (1-9)" autoCalc={false}>
+                            <div className="p-2">
+                                <input
+                                    type="range"
+                                    min="1"
+                                    max="9"
+                                    step="1"
+                                    value={watch('fragilidad_score') || 1}
+                                    onChange={(e) => setValue('fragilidad_score', parseInt(e.target.value))}
+                                    className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-clinical-navy"
+                                />
+                                <div className="flex justify-between items-center mt-2">
+                                    <span className="text-xl font-bold text-clinical-navy">{watch('fragilidad_score') || 1}</span>
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded 
+                                    ${(watch('fragilidad_score') || 1) <= 3 ? 'bg-green-100 text-green-800' :
+                                            (watch('fragilidad_score') || 1) <= 6 ? 'bg-amber-100 text-amber-800' :
+                                                'bg-red-100 text-red-800'}`}>
+                                        {(watch('fragilidad_score') || 1) <= 3 ? 'ROBUSTO' :
+                                            (watch('fragilidad_score') || 1) <= 6 ? 'VULNERABLE' :
+                                                'FRAGILIDAD SEVERA'}
+                                    </span>
+                                </div>
+                                <p className="text-[9px] text-gray-400 mt-1 text-center">
+                                    {(watch('fragilidad_score') || 1) >= 7 ? 'Alto riesgo de delirio y estancia prolongada.' :
+                                        (watch('fragilidad_score') || 1) >= 4 ? 'Reserva funcional disminuida.' : 'Buen estado funcional.'}
+                                </p>
+                            </div>
+                        </ScaleCard>
+
+                        {/* METs ESTIMATION */}
+                        <ScaleCard label="METs" desc="Capacidad Funcional" autoCalc={false}>
+                            <div className="p-2">
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="20"
+                                    step="0.5"
+                                    placeholder="4"
+                                    value={watch('mets_estimated') || ''}
+                                    onChange={(e) => setValue('mets_estimated', parseFloat(e.target.value))}
+                                    className="w-full p-1 border rounded text-lg font-bold text-center text-clinical-navy mb-2"
+                                />
+                                <div className="text-center">
+                                    <span className={`text-[10px] font-bold px-2 py-1 rounded 
+                                    ${(watch('mets_estimated') || 4) >= 10 ? 'bg-green-100 text-green-800' :
+                                            (watch('mets_estimated') || 4) >= 4 ? 'bg-amber-100 text-amber-800' :
+                                                'bg-red-100 text-red-800'}`}>
+                                        {(watch('mets_estimated') || 4) >= 10 ? 'EXCELENTE' :
+                                            (watch('mets_estimated') || 4) >= 4 ? 'MODERADA' :
+                                                'MALA (<4)'}
+                                    </span>
+                                </div>
+                            </div>
+                        </ScaleCard>
+
+                        {/* VRC SCALE (Conditional) */}
+                        {(watch('gupta_surgical_site') === 'vascular' || watch('gupta_surgical_site') === 'aortic' || watch('gupta_surgical_site') === 'amputation') && (
+                            <ScaleCard label="VRC Score" desc="VSGNE Vascular" autoCalc={true}>
+                                <div className="text-center flex flex-col items-center justify-center">
+                                    <span className={`text-xl font-bold ${(watch('vrc_total') || 0) >= 4 ? 'text-red-600' : 'text-clinical-navy'}`}>
+                                        {watch('vrc_total') !== -1 ? watch('vrc_total') : '-'}
+                                    </span>
+                                    <p className="text-[10px] text-gray-400">Puntos (Mortalidad Intra-hosp)</p>
+                                </div>
+                            </ScaleCard>
+                        )}
+                    </div>
                     {/* Dedicated Button for Caprini - Z-Index 20 to sit above overlay */}
                     <button
                         type="button"
@@ -756,6 +913,18 @@ const RiskScales: React.FC = () => {
                                 {watch('hasbled') || 0}
                             </span>
                             <p className="text-[10px] text-gray-400">Puntos</p>
+                        </div>
+                    </ScaleCard>
+
+                    {/* STOP-BANG CARD */}
+                    <ScaleCard label="STOP-BANG" desc="Apnea Sueño" autoCalc={true} onClick={() => setSelectedScale('stopBang')}>
+                        <div className="text-center flex flex-col items-center justify-center">
+                            <span className={`text-xl font-bold ${(watch('stopbang_total') || 0) >= 5 ? 'text-red-600' : (watch('stopbang_total') || 0) >= 3 ? 'text-amber-600' : 'text-clinical-navy'}`}>
+                                {watch('stopbang_total') || 0}
+                            </span>
+                            <p className={`text-[10px] font-bold ${(watch('stopbang_total') || 0) >= 5 ? 'text-red-600' : (watch('stopbang_total') || 0) >= 3 ? 'text-amber-600' : 'text-gray-400'}`}>
+                                {(watch('stopbang_total') || 0) >= 5 ? 'Alto' : (watch('stopbang_total') || 0) >= 3 ? 'Intermedio' : 'Bajo'}
+                            </p>
                         </div>
                     </ScaleCard>
                 </div>

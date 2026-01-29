@@ -14,6 +14,7 @@ export interface MedicationRecommendation {
     instructions: string;
     rationale: string;
     bridgeRequired?: boolean;
+    stressDoseRecommendation?: string;
 }
 
 export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData): MedicationRecommendation => {
@@ -149,10 +150,115 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
         recommendation.rationale = "Riesgo de aspiración por gastroparesia (Estómago lleno).";
     }
 
+    // --- H: CORTICOSTEROIDES & HORMONAS ---
+    if (med.isSteroid) {
+        if (med.isChronic) {
+            recommendation.alertLevel = 'yellow';
+            recommendation.action = 'adjust';
+            const stressDose = calculateStressDose(patient);
+            recommendation.instructions = stressDose;
+            recommendation.stressDoseRecommendation = stressDose;
+            recommendation.rationale = "Uso crónico (>3 sem/dosis altas). Riesgo insuficiencia adrenal aguda.";
+        } else {
+            recommendation.alertLevel = 'green';
+            recommendation.action = 'continue'; // Or adjust? Usually continue basal or just stop if short course.
+            recommendation.instructions = "No requiere dosis de estrés si uso < 3 semanas.";
+            recommendation.rationale = "Eje HHA íntegro probable.";
+        }
+    }
+
+    // --- N: NEUROLOGY / PSYCHIATRY ---
+    if (med.category === 'Antiepiléptico') {
+        recommendation.alertLevel = 'green';
+        recommendation.action = 'continue';
+        recommendation.instructions = "CONTINUAR ESTRICTAMENTE. Si ayuno prolongado, rotar a IV.";
+        recommendation.rationale = "Riesgo alto de crisis convulsivas por deprivación.";
+    }
+
+    if (med.category === 'Antiparkinsoniano') {
+        recommendation.alertLevel = 'green';
+        recommendation.action = 'continue';
+        recommendation.instructions = "CONTINUAR hasta momento de cirugía. Reiniciar en cuanto tolere vía oral.";
+        recommendation.rationale = "Riesgo de rigidez/Síndrome Neuroléptico Maligno si suspensión abrupta.";
+    }
+
+    if (med.category === 'Antipsicótico') {
+        if (med.id === 'cloza') { // Clozapine
+            recommendation.alertLevel = 'yellow';
+            recommendation.action = 'continue';
+            recommendation.instructions = "CONTINUAR. Vigilar ileo postoperatorio (riesgo aumentado).";
+            recommendation.rationale = "Riesgo agranulocitosis (no suspender monitorización) y rebote psicótico.";
+        } else {
+            recommendation.action = 'continue';
+            recommendation.instructions = "CONTINUAR. Precaución QT prolongado con anestésicos.";
+        }
+    }
+
+    if (med.category === 'Litio') {
+        recommendation.alertLevel = 'red';
+        recommendation.action = 'stop';
+        recommendation.daysPrior = 1; // 24-72h depending on renal. 1 day safe default.
+        recommendation.instructions = "SUSPENDER 24-72h antes (Según función renal). Niveles < 1.0 mEq/L.";
+        recommendation.rationale = "Potencia relajantes musculares. Riesgo toxicidad renal/deshidratación.";
+    }
+
+    // --- J: ANTIINFECCIOSOS (High Risk) ---
+    if (med.category === 'Antirretroviral') {
+        recommendation.alertLevel = 'green';
+        recommendation.action = 'continue';
+        recommendation.instructions = "CONTINUAR. Riesgo de rebote viral y resistencia si se suspende.";
+        recommendation.rationale = "Vida media crítica. Mantener horario estricto.";
+    }
+
+    // --- L: IMMUNOSUPPRESSANTS / ANTINEOPLASTIC ---
+    if (med.category === 'Inmunosupresor') {
+        recommendation.alertLevel = 'green';
+        recommendation.action = 'continue';
+        recommendation.instructions = "CONTINUAR ESTRICTAMENTE. Dosis matutina con poco agua.";
+        recommendation.rationale = "Alto riesgo de rechazo de injerto (Trasplante) o brote (Autoinmune).";
+    }
+
     return recommendation;
 };
 
 // --- HELPER FUNCTIONS ---
+
+const calculateStressDose = (patient: VPOData): string => {
+    const site = patient.gupta_surgical_site || 'minor';
+    let risk = 'minor';
+
+    // Risk Categorization
+    const modRisk = ['abdominal', 'orthopedic', 'spine', 'head-neck', 'urologic', 'gynecologic'];
+    const highRisk = ['cardiac', 'aortic', 'transplant', 'esopha', 'pneumonectomy'];
+
+    if (modRisk.some(r => site.includes(r))) risk = 'moderate';
+    if (highRisk.some(r => site.includes(r))) risk = 'severe';
+    if (patient.capB_cxMayor) risk = 'moderate'; // Default major
+
+    const weight = patient.peso || 70;
+
+    // Dosing Logic
+    // Minor: Hydrocortisone 25mg induction only OR just continue usual dose
+    // Moderate: Hydro 50mg induction + 25mg q8h (or 50-75mg/24h)
+    // Severe: Hydro 100mg induction + 50mg q8h (or 100-150mg/24h)
+
+    let hydroDose = '25mg';
+    let maintainDose = 'Dosis usual';
+
+    if (risk === 'severe') {
+        hydroDose = '100mg';
+        maintainDose = '50mg IV c/8h';
+    } else if (risk === 'moderate') {
+        hydroDose = '50mg';
+        maintainDose = '25mg IV c/8h';
+    } else {
+        // Minor
+        if (weight < 40) hydroDose = '25mg'; // Pediatrics/Low weight
+        else hydroDose = '25mg'; // Standard minor often just usual dose, but induction 25mg is safe buffer.
+    }
+
+    return `Inducción: Hidrocortisona ${hydroDose} IV. Mantenimiento: ${maintainDose} por 24h, luego reducir.`;
+};
 
 const getSurgicalBleedingRisk = (patient: VPOData): 'low' | 'high' => {
     // PAUSE / EHA Mapping
