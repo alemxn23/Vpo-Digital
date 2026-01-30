@@ -166,11 +166,16 @@ const Recommendations: React.FC = () => {
             ? "\n\n⚠️ FRAGILIDAD (CFS >= 5): Protocolo de prevención de Delirio y manejo geriátrico temprano sugerido."
             : "";
 
+        // STOP-BANG Alert (High Risk)
+        const stopBangRec = (data.stopbang_risk === 'Alto' || data.stopbang_risk === 'Alto (Dx Previo)')
+            ? "\n\n⚠️ VÍA AÉREA (STOP-BANG ALTO): Se sugiere extubación despierto y monitoreo de oximetría continua postoperatoria por alta probabilidad de SAOS."
+            : "";
+
         return `• Ayuno: 6h para sólidos y 2h para líquidos claros.
 • ${aineInstruction}
 • Profilaxis antibiótica: ${antibioticRegimen}
 • Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas según esquema (Ver Post)' : 'Deambulación temprana / Medias TEDs'}.
-• Soluciones: ${fluidRec}${medsPlan}${dukeAlert}${frailtyRec}`;
+• Soluciones: ${fluidRec}${medsPlan}${dukeAlert}${frailtyRec}${stopBangRec}`;
     };
 
     const getEcoRecommendations = () => {
@@ -254,7 +259,7 @@ const Recommendations: React.FC = () => {
             setValue('plan_trans', generateTransPlan());
             setValue('plan_post', generatePostPlan());
         }
-    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica, data.flag_estenosis_aortica_severa]);
+    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica, data.flag_estenosis_aortica_severa, data.stopbang_risk, data.fragilidad_score]);
 
     // Determine Meta Labels based on risk
     const isNephroCardio = data.enfRenalCronica || data.icc || data.cardiopatiaIsquemica;

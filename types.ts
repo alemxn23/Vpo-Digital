@@ -271,7 +271,7 @@ export interface VPOData {
   stopBang_observed: boolean;
   stopBang_neck: boolean; // > 40cm
   stopbang_total: number;
-  stopbang_risk: "Bajo" | "Intermedio" | "Alto";
+  stopbang_risk: "Bajo" | "Intermedio" | "Alto" | "Alto (Dx Previo)";
   neck_circumference: number; // For manual input
 
   // --- RESERVA FUNCIONAL & FRAGILIDAD & VRC ---

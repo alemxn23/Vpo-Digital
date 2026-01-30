@@ -64,7 +64,21 @@ const RiskScales: React.FC = () => {
     const overrides = data.risk_overrides || {};
 
     // --- MASTER SCORE FUNCTION LOGIC ---
+    // --- MASTER SCORE FUNCTION LOGIC ---
     useEffect(() => {
+        // Helper to prevent infinite loops due to type mismatch (string vs number)
+        const safeSet = (key: keyof VPOData, newVal: any) => {
+            // Use loose quality to catch "5" == 5, or exact match
+            if (data[key] != newVal) {
+                setValue(key, newVal);
+            }
+        };
+
+        const parse = (val: any) => {
+            const n = parseFloat(val);
+            return isNaN(n) ? 0 : n;
+        };
+
         // --- 0. PRE-CALCULATE FLAGS ---
         const monthsPostIAM = data.cardiopatiaIsquemica && data.cardio_tipo_evento === 'iam' ? getMonthsDiff(data.cardio_fecha_evento) : 999;
         const isIAMReciente = monthsPostIAM < 6;
@@ -77,9 +91,9 @@ const RiskScales: React.FC = () => {
         const monthsPostEVC = data.evc ? getMonthsDiff(data.evc_fecha) : 999;
         const isEVCAgudo = monthsPostEVC < 1;
 
-        if (data.flag_iam_reciente !== isIAMReciente) setValue('flag_iam_reciente', isIAMReciente);
-        if (data.flag_angina_inestable !== isAnginaInestable) setValue('flag_angina_inestable', isAnginaInestable);
-        if (data.flag_estenosis_aortica_severa !== isEstenosisSevera) setValue('flag_estenosis_aortica_severa', isEstenosisSevera);
+        safeSet('flag_iam_reciente', isIAMReciente);
+        safeSet('flag_angina_inestable', isAnginaInestable);
+        safeSet('flag_estenosis_aortica_severa', isEstenosisSevera);
 
         const getVal = (key: string, auto: boolean) => {
             if (overrides && overrides[key] !== undefined) return overrides[key];
@@ -87,7 +101,6 @@ const RiskScales: React.FC = () => {
         };
 
         // --- 1. Lee (RCRI) ---
-        // Updated Logic: TFG < 60 adds point
         let leePoints = 0;
         if (getVal('lee_cx_high', data.capB_cxMayor)) leePoints++;
         if (getVal('lee_ischem', data.cardiopatiaIsquemica || data.capA_iam || data.ecg_isquemia || data.ecg_brihh_completo)) leePoints++;
@@ -102,16 +115,16 @@ const RiskScales: React.FC = () => {
         else if (leePoints === 2) leeClass = "III";
         else if (leePoints >= 3) leeClass = "IV";
 
-        if (data.lee !== leeClass) setValue('lee', leeClass);
+        safeSet('lee', leeClass);
 
         // --- 2. Caprini ---
         let capPoints = 0;
-        const age = data.edad || 0;
+        const age = parse(data.edad);
         if (age >= 75) capPoints += 3;
         else if (age >= 61) capPoints += 2;
         else if (age >= 41) capPoints += 1;
-        if ((data.imc || 0) > 25) capPoints += 1;
-        // ... Caprini logic mostly direct from booleans
+        if (parse(data.imc) > 25) capPoints += 1;
+
         if (data.capA_cxMenor) capPoints += 1;
         if (data.capA_cxMayorAnt) capPoints += 1;
         if (data.capA_varices) capPoints += 1;
@@ -137,19 +150,19 @@ const RiskScales: React.FC = () => {
         if (data.capD_fxCadera) capPoints += 5;
         if (data.capD_trauma) capPoints += 5;
 
-        if (data.caprini !== capPoints) setValue('caprini', capPoints);
+        safeSet('caprini', capPoints);
 
         // --- 3. ASA Autopuntaje ---
         let asaBase: "I" | "II" | "III" | "IV" = "I";
-        if (data.tabaquismo || (data.imc > 30 && data.imc < 40) || (data.hta && data.hta_control === 'controlada') || (data.diabetes && !data.usaInsulina)) asaBase = "II";
-        if (data.imc >= 40 || data.enfRenalCronica || data.neumopatia || (data.icc && data.icc_nyha !== 'IV') || isIAMAntiguo || (data.hta && data.hta_control === 'descontrolada') || data.erc_dialisis) asaBase = "III";
+        if (data.tabaquismo || (parse(data.imc) > 30 && parse(data.imc) < 40) || (data.hta && data.hta_control === 'controlada') || (data.diabetes && !data.usaInsulina)) asaBase = "II";
+        if (parse(data.imc) >= 40 || data.enfRenalCronica || data.neumopatia || (data.icc && data.icc_nyha !== 'IV') || isIAMAntiguo || (data.hta && data.hta_control === 'descontrolada') || data.erc_dialisis) asaBase = "III";
         if (isIAMReciente || (data.icc && data.icc_nyha === 'IV') || isAnginaInestable || isEstenosisSevera || monthsPostEVC < 3 || data.hepato_child === 'C' || data.erc_estadio === 'G5') asaBase = "IV";
 
         // Override Logic
         let finalASA = data.asa_manual_class ? (data.asa_manual_class as any) : asaBase;
         if (data.esUrgencia && !finalASA.includes('-E')) finalASA = `${finalASA}-E`;
 
-        if (data.asa !== finalASA) setValue('asa', finalASA);
+        safeSet('asa', finalASA);
 
         // --- 4. GOLDMAN ---
         let goldmanPoints = 0;
@@ -157,10 +170,10 @@ const RiskScales: React.FC = () => {
         if (getVal('gold_iam', isIAMReciente)) goldmanPoints += 10;
         if (getVal('gold_ritmo', (data.arritmias && data.arritmia_tipo !== 'otra') || (data.ecg_ritmo_especifico && data.ecg_ritmo_especifico !== 'Sinusal'))) goldmanPoints += 7;
         if (getVal('gold_pvc', (data.arritmias && data.arritmia_tipo === 'extrasistoles') || data.ecg_extrasistoles)) goldmanPoints += 7;
-        if (getVal('gold_age', data.edad > 70)) goldmanPoints += 5;
+        if (getVal('gold_age', parse(data.edad) > 70)) goldmanPoints += 5;
         if (getVal('gold_urg', data.esUrgencia)) goldmanPoints += 4;
         if (getVal('gold_ao', isEstenosisSevera)) goldmanPoints += 3;
-        if (getVal('gold_gen', (data.k && data.k < 3) || (data.creatinina > 3) || (data.urea > 50) || data.hepatopatia || data.capA_reposo)) goldmanPoints += 3;
+        if (getVal('gold_gen', (data.k && data.k < 3) || (parse(data.creatinina) > 3) || (data.urea > 50) || data.hepatopatia || data.capA_reposo)) goldmanPoints += 3;
         if (getVal('gold_cx', data.ariscat_incision === 'abdominal_sup' || data.ariscat_incision === 'intratoracica')) goldmanPoints += 3;
 
         let goldmanClass: "I" | "II" | "III" | "IV" = "I";
@@ -168,7 +181,7 @@ const RiskScales: React.FC = () => {
         else if (goldmanPoints >= 13) goldmanClass = "III";
         else if (goldmanPoints >= 6) goldmanClass = "II";
 
-        if (data.goldman !== goldmanClass) setValue('goldman', goldmanClass);
+        safeSet('goldman', goldmanClass);
 
         // --- 5. DETSKY ---
         let detskyPoints = 0;
@@ -180,21 +193,18 @@ const RiskScales: React.FC = () => {
         else if (getVal('det_eap_hist', data.icc_historia_eap)) detskyPoints += 5;
         if (getVal('det_ao', isEstenosisSevera)) detskyPoints += 20;
         if (getVal('det_ritmo', (data.arritmias && data.arritmia_tipo !== 'otra') || (data.ecg_ritmo_especifico && data.ecg_ritmo_especifico !== 'Sinusal'))) detskyPoints += 5;
-        if (getVal('det_gen', (data.k && data.k < 3) || (data.creatinina > 3) || (data.urea > 50) || data.hepatopatia || data.capA_reposo)) detskyPoints += 5;
-        if (getVal('det_age', data.edad > 70)) detskyPoints += 5;
+        if (getVal('det_gen', (data.k && data.k < 3) || (parse(data.creatinina) > 3) || (data.urea > 50) || data.hepatopatia || data.capA_reposo)) detskyPoints += 5;
+        if (getVal('det_age', parse(data.edad) > 70)) detskyPoints += 5;
         if (getVal('det_urg', data.esUrgencia)) detskyPoints += 10;
 
         let detskyClass: "I" | "II" | "III" = "I";
         if (detskyPoints >= 31) detskyClass = "III";
         else if (detskyPoints >= 15) detskyClass = "II";
 
-        if (data.detsky !== detskyClass) setValue('detsky', detskyClass);
+        safeSet('detsky', detskyClass);
 
-        // --- 6. GUPTA ---
         // --- 6. GUPTA ---
         const intercept = -5.31;
-        const parse = (val: number) => (typeof val === 'number' && !isNaN(val)) ? val : 0;
-
         const coeffAge = 0.003 * parse(data.edad);
         const coeffCr = parse(data.creatinina) > 1.5 ? 0.6 : 0;
         let coeffAsa = 0;
@@ -227,14 +237,11 @@ const RiskScales: React.FC = () => {
         const risk = Math.exp(logit) / (1 + Math.exp(logit));
         const riskPercent = parseFloat((risk * 100).toFixed(1));
 
-        // Prevent NaN loop
-        if (!isNaN(riskPercent) && data.gupta !== riskPercent) {
-            setValue('gupta', riskPercent);
+        if (!isNaN(riskPercent)) {
+            safeSet('gupta', riskPercent);
         }
 
         // --- 6.1 VRC SCORE (Vascular Only) ---
-        // Reference: VSGNE Risk Score for In-Hospital Mortality
-        // Age>70(+2), COPD(+2), Cr>1.8(+2), CAD(+2), CHF(+3), DMInsulin(+1), BetaBlocker Preop(+1)
         if (['vascular', 'aortic', 'amputation'].includes(site)) {
             let vrcPoints = 0;
             if (parse(data.edad) >= 70) vrcPoints += 2;
@@ -245,67 +252,67 @@ const RiskScales: React.FC = () => {
             if (data.diabetes && data.usaInsulina) vrcPoints += 1; // DM Insulin
             if (data.vrc_beta_blocker) vrcPoints += 1; // Preop BB
 
-            if (data.vrc_total !== vrcPoints) setValue('vrc_total', vrcPoints);
+            safeSet('vrc_total', vrcPoints);
 
             // Set Risk Interpretation
             let vrcRisk = "Bajo";
-            // Using approximate quintiles or standard VSGNE buckets
             if (vrcPoints >= 7) vrcRisk = "Alto (>8% Mortalidad)";
             else if (vrcPoints >= 4) vrcRisk = "Moderado (4-8% Mortalidad)";
             else vrcRisk = "Bajo (<4% Mortalidad)";
 
-            if (data.vrc_riesgo !== vrcRisk) setValue('vrc_riesgo', vrcRisk);
+            safeSet('vrc_riesgo', vrcRisk);
 
         } else {
-            if (data.vrc_total !== -1) setValue('vrc_total', -1);
-            if (data.vrc_riesgo !== '') setValue('vrc_riesgo', '');
+            safeSet('vrc_total', -1);
+            safeSet('vrc_riesgo', '');
         }
 
         // --- 7. CHA2DS2-VASc ---
         let chaPoints = 0;
         if (data.icc) chaPoints += 1; // C
         if (data.hta) chaPoints += 1; // H
-        if (data.edad >= 75) chaPoints += 2; // A2
+        if (parse(data.edad) >= 75) chaPoints += 2; // A2
         if (data.diabetes) chaPoints += 1; // D
         if (data.evc || isEVCAgudo) chaPoints += 2; // S2
-        if (data.cardiopatiaIsquemica || isEAPAgudo || isEstenosisSevera || data.icc_historia_eap) chaPoints += 1; // V ( Vascular disease)
-        if (data.edad >= 65 && data.edad < 75) chaPoints += 1; // A
-        if (data.genero === 'Fem') chaPoints += 1; // Sc (Sex category)
+        if (data.cardiopatiaIsquemica || isEAPAgudo || isEstenosisSevera || data.icc_historia_eap) chaPoints += 1; // V
+        if (parse(data.edad) >= 65 && parse(data.edad) < 75) chaPoints += 1; // A
+        if (data.genero === 'Fem') chaPoints += 1; // Sc
 
-        if (data.cha2ds2vasc !== chaPoints) setValue('cha2ds2vasc', chaPoints);
+        safeSet('cha2ds2vasc', chaPoints);
 
         // --- 8. HAS-BLED ---
         let hasbledPoints = 0;
-        if (data.hta && data.hta_control === 'descontrolada') hasbledPoints += 1; // H (Uncontrolled HTN)
-        if (data.creatinina > 2.26 || data.erc_dialisis || data.erc_estadio === 'G4' || data.erc_estadio === 'G5' || (data.tfg && data.tfg < 60)) hasbledPoints += 1; // A (Renal)
-        if (data.hepatopatia || data.hepato_child === 'B' || data.hepato_child === 'C') hasbledPoints += 1; // A (Liver) - Simplified
-        if (data.evc) hasbledPoints += 1; // S (Stroke history)
-        if (data.coagulopatia || data.inr > 1.2 || data.hasbled_inr_labil) hasbledPoints += 1; // B (Bleeding) or L (Labile INR)
-        if (data.edad > 65) hasbledPoints += 1; // E (Elderly)
-        if (data.tabaquismo || data.hasbled_alcohol) hasbledPoints += 1; // D (Drugs/Alcohol) - Using Smoking as proxy for lifestyle risk or add Alcohol field if needed. Plan says Alcohol manual toggle.
-        // Note: 'Drugs' part of D is medications which we might check from meds list, but for now manual or proxy. 
-        // We will rely on manual toggle/logic if we want strictly 'Alcohol'. Here combining.
+        if (data.hta && data.hta_control === 'descontrolada') hasbledPoints += 1;
+        if (parse(data.creatinina) > 2.26 || data.erc_dialisis || data.erc_estadio === 'G4' || data.erc_estadio === 'G5' || (data.tfg && data.tfg < 60)) hasbledPoints += 1;
+        if (data.hepatopatia || data.hepato_child === 'B' || data.hepato_child === 'C') hasbledPoints += 1;
+        if (data.evc) hasbledPoints += 1;
+        if (data.coagulopatia || data.inr > 1.2 || data.hasbled_inr_labil) hasbledPoints += 1;
+        if (parse(data.edad) > 65) hasbledPoints += 1;
+        if (data.tabaquismo || data.hasbled_alcohol) hasbledPoints += 1;
 
-
-        if (data.hasbled !== hasbledPoints) setValue('hasbled', hasbledPoints);
+        safeSet('hasbled', hasbledPoints);
 
         // --- 9. STOP-BANG ---
         let sbPoints = 0;
-        // Manual inputs
         if (data.stopBang_snoring) sbPoints += 1;
         if (data.stopBang_tired) sbPoints += 1;
         if (data.stopBang_observed) sbPoints += 1;
         if (data.stopBang_neck) sbPoints += 1;
+        if (data.hta) sbPoints += 1;
+        if (parse(data.imc) > 35) sbPoints += 1;
+        if (parse(data.edad) > 50) sbPoints += 1;
+        if (data.genero === 'Masc') sbPoints += 1;
 
-        // Auto inputs
-        if (data.hta) sbPoints += 1; // Pressure
-        if (data.imc > 35) sbPoints += 1; // BMI
-        if (data.edad > 50) sbPoints += 1; // Age
-        if (data.genero === 'Masc') sbPoints += 1; // Gender
+        safeSet('stopbang_total', sbPoints);
 
-        // Note: stopBang_risk is manually updated if needed or we can auto-calc it too.
-        // We only store the total score if it changed.
-        if (data.stopbang_total !== sbPoints) setValue('stopbang_total', sbPoints);
+        // --- Risk Interpretation for STOP-BANG logic update directly
+        let sbRisk = sbPoints >= 5 ? "Alto" : sbPoints >= 3 ? "Intermedio" : "Bajo";
+        // Override if OSA is already diagnosed
+        if (data.diagnosed_osa || data.neumo_tipo === 'saohs') {
+            sbRisk = "Alto (Dx Previo)";
+        }
+
+        safeSet('stopbang_risk', sbRisk);
 
     }, [data, setValue]);
 

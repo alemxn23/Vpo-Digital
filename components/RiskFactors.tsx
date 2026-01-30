@@ -414,6 +414,90 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
+                {/* 10.1 Vía Aérea y Sueño (STOP-BANG) - Conditional */}
+                {(watch('imc') > 30 || watch('diagnosed_osa') || watch('neumo_tipo') === 'saohs') && (
+                    <div className="border border-blue-200 rounded-xl bg-blue-50/50 overflow-hidden animate-fadeIn">
+                        <label className="flex items-center gap-2 p-4 text-blue-900 font-bold text-sm">
+                            <Wind size={20} /> Vía Aérea y Sueño (STOP-BANG)
+                        </label>
+                        <div className="px-4 pb-4 space-y-3">
+                            <div className="bg-white p-3 rounded-lg border border-blue-100 text-xs shadow-sm">
+                                <p className="font-bold text-gray-500 uppercase mb-2">Puntos Automáticos (Detectados):</p>
+                                <div className="grid grid-cols-2 gap-2 text-slate-700">
+                                    <div className={watch('imc') > 35 ? 'font-bold text-red-600' : ''}>• IMC &gt; 35</div>
+                                    <div className={watch('edad') > 50 ? 'font-bold text-red-600' : ''}>• Edad &gt; 50</div>
+                                    <div className={watch('hta') ? 'font-bold text-red-600' : ''}>• Hipertensión</div>
+                                    <div className={watch('genero') === 'Masc' ? 'font-bold text-red-600' : ''}>• Género Masc.</div>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <label className={`flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer transition-colors ${watch('stopBang_snoring') ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+                                    <input type="checkbox" {...register('stopBang_snoring')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    <div>
+                                        <span className="text-xs font-bold block text-slate-800">Ronquido (Snoring)</span>
+                                        <span className="text-[10px] text-gray-500">¿Ronca fuerte?</span>
+                                    </div>
+                                </label>
+
+                                <label className={`flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer transition-colors ${watch('stopBang_tired') ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+                                    <input type="checkbox" {...register('stopBang_tired')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    <div>
+                                        <span className="text-xs font-bold block text-slate-800">Cansancio (Tired)</span>
+                                        <span className="text-[10px] text-gray-500">¿Cansado o con sueño durante el día?</span>
+                                    </div>
+                                </label>
+
+                                <label className={`flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer transition-colors ${watch('stopBang_observed') ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+                                    <input type="checkbox" {...register('stopBang_observed')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    <div>
+                                        <span className="text-xs font-bold block text-slate-800">Observado (Observed)</span>
+                                        <span className="text-[10px] text-gray-500">¿Alguien le ha visto dejar de respirar?</span>
+                                    </div>
+                                </label>
+
+                                <label className={`flex items-center gap-2 p-3 bg-white border rounded-lg cursor-pointer transition-colors ${watch('stopBang_neck') ? 'border-blue-400 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+                                    <input type="checkbox" {...register('stopBang_neck')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    <div>
+                                        <span className="text-xs font-bold block text-slate-800">Cuello (Neck)</span>
+                                        <span className="text-[10px] text-gray-500">¿&gt; 40cm (o talla camisa &gt; 16)?</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* 10.2 Geriatría (Fragilidad) - Conditional */}
+                {watch('edad') >= 65 && (
+                    <div className="border border-orange-200 rounded-xl bg-orange-50/50 overflow-hidden animate-fadeIn">
+                        <label className="flex items-center gap-2 p-4 text-orange-900 font-bold text-sm">
+                            <Activity size={20} /> Geriatría y Fragilidad
+                        </label>
+                        <div className="px-4 pb-4">
+                            <label className="text-xs font-bold text-gray-500 uppercase block mb-2">Escala Clínica de Fragilidad (CFS)</label>
+                            <select
+                                {...register('fragilidad_score', { valueAsNumber: true })}
+                                className="w-full p-2 border border-orange-200 rounded-lg text-sm bg-white focus:ring-2 focus:ring-orange-300 outline-none"
+                            >
+                                <option value="1">1. Muy en forma (Robusto)</option>
+                                <option value="2">2. En forma (Activo)</option>
+                                <option value="3">3. Bien controlado (Comorbilidades estables)</option>
+                                <option value="4">4. Vulnerable (Síntomas limitantes)</option>
+                                <option value="5">5. Levemente Frágil (Ayuda para IAVD)</option>
+                                <option value="6">6. Moderadamente Frágil (Ayuda act. exterior)</option>
+                                <option value="7">7. Severamente Frágil (Dependencia total personal)</option>
+                                <option value="8">8. Muy Severamente Frágil (Fin de vida inminente)</option>
+                                <option value="9">9. Terminal (Expectativa &lt; 6m)</option>
+                            </select>
+                            <div className="mt-2 text-[10px] text-gray-500 italic bg-white p-2 rounded border border-orange-100">
+                                <b>Interpretación:</b> 1-3 Robusto | 4-6 Vulnerable | 7-9 Frágil. <br />
+                                Impacta en riesgo de Delirium y estancia hospitalaria.
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* 11. RENAL (ERC) */}
                 <RiskAccordion label="Enfermedad Renal (ERC)" name="enfRenalCronica" icon={FlaskConical}>
                     <div className="space-y-3">
