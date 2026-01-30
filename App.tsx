@@ -63,7 +63,7 @@ const StickyHeader = () => {
       <div className="w-full max-w-md md:max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 lg:opacity-0 pointer-events-none">
           <div className="flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-auto h-12 object-contain" />
+            <img src="/logo.png" alt="Logo" className="w-auto h-16 object-contain" />
           </div>
           <div className="flex flex-col border-l border-gray-300 pl-3 ml-2">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none">
@@ -103,11 +103,11 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 left-0 z-40 overflow-y-auto no-print shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       <div className="p-5 border-b border-gray-100 mb-2">
-        <div className="flex flex-col items-center gap-4 w-full">
-          <div className="flex-shrink-0 w-full flex justify-center">
-            <img src="/logo.png" alt="Logo" className="w-32 h-auto object-contain transition-transform hover:scale-105 duration-300" />
+        <div className="flex flex-col items-center gap-0 w-full">
+          <div className="flex-shrink-0 w-full flex justify-center -mb-2">
+            <img src="/logo.png" alt="Logo" className="w-48 h-auto object-contain transition-transform hover:scale-105 duration-300" />
           </div>
-          <div className="flex flex-col items-center w-full border-t border-gray-100 pt-3">
+          <div className="flex flex-col items-center w-full mt-0">
             <div className="flex flex-col items-center">
               <p className="text-[10px] text-clinical-navy font-black uppercase tracking-[0.2em]">
                 {servicioSolicitante || 'Medicina Interna'}
@@ -144,10 +144,22 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
 
       <div className="p-6 mt-auto">
         <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-          <p className="text-xs text-slate-500 text-center font-bold">
-            VPO Digital v2.2 ECO-MOD
-            <span className="block text-[10px] text-blue-500 mt-1 font-black underline">NUEVA ACTUALIZACIÓN: ECO ACTIVO</span>
+          <p className="text-xs text-slate-500 text-center font-medium">
+            VPO Digital V2.2 Eco-mod
+            <span className="block text-[10px] text-slate-400 mt-1">Act: {new Date().toLocaleDateString()}</span>
           </p>
+
+          <div className="mt-4 pt-3 border-t border-slate-200 flex flex-col items-center">
+            <p className="text-[10px] text-gray-400 mb-2">Desarrollado por:</p>
+            <a
+              href="mailto:contacto@auradigital.com"
+              className="flex flex-col items-center group transition-opacity hover:opacity-80"
+              title="Sugerencias, quejas o contacto"
+            >
+              <img src="/aura_logo.png" alt="Aura Digital" className="h-12 w-auto object-contain mb-1" />
+              <span className="text-[10px] font-bold text-clinical-navy group-hover:underline">Contactar Soporte</span>
+            </a>
+          </div>
         </div>
       </div>
     </aside>

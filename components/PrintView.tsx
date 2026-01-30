@@ -38,7 +38,7 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
 
     const getNeumoText = () => {
         if (!data.neumopatia) return "Negado";
-        return `${data.neumo_tipo.toUpperCase()} ${data.neumo_o2 ? '(REQ. O2)' : ''}`;
+        return `${(data.neumo_tipo || '').toUpperCase()} ${data.neumo_o2 ? '(REQ. O2)' : ''}`;
     };
 
     const getRenalText = () => {
@@ -48,7 +48,7 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
 
     const getHepatoText = () => {
         if (!data.hepatopatia) return "Negado";
-        return `${data.hepato_tipo.toUpperCase()} (CHILD: ${data.hepato_child}) ${data.hepato_coagulopatia ? '+COAG' : ''}`;
+        return `${(data.hepato_tipo || '').toUpperCase()} (CHILD: ${data.hepato_child || '?'}) ${data.hepato_coagulopatia ? '+COAG' : ''}`;
     };
 
     const Check = ({ val }: { val: boolean }) => (
@@ -105,7 +105,7 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                     <tbody>
                         <tr>
                             <td width="100" valign="middle" style={{ width: '100px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
-                                <img src="/logo.png" alt="Logo" style={{ width: 'auto', height: '70px' }} />
+                                <img src="/logo.png" alt="Logo" style={{ width: 'auto', height: '90px' }} />
                             </td>
                             <td width="314" valign="bottom" style={{ paddingLeft: '10px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
                                 <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.1em', marginBottom: '5px' }}>{data.unidadMedica || 'CMN SIGLO XXI'} • {(data.servicioSolicitante || 'MEDICINA INTERNA').toUpperCase()}</div>
@@ -259,7 +259,7 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                                             <td width="50%" style={{ borderBottom: '1px solid #eee', padding: '4px 0', paddingLeft: '15px' }}><span style={labelStyle}>ALERGIAS:</span> {data.alergicos ? `(SI) ${data.alergicosDetalle || ''}` : 'NEGADO'}</td>
                                         </tr>
                                         <tr>
-                                            <td style={{ borderBottom: '1px solid #eee', padding: '4px 0' }}><span style={labelStyle}>HTA:</span> <Check val={data.hta} /> {data.hta && `(${data.hta_control?.toUpperCase()} - ${data.hta_tiempo} años)`}</td>
+                                            <td style={{ borderBottom: '1px solid #eee', padding: '4px 0' }}><span style={labelStyle}>HTA:</span> <Check val={data.hta} /> {data.hta && `(${(data.hta_control || '').toUpperCase()} - ${data.hta_tiempo} años)`}</td>
                                             <td style={{ borderBottom: '1px solid #eee', padding: '4px 0', paddingLeft: '15px' }}><span style={labelStyle}>DIABETES:</span> <Check val={data.diabetes} /> {data.diabetes && `(Tipo ${data.diabetesTipo} - ${data.diabetesTiempo} años) ${data.usaInsulina ? '[INSULINA]' : ''}`}</td>
                                         </tr>
                                         <tr>
@@ -267,7 +267,7 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                                             <td style={{ borderBottom: '1px solid #eee', padding: '4px 0', paddingLeft: '15px' }}><span style={labelStyle}>I. CARDIACA:</span> <Check val={data.icc} /> {data.icc && getIccText()}</td>
                                         </tr>
                                         <tr>
-                                            <td style={{ borderBottom: '1px solid #eee', padding: '4px 0' }}><span style={labelStyle}>ARRITMIAS:</span> <Check val={data.arritmias} /> {data.arritmias && `${data.arritmia_tipo?.toUpperCase()} ${data.marcapasos ? '[MARCAPASOS]' : ''}`}</td>
+                                            <td style={{ borderBottom: '1px solid #eee', padding: '4px 0' }}><span style={labelStyle}>ARRITMIAS:</span> <Check val={data.arritmias} /> {data.arritmias && `${(data.arritmia_tipo || '').toUpperCase()} ${data.marcapasos ? '[MARCAPASOS]' : ''}`}</td>
                                             <td style={{ borderBottom: '1px solid #eee', padding: '4px 0', paddingLeft: '15px' }}><span style={labelStyle}>VALVULOPATÍA:</span> <Check val={data.valvulopatia} /> {data.valvulopatia && `${data.valvula_afectada} ${data.valvula_patologia} (${data.valvula_severidad})`}</td>
                                         </tr>
                                         <tr>
@@ -275,7 +275,7 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                                             <td style={{ borderBottom: '1px solid #eee', padding: '4px 0', paddingLeft: '15px' }}><span style={labelStyle}>NEUMOPATÍA:</span> <Check val={data.neumopatia} /> {data.neumopatia && getNeumoText()}</td>
                                         </tr>
                                         <tr>
-                                            <td style={{ borderBottom: '1px solid #eee', padding: '4px 0' }}><span style={labelStyle}>EVC (NEURO):</span> <Check val={data.evc} /> {data.evc && `${data.evc_tipo?.toUpperCase()} (${data.evc_fecha})`}</td>
+                                            <td style={{ borderBottom: '1px solid #eee', padding: '4px 0' }}><span style={labelStyle}>EVC (NEURO):</span> <Check val={data.evc} /> {data.evc && `${(data.evc_tipo || '').toUpperCase()} (${data.evc_fecha})`}</td>
                                             <td style={{ borderBottom: '1px solid #eee', padding: '4px 0', paddingLeft: '15px' }}><span style={labelStyle}>HEPATOPATÍA:</span> <Check val={data.hepatopatia} /> {data.hepatopatia && getHepatoText()}</td>
                                         </tr>
                                         <tr>
@@ -378,14 +378,14 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                             <td style={{ fontSize: '10px', fontWeight: 'bold' }}>
                                 {typeof data.stopbang_total === 'number' ? data.stopbang_total : 0} pts
                                 <br />
-                                <span style={{ fontSize: '8px' }}>{(data.stopbang_risk || 'Bajo').toUpperCase()}</span>
+                                <span style={{ fontSize: '8px' }}>{((data.stopbang_risk || 'Bajo') + '').toUpperCase()}</span>
                             </td>
                             <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: (data.vrc_total || 0) >= 4 ? '#fecaca' : 'transparent' }}>
                                 {(data.vrc_total !== undefined && data.vrc_total !== -1) ?
                                     <>
                                         {data.vrc_total} pts
                                         <br />
-                                        <span style={{ fontSize: '8px' }}>{(data.vrc_riesgo || 'Bajo').toUpperCase()}</span>
+                                        <span style={{ fontSize: '8px' }}>{((data.vrc_riesgo || 'Bajo') + '').toUpperCase()}</span>
                                     </>
                                     : '-'}
                             </td>
@@ -434,7 +434,25 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                                         <tr>
                                             <td width="33%" valign="top" style={{ borderRight: '1px solid #ccc', paddingRight: '15px' }}>
                                                 <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '15px' }}>PRE-QUIRÚRGICO</div>
-                                                <div style={{ fontSize: '10px', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{data.plan_pre}</div>
+                                                <div style={{ fontSize: '10px', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
+                                                    {data.plan_pre}
+                                                    {data.selectedMeds && data.selectedMeds.length > 0 && (
+                                                        <div style={{ marginTop: '10px', borderTop: '1px dashed #ccc', paddingTop: '5px' }}>
+                                                            <div style={{ fontWeight: 'bold', textDecoration: 'underline', marginBottom: '3px' }}>CONCILIACIÓN FARMACOLÓGICA:</div>
+                                                            {data.selectedMeds.map((med, idx) => (
+                                                                <div key={idx} style={{ marginBottom: '4px' }}>
+                                                                    <span style={{ fontWeight: 'bold' }}>• {med.name}:</span> <span style={{
+                                                                        color: med.action === 'stop' ? '#b91c1c' : med.action === 'adjust' ? '#b45309' : '#15803d',
+                                                                        fontWeight: 'bold'
+                                                                    }}>
+                                                                        {med.action === 'stop' ? 'SUSPENDER' : med.action === 'adjust' ? 'AJUSTAR' : 'CONTINUAR'}
+                                                                    </span>
+                                                                    <div style={{ paddingLeft: '8px', fontStyle: 'italic', color: '#444' }}>{med.instructions}</div>
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
                                             </td>
                                             <td width="33%" valign="top" style={{ borderRight: '1px solid #ccc', padding: '0 15px' }}>
                                                 <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '15px' }}>TRANS-QUIRÚRGICO</div>

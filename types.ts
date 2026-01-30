@@ -24,7 +24,7 @@ export interface SelectedMed {
   isGLP1?: boolean;
   glp1Frequency?: 'daily' | 'weekly';
   isAnticoagulant?: boolean;
-  anticoagType?: 'AVK' | 'DOAC';
+  anticoagType?: 'AVK' | 'DOAC' | 'HBPM';
   route?: 'VO' | 'IV' | 'SC' | 'Inhalada' | 'Topica' | 'Oftalmica';
   conversionMessage?: string; // To display bioequivalence notes
 

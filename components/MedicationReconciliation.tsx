@@ -288,7 +288,7 @@ const MedicationReconciliation: React.FC = () => {
     // Careful with infinite loops. Let's provide a visual indicator or just do it on Mount.
 
     // --- BRIDGE THERAPY LOGIC ---
-    const isHighRiskThrombotic = (formData.cha2ds2vasc || 0) > 5 || formData.evc || formData.valvula_protesis;
+    const isHighRiskThrombotic = (formData.cha2ds2vasc || 0) > 5 || (formData.caprini || 0) >= 5 || formData.evc || formData.valvula_protesis;
     const hasEnoxaparin = selectedMeds.some(m => m.name.toLowerCase().includes('enoxaparina'));
 
     const addEnoxaparinBridge = () => {

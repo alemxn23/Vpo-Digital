@@ -66,10 +66,14 @@ const RiskScales: React.FC = () => {
     // --- MASTER SCORE FUNCTION LOGIC ---
     // --- MASTER SCORE FUNCTION LOGIC ---
     useEffect(() => {
-        // Helper to prevent infinite loops due to type mismatch (string vs number)
+        // Helper to prevent infinite loops due to type mismatch (string vs number) or NaN
         const safeSet = (key: keyof VPOData, newVal: any) => {
-            // Use loose quality to catch "5" == 5, or exact match
-            if (data[key] != newVal) {
+            const current = data[key];
+            // Handle NaN comparisons (NaN !== NaN is true)
+            if (typeof newVal === 'number' && typeof current === 'number' && isNaN(newVal) && isNaN(current)) {
+                return;
+            }
+            if (current != newVal) {
                 setValue(key, newVal);
             }
         };
@@ -314,7 +318,28 @@ const RiskScales: React.FC = () => {
 
         safeSet('stopbang_risk', sbRisk);
 
-    }, [data, setValue]);
+    }, [
+        data.edad, data.imc, data.genero, data.hta, data.hta_control, data.diabetes, data.usaInsulina,
+        data.cardiopatiaIsquemica, data.cardio_tipo_evento, data.cardio_fecha_evento,
+        data.icc, data.icc_nyha, data.icc_evolucion, data.icc_historia_eap,
+        data.neumopatia, data.neumo_tipo, data.diagnosed_osa,
+        data.enfRenalCronica, data.erc_dialisis, data.erc_estadio, data.creatinina, data.tfg,
+        data.hepatopatia, data.hepato_child,
+        data.evc, data.evc_fecha,
+        data.arritmias, data.arritmia_tipo, data.valvulopatia,
+        data.ecg_ritmo_especifico, data.ecg_extrasistoles,
+        data.esUrgencia, data.gupta_surgical_site, data.functional_status,
+        data.stopBang_snoring, data.stopBang_tired, data.stopBang_observed, data.stopBang_neck,
+        data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica,
+        data.flag_angina_inestable, data.flag_estenosis_aortica_severa, data.flag_eap_agudo, data.flag_evc_agudo,
+        data.capA_cxMenor, data.capA_cxMayorAnt, data.capA_varices, data.capA_eii, data.capA_iam, data.capA_epoc, data.capA_reposo,
+        data.capB_cxMayor, data.capB_laparoscopia, data.capB_confinado, data.capB_ferula, data.capB_cancer, data.capB_cateter,
+        data.capC_historiaTVP, data.capC_historiaFam, data.capC_leiden, data.capC_lupico, data.capC_hit,
+        data.capD_artroplastia, data.capD_fxCadera, data.capD_trauma,
+        data.hasbled_inr_labil, data.hasbled_alcohol, data.vrc_epoc, data.vrc_beta_blocker,
+        data.tabaquismo, data.inr, data.urea, data.asa_manual_class, data.risk_overrides,
+        setValue
+    ]);
 
     // --- INTERACTIVE AUDIT MODAL LOGIC ---
     const toggleOverride = (key: string, autoValue: boolean) => {

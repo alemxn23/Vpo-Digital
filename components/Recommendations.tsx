@@ -13,6 +13,15 @@ const Recommendations: React.FC = () => {
     // Clinical Variables for Logic
     const data = watch();
 
+    // Helper to prevent infinite loops
+    const safeSet = (key: keyof VPOData, newVal: any) => {
+        const current = (data as any)[key];
+        if (typeof newVal === 'number' && typeof current === 'number' && isNaN(newVal) && isNaN(current)) return;
+        if (current != newVal) {
+            setValue(key, newVal as any);
+        }
+    };
+
     // --- BUSINESS RULES & LOGIC HELPERS ---
 
     const getInsulinSchema = () => {
@@ -91,13 +100,40 @@ const Recommendations: React.FC = () => {
     };
 
     const getFluidRecommendation = () => {
-        const isCHF = data.icc;
-        const isHighCVRisk = data.cardiopatiaIsquemica || (data.lee && (data.lee === 'III' || data.lee === 'IV'));
+        const site = data.gupta_surgical_site || 'other';
+        const isNeuro = site === 'intracranial' || site === 'spinal';
+        const isThoracic = site === 'thoracic';
+        const isAbdMajor = ['intestinal', 'bariatric', 'biliary', 'urologic', 'anorectal', 'obstetric', 'gyneco'].includes(site) || data.capB_cxMayor || data.capB_laparoscopia;
 
-        if (isCHF || isHighCVRisk) {
-            return "Manejo ESTRICTO de líquidos (Mantenimiento mínimo/No soluciones de base). Mantener euvolemia.";
+        const isChfOrRenal = data.icc || data.enfRenalCronica || (data.lee && (data.lee === 'III' || data.lee === 'IV'));
+        const isCirrhosis = data.hepatopatia;
+        const isAmbulatory = data.capA_cxMenor;
+
+        // 1. SAFETY RULE: NO SYNTHETIC COLLOIDS
+        const safetyWarning = "⚠️ KDIGO 2024: Uso de Coloides Sintéticos (HES/Voluven) CONTRAINDICADO (Riesgo AKI/Mortalidad).";
+
+        let strategy = "";
+
+        // 2. COMORBIDITY OVERRIDES
+        if (isChfOrRenal) {
+            strategy = "• ESTRATEGIA: Restrictiva guiada por metas (GDFT).\n• Recomendación: Tolerancia a fluidos disminuida. No suspender diuréticos si hay congestión. Balance neutro/negativo.";
+        } else if (isCirrhosis) {
+            strategy = "• FLUIDO: Cristaloides Balanceados o Albúmina.\n• Regla: Si paracentesis >5L -> Reponer 8g Albúmina por litro extraído. Evitar Salina 0.9%.";
+        } else if (isNeuro) {
+            // 3. SURGERY SPECIFIC
+            strategy = "• FLUIDO: Solución Salina 0.9% (ÚNICA opción permitida).\n• ALERTA: Prohibido el uso de soluciones hipotónicas o Ringer Lactato en grandes volúmenes (Riesgo de Edema Cerebral).";
+        } else if (isThoracic) {
+            strategy = "• ESTRATEGIA: Estrictamente Restrictiva (< 2 ml/kg/h).\n• Meta: Balance acumulado < 1.5L en 24h. Pulmón sensible. Manejar hipotensión con vasopresores.";
+        } else if (isAbdMajor) {
+            strategy = "• ESTRATEGIA: Moderadamente Liberal (Estudio RELIEF).\n• Fluido: Cristaloides Balanceados (Hartmann/Plasma-Lyte). Evitar Salina 0.9% (Acidosis hiperclorémica).\n• Meta: 10-12 ml/kg/h intraop. Balance positivo final 1-2L.";
+        } else if (isAmbulatory) {
+            strategy = "• ESTRATEGIA: Liberal Moderada (1-2L Cristaloides Balanceados) para reducir NVPO y mareo.";
+        } else {
+            // Default Standard
+            strategy = "• Recomendación: Solución Hartmann/Balanceada 1000 cc para 8 horas (Mantenimiento Estándar).";
         }
-        return "Solución Hartmann 1000cc para 8 horas.";
+
+        return `${strategy}\n• ${safetyWarning}\n(Ref: ASA 2023, SAMBA 2024, KDIGO 2024)`;
     };
 
     const getThromboprophylaxisRec = () => {
@@ -113,8 +149,8 @@ const Recommendations: React.FC = () => {
         let dose = "40mg SC cada 24h";
         let mechanical = "Medias de Compresión Graduada (TEDs)";
 
-        // 2. Renal Adjustment (TFG < 30)
-        if (tfg < 30) {
+        // 2. Renal Adjustment (TFG < 30 or Stage 4/5 CKD)
+        if (tfg < 30 || data.erc_estadio === 'G4' || data.erc_estadio === 'G5') {
             drug = "Heparina No Fraccionada (HNF) o Enoxaparina Ajustada";
             dose = "HNF 5000 UI SC cada 12h (Preferido) o Enoxaparina 30mg SC cada 24h";
         } else {
@@ -171,11 +207,17 @@ const Recommendations: React.FC = () => {
             ? "\n\n⚠️ VÍA AÉREA (STOP-BANG ALTO): Se sugiere extubación despierto y monitoreo de oximetría continua postoperatoria por alta probabilidad de SAOS."
             : "";
 
-        return `• Ayuno: 6h para sólidos y 2h para líquidos claros.
+        // Fasting & CHO Logic (SAMBA 2024)
+        const isDiabetic = data.diabetes;
+        const fastingRule = isDiabetic
+            ? "• Ayuno: Sólidos 6h. Líquidos claros (AGUA) hasta 2h previas.\n• ⚠️ DIABETES: EVITAR cargas de Carbohidratos/Maltodextrina (SAMBA 2024: Riesgo de Hiperglucemia/Variabilidad)."
+            : "• Ayuno: Sólidos 6h. Líquidos claros hasta 2h previas.\n• Carga CHO: Maltodextrina recomendada 2h antes (Reduce resistencia a insulina).";
+
+        return `${fastingRule}
 • ${aineInstruction}
-• Profilaxis antibiótica: ${antibioticRegimen}
-• Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas según esquema (Ver Post)' : 'Deambulación temprana / Medias TEDs'}.
-• Soluciones: ${fluidRec}${medsPlan}${dukeAlert}${frailtyRec}${stopBangRec}`;
+• Profilaxis antibiótica: ${antibioticRegimen} (Ref: ASHP Guidelines / Sanford 2024)
+• Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas según esquema (Ver Post)' : 'Deambulación temprana / Medias TEDs'}. (Ref: ACCP / PAUSE)
+• Soluciones: \n${fluidRec}${medsPlan}${dukeAlert}${frailtyRec}${stopBangRec}`;
     };
 
     const getEcoRecommendations = () => {
@@ -201,12 +243,15 @@ const Recommendations: React.FC = () => {
     };
 
     const generateTransPlan = () => {
-        // Hemodynamic Logic
-        const isHighCVRisk = data.icc || data.cardiopatiaIsquemica || data.edad > 75;
+        // Hemodynamic & Fluid Logic (Mirrored from Engine)
+        const fluidRec = getFluidRecommendation(); // Use the engine output
+
+        const isHighCVRisk = data.icc || data.cardiopatiaIsquemica || data.edad > 75 || data.enfRenalCronica;
         const hbTarget = isHighCVRisk ? "10.0 g/dL" : "8.0 g/dL";
-        const fluidMgmt = isHighCVRisk
-            ? "Manejo ESTRICTO de líquidos. Balance neutro/negativo. Evitar sobrecarga hídrica."
-            : "Evitar sobrecarga hídrica. Balances neutros.";
+        // Extract just the strategy line if needed, or append to liquids
+        // For Trans plan, we want specific hemodynamic goals too.
+
+        const hemodynamics = "• METAS HEMODINÁMICAS: TA < 140/90 mmHg. Evitar hipotensión. Evitar sobrecarga hídrica.";
 
         // Antibiotic Redosing logic based on site
         const site = data.gupta_surgical_site || 'other';
@@ -233,7 +278,7 @@ const Recommendations: React.FC = () => {
 • Monitoreo cardiaco y pulsioximetría continuos.
 • METAS: Hb > ${hbTarget}. Uresis ≥ 0.5ml/kg/h.
 • METAS HEMODINÁMICAS: TA < 140/90 mmHg. Evitar hipotensión.
-• LÍQUIDOS: ${fluidMgmt}${antibioticInstructions}${insulinInstruction}${steroidInstruction}${ecoRecs}`;
+• LÍQUIDOS: \n${fluidRec}${antibioticInstructions}${insulinInstruction}${steroidInstruction}${ecoRecs}`;
     };
 
     const generatePostPlan = () => {
@@ -254,10 +299,13 @@ const Recommendations: React.FC = () => {
     // --- EFFECT: APPLY STANDARD GOALS ---
     useEffect(() => {
         if (metasChecked) {
-            // Only populate if empty or user specifically re-toggles
-            setValue('plan_pre', generatePrePlan());
-            setValue('plan_trans', generateTransPlan());
-            setValue('plan_post', generatePostPlan());
+            const pre = generatePrePlan();
+            const trans = generateTransPlan();
+            const post = generatePostPlan();
+
+            if (data.plan_pre !== pre) setValue('plan_pre', pre);
+            if (data.plan_trans !== trans) setValue('plan_trans', trans);
+            if (data.plan_post !== post) setValue('plan_post', post);
         }
     }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica, data.flag_estenosis_aortica_severa, data.stopbang_risk, data.fragilidad_score]);
 

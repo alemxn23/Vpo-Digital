@@ -72,7 +72,7 @@ const MedicalNoteGenerator: React.FC = () => {
         return `PLAN OPERATORIO (NOM-004):\nCIRUGÍA: ${data.cirugiaProgramada || 'Programada'}\n\nRECOMENDACIONES FARMACOLÓGICAS:\n${medInstructions}\n${stressDose ? `\nPAUTA DE ESTRÉS: ${stressDose}\n` : ''}\nRECOMENDACIONES GENERALES:\n- ${data.ayuno || 'Ayuno estándar'}\n- ${data.recomendacionesGenerales || 'Seguir protocolo institucional'}\n- Metas Transoperatorias: TA < 180/110 mmHg, Glu 70-180 mg/dL.${saosRec}`.trim();
     };
 
-    const fullNote = `VALORACIÓN MÉDICA PREOPERATORIA (NOM-004-SSA3-2012)\nFecha: ${data.fecha} | Hora: ${data.hora}\nUnidad: ${data.unidadMedica}\n\n${generateSubjective()}\n\n${generateObjective()}\n\n${generateAssessment()}\n\n${generatePlan()}\n\nNota generada por VPO Digital v2.1.`.trim();
+    const fullNote = `VALORACIÓN MÉDICA PREOPERATORIA (NOM-004-SSA3-2012)\nFecha: ${data.fecha} | Hora: ${data.hora}\nUnidad: ${data.unidadMedica}\n\n${generateSubjective()}\n\n${generateObjective()}\n\n${generateAssessment()}\n\n${generatePlan()}\n\nNota generada por VPO Digital v2.2 ECO-MOD.`.trim();
 
     const sections = [
         { id: 'subj', title: 'Subjetivo', content: generateSubjective(), icon: User },

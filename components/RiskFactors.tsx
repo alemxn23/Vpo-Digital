@@ -62,7 +62,9 @@ const RiskFactors: React.FC = () => {
     useEffect(() => {
         if (tabaquismo && cigarros > 0 && anios > 0) {
             const it = parseFloat(((cigarros * anios) / 20).toFixed(1));
-            if (watch('indiceTabaquico') !== it) {
+            // FIXED: Handle NaN and check before setting
+            const currentIT = watch('indiceTabaquico');
+            if (currentIT !== it && !(isNaN(currentIT) && isNaN(it))) {
                 setValue('indiceTabaquico', it);
             }
             let riesgo = "Leve";
@@ -419,7 +421,7 @@ const RiskFactors: React.FC = () => {
                 </RiskAccordion>
 
                 {/* 10.1 Vía Aérea y Sueño (STOP-BANG) - Conditional */}
-                {(watch('imc') > 30 || watch('diagnosed_osa') || watch('neumo_tipo') === 'saohs') && (
+                {((parseFloat(watch('imc') as any) || 0) > 30 || watch('diagnosed_osa') || watch('neumo_tipo') === 'saohs') && (
                     <div className="border border-blue-200 rounded-xl bg-blue-50/50 overflow-hidden animate-fadeIn">
                         <label className="flex items-center gap-2 p-4 text-blue-900 font-bold text-sm">
                             <Wind size={20} /> Vía Aérea y Sueño (STOP-BANG)
@@ -428,8 +430,8 @@ const RiskFactors: React.FC = () => {
                             <div className="bg-white p-3 rounded-lg border border-blue-100 text-xs shadow-sm">
                                 <p className="font-bold text-gray-500 uppercase mb-2">Puntos Automáticos (Detectados):</p>
                                 <div className="grid grid-cols-2 gap-2 text-slate-700">
-                                    <div className={watch('imc') > 35 ? 'font-bold text-red-600' : ''}>• IMC &gt; 35</div>
-                                    <div className={watch('edad') > 50 ? 'font-bold text-red-600' : ''}>• Edad &gt; 50</div>
+                                    <div className={(parseFloat(watch('imc') as any) || 0) > 35 ? 'font-bold text-red-600' : ''}>• IMC &gt; 35</div>
+                                    <div className={(parseFloat(watch('edad') as any) || 0) > 50 ? 'font-bold text-red-600' : ''}>• Edad &gt; 50</div>
                                     <div className={watch('hta') ? 'font-bold text-red-600' : ''}>• Hipertensión</div>
                                     <div className={watch('genero') === 'Masc' ? 'font-bold text-red-600' : ''}>• Género Masc.</div>
                                 </div>

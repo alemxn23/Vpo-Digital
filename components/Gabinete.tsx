@@ -16,11 +16,12 @@ const Gabinete: React.FC = () => {
         let points = 0;
 
         // 1. Age
-        if (data.edad > 80) { points += 16; }
-        else if (data.edad >= 51) { points += 3; }
+        const age = parseFloat(data.edad as any) || 0;
+        if (age > 80) { points += 16; }
+        else if (age >= 51) { points += 3; }
 
         // 2. SpO2 Basal
-        const spo2 = data.sato2 || 98; // Default to safe if not set, but practically handled
+        const spo2 = data.sato2 || 98;
         if (spo2 <= 90) { points += 24; }
         else if (spo2 <= 95) { points += 8; }
 
@@ -39,15 +40,21 @@ const Gabinete: React.FC = () => {
         if (data.ariscat_duracion === 'mas_3') { points += 23; }
         else if (data.ariscat_duracion === '2_a_3') { points += 16; }
 
-        setValue('ariscat_total', points);
+        const currentTotal = watch('ariscat_total');
+        if (currentTotal !== points && !(isNaN(currentTotal) && isNaN(points))) {
+            setValue('ariscat_total', points);
+        }
 
         // Set Category and Text
         let category = "Bajo Riesgo";
         if (points >= 45) category = "ALTO RIESGO";
         else if (points >= 26) category = "Riesgo Moderado";
-        setValue('ariscat_categoria', category);
 
-    }, [data.edad, data.sato2, data.ariscat_infeccion, data.hb, data.ariscat_incision, data.ariscat_duracion, setValue]);
+        if (watch('ariscat_categoria') !== category) {
+            setValue('ariscat_categoria', category);
+        }
+
+    }, [data.edad, data.sato2, data.ariscat_infeccion, data.hb, data.ariscat_incision, data.ariscat_duracion, setValue, watch]);
 
 
     // --- DUKE CRITERIA LOGIC (ENDOCARDITIS) ---

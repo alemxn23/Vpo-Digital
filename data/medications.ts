@@ -2,6 +2,7 @@
 import { SelectedMed } from '../types';
 
 export const MEDICATIONS_DB: SelectedMed[] = [
+
     {
         id: 'meto',
         name: 'Metoprolol',
@@ -478,6 +479,18 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         alertLevel: 'yellow',
         instructions: 'Prevención 2ria: CONTINUAR. Suspender 7 días SOLO si Neuro/Oftalmo/Raquia.',
         atcCode: 'B01AC06'
+    },
+    {
+        id: 'enoxaparin',
+        name: 'Enoxaparina',
+        englishName: 'Enoxaparin',
+        category: 'Anticoagulante',
+        action: 'adjust',
+        daysPrior: 1, // 24h usually
+        alertLevel: 'yellow',
+        instructions: 'Suspender 24h antes de la cirugía (Dosis Terapéutica) o 12h antes (Profiláctica). Evaluar función renal.',
+        atcCode: 'B01AB05',
+        keywords: ['clexane', 'heparina', 'bajo peso molecular']
     },
     {
         id: 'clopi',
@@ -1609,7 +1622,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Cefalexina',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01DB01'
@@ -1619,7 +1632,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Ciprofloxacino',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01MA02'
@@ -1629,7 +1642,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Azitromicina',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01FA10'
@@ -1639,7 +1652,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Claritromicina',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01FA09'
@@ -1649,7 +1662,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Doxiciclina',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01AA02'
@@ -1659,7 +1672,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Nitrofurantoína',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01XE01'
@@ -1669,7 +1682,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Clindamicina',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01FF01'
@@ -1679,7 +1692,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Levofloxacino',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01MA12'
@@ -1689,7 +1702,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Trimetoprima/Sulfametoxazol',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01EE01'
@@ -1699,7 +1712,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Lansoprazol',
         category: 'IBP',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A02BC03'
@@ -1709,7 +1722,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Rabeprazol',
         category: 'IBP',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A02BC04'
@@ -1719,7 +1732,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Famotidina',
         category: 'Antihistamínico H2',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A02BA03'
@@ -1729,7 +1742,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Sucralfato',
         category: 'Gastroprotector',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A02BX02'
@@ -1739,7 +1752,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Loperamida',
         category: 'Antidiarreico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A07DA03'
@@ -1749,7 +1762,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Finasterida',
         category: 'Urológico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'G04CB01'
@@ -1759,7 +1772,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Dutasterida',
         category: 'Urológico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'G04CB02'
@@ -1769,7 +1782,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Solifenacina',
         category: 'Urológico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'G04BD08'
@@ -1779,7 +1792,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Oxibutinina',
         category: 'Urológico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'G04BD04'
@@ -1789,7 +1802,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Timolol (Oftálmico)',
         category: 'Oftalmológico',
         action: 'continue',
-        
+
         alertLevel: 'yellow',
         instructions: 'CONTINUAR. Vigilar bradicardia por absorción sistémica.',
         atcCode: 'S01ED01'
@@ -1799,7 +1812,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Latanoprost',
         category: 'Oftalmológico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'S01EE01'
@@ -1809,7 +1822,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Brimonidina',
         category: 'Oftalmológico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'S01EA05'
@@ -1829,7 +1842,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Etoricoxib',
         category: 'AINE (COX-2)',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'M01AH05'
@@ -1859,7 +1872,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Vitamina C (PURA)',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A11GA01'
@@ -1869,7 +1882,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Vitamina D',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A11CC05'
@@ -1879,7 +1892,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Sulfato Ferroso',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'B03AA07'
@@ -1889,7 +1902,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Carbonato de Calcio',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A12AA04'
@@ -1899,7 +1912,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Magnesio',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A12CC'
@@ -1939,7 +1952,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Aripiprazol',
         category: 'Antipsicótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'N05AX12'
@@ -1949,7 +1962,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Ziprasidona',
         category: 'Antipsicótico',
         action: 'continue',
-        
+
         alertLevel: 'yellow',
         instructions: 'CONTINUAR. Ojo: Prolongación QT.',
         atcCode: 'N05AE04'
@@ -1959,7 +1972,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Paliperidona',
         category: 'Antipsicótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'N05AX13'
@@ -1999,7 +2012,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Tamoxifeno',
         category: 'Antiestrógenos',
         action: 'continue',
-        
+
         alertLevel: 'yellow',
         instructions: 'CONTINUAR (En cáncer de mama). Vigilancia TVP.',
         atcCode: 'L02BA01'
@@ -2009,7 +2022,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Voscina (Buscapina)',
         category: 'Antiespasmódico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A03BB01'
@@ -2019,7 +2032,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Bromuro de Pinaverio',
         category: 'Antiespasmódico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A03AX04'
@@ -2029,7 +2042,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Trimebutina',
         category: 'Antiespasmódico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A03AA05'
@@ -2039,7 +2052,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Simeticona',
         category: 'Antiflatulento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A03AX13'
@@ -2069,7 +2082,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Cefadroxilo',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01DB05'
@@ -2079,7 +2092,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Cefuroxima',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01DC02'
@@ -2089,7 +2102,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Cefdinir',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01DD15'
@@ -2099,7 +2112,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Amoxicilina / Ácido Clavulánico',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01CR02'
@@ -2109,7 +2122,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Fosfomicina',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01XX01'
@@ -2119,7 +2132,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Metronidazol',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01XD01'
@@ -2129,7 +2142,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Vancomicina',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01XA01'
@@ -2139,7 +2152,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Linezolid',
         category: 'Antibiótico',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'J01XX08'
@@ -2209,7 +2222,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Montelukast',
         category: 'Antileucotrieno',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'R03DC03'
@@ -2219,7 +2232,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Budesonida / Formoterol (Symbicort)',
         category: 'Combinación Respiratoria',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'R03AK07'
@@ -2229,7 +2242,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Fluticasona / Salmeterol (Seretide/Advair)',
         category: 'Combinación Respiratoria',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'R03AK06'
@@ -2239,7 +2252,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Umeclidinio / Vilanterol (Anoro)',
         category: 'LAMA/LABA',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'R03AL03'
@@ -2249,7 +2262,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Tiotropio / Olodaterol (Stiolto)',
         category: 'LAMA/LABA',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'R03AL06'
@@ -2259,7 +2272,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Febuxostat',
         category: 'Antigotoso',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'M04AA03'
@@ -2269,7 +2282,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Ranitidina',
         category: 'Anti-H2',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A02BA02'
@@ -2279,7 +2292,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Cimetidina',
         category: 'Anti-H2',
         action: 'continue',
-        
+
         alertLevel: 'yellow',
         instructions: 'CONTINUAR. Ojo con interacciones citocromo P450.',
         atcCode: 'A02BA01'
@@ -2289,7 +2302,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Domperidona',
         category: 'Procinético',
         action: 'continue',
-        
+
         alertLevel: 'yellow',
         instructions: 'CONTINUAR. Ojo: Prolongación del intervalo QT.',
         atcCode: 'A03FA03'
@@ -2299,7 +2312,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Itoprida',
         category: 'Procinético',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A03FA'
@@ -2309,7 +2322,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Vitamina B12 (Cianocobalamina)',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'B03BA01'
@@ -2319,7 +2332,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Vitamina B6 (Piridoxina)',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A11HA02'
@@ -2329,7 +2342,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Vitamina B1 (Tiamina)',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A11DA01'
@@ -2339,7 +2352,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Ácido Fólico',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'B03BB01'
@@ -2349,7 +2362,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Zinc (Suplemento)',
         category: 'Suplemento',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'A12CB'
@@ -2359,7 +2372,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Terazosina',
         category: 'Alfa-Bloq (HBP)',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'G04CA03'
@@ -2369,7 +2382,7 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         name: 'Alfuzosina',
         category: 'Alfa-Bloq (HBP)',
         action: 'continue',
-        
+
         alertLevel: 'green',
         instructions: 'CONTINUAR.',
         atcCode: 'G04CA01'
