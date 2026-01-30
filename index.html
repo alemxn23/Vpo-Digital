@@ -83,6 +83,47 @@
       scrollbar-width: none;
       /* Firefox */
     }
+
+    /* Shiny Effect */
+    @keyframes shine {
+      0% {
+        left: -100%;
+        opacity: 0;
+      }
+
+      20% {
+        opacity: 0.5;
+      }
+
+      40% {
+        left: 100%;
+        opacity: 0;
+      }
+
+      100% {
+        left: 100%;
+        opacity: 0;
+      }
+    }
+
+    .shiny-effect {
+      position: relative;
+      overflow: hidden;
+      display: inline-block;
+    }
+
+    .shiny-effect::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 50%;
+      height: 100%;
+      background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
+      transform: skewX(-25deg);
+      animation: shine 5s infinite;
+      pointer-events: none;
+    }
   </style>
 </head>
 
