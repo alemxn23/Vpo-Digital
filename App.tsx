@@ -102,9 +102,9 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
 
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 left-0 z-40 overflow-y-auto no-print shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
-      <div className="p-2 border-b border-gray-100 mb-0">
+      <div className="pt-0 px-2 pb-2 border-b border-gray-100 mb-0">
         <div className="flex flex-col items-center gap-0 w-full">
-          <div className="flex-shrink-0 w-full flex justify-center -mb-6">
+          <div className="flex-shrink-0 w-full flex justify-center -mb-8 -mt-6">
             <img src="/logo.png" alt="Logo" className="w-48 h-auto object-contain transition-transform hover:scale-105 duration-300" />
           </div>
           <div className="flex flex-col items-center w-full mt-0">
@@ -160,7 +160,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
                 src="/aura_logo.png"
                 alt="Aura Digital"
                 className="h-12 w-auto object-contain mb-1"
-                style={{ mixBlendMode: 'multiply' }}
+                style={{ mixBlendMode: 'screen', filter: 'brightness(1.1) contrast(1.1)' }}
               />
               <span className="text-[10px] font-bold text-clinical-navy group-hover:underline">Contactar Soporte</span>
             </a>
