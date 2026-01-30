@@ -104,9 +104,9 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 left-0 z-40 overflow-y-auto no-print shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       <div className="pt-0 px-2 pb-2 border-b border-gray-100 mb-0">
         <div className="flex flex-col items-center gap-0 w-full">
-          <div className="flex-shrink-0 w-full flex justify-center -mb-8 -mt-10">
+          <div className="flex-shrink-0 w-full flex justify-center" style={{ marginTop: '-2.5rem', marginBottom: '-2rem' }}>
             <div className="shiny-effect">
-              <img src="/logo.png" alt="Logo" className="w-48 h-auto object-contain transition-transform hover:scale-105 duration-300" />
+              <img src="/logo.png?v=3" alt="Logo" className="w-48 h-auto object-contain transition-transform hover:scale-105 duration-300" />
             </div>
           </div>
           <div className="flex flex-col items-center w-full mt-0">
@@ -159,7 +159,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
               title="Sugerencias, quejas o contacto"
             >
               <img
-                src="/aura_logo.png"
+                src="/aura_logo.png?v=3"
                 alt="Aura Digital"
                 className="h-12 w-auto object-contain mb-1"
               />
