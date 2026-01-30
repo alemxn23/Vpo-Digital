@@ -169,6 +169,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
               />
               <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
             </a>
+            <p className="text-[9px] text-gray-400 mt-1">v2.3.0 (Updated)</p>
           </div>
         </div>
       </div>
