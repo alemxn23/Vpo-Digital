@@ -163,9 +163,9 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
               </div>
 
               <img
-                src="/aura_logo.png?v=8"
+                src="/aura_logo.png?v=9"
                 alt="Aura Digital"
-                className="h-16 w-auto object-contain mb-1"
+                className="h-16 w-auto object-contain mb-1 mix-blend-multiply"
               />
               <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
             </a>
