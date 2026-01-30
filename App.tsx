@@ -145,7 +145,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
       <div className="p-6 mt-auto">
         <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
           <p className="text-xs text-slate-500 text-center font-medium">
-            VPO Digital V2.3.0
+            VPO Digital V2.3.1 (SW Fix)
             <span className="block text-[10px] text-slate-400 mt-1">Act: {new Date().toLocaleDateString()}</span>
           </p>
 
@@ -169,7 +169,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
               />
               <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
             </a>
-            <p className="text-[9px] text-gray-400 mt-1">v2.3.0 (Updated)</p>
+            <p className="text-[9px] text-gray-400 mt-1">v2.3.1</p>
           </div>
         </div>
       </div>
