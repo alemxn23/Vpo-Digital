@@ -84,45 +84,49 @@
       /* Firefox */
     }
 
-    /* Shiny Effect */
-    @keyframes shine {
-      0% {
-        left: -100%;
-        opacity: 0;
-      }
+    /* Neural Pulse Effect */
+    @keyframes neural-pulse {
 
-      20% {
-        opacity: 0.5;
-      }
-
-      40% {
-        left: 100%;
-        opacity: 0;
-      }
-
+      0%,
       100% {
-        left: 100%;
-        opacity: 0;
+        opacity: 1;
+        filter: brightness(100%);
+      }
+
+      5% {
+        opacity: 0.8;
+        filter: brightness(130%);
+      }
+
+      10% {
+        opacity: 1;
+        filter: brightness(100%);
+      }
+
+      50% {
+        opacity: 1;
+        filter: brightness(100%);
+      }
+
+      55% {
+        opacity: 0.9;
+        filter: brightness(150%) drop-shadow(0 0 2px rgba(50, 200, 255, 0.5));
+      }
+
+      60% {
+        opacity: 1;
+        filter: brightness(100%);
       }
     }
 
-    .shiny-effect {
-      position: relative;
-      overflow: hidden;
-      display: inline-block;
+    .neural-anim {
+      animation: neural-pulse 3s infinite;
     }
 
-    .shiny-effect::after {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 50%;
-      height: 100%;
-      background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.8), transparent);
-      transform: skewX(-25deg);
-      animation: shine 5s infinite;
-      pointer-events: none;
+    /* Background Eraser for White Sidebar */
+    .erase-bg {
+      mix-blend-mode: multiply;
+      filter: contrast(150%) brightness(110%);
     }
   </style>
 </head>

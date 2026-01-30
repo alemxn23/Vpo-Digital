@@ -104,10 +104,8 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 left-0 z-40 overflow-y-auto no-print shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       <div className="pt-0 px-2 pb-2 border-b border-gray-100 mb-0">
         <div className="flex flex-col items-center gap-0 w-full mb-1">
-          <div className="flex-shrink-0 w-full flex justify-center">
-            <div className="shiny-effect">
-              <img src="/logo.png?v=5" alt="Logo" className="w-48 h-auto object-contain transition-transform hover:scale-105 duration-300" />
-            </div>
+          <div className="flex-shrink-0 w-full flex justify-center -mb-2">
+            <img src="/logo.png?v=5" alt="Logo" className="w-48 h-auto object-contain transition-transform hover:scale-105 duration-300" />
           </div>
           <div className="flex flex-col items-center w-full mt-0">
             <div className="flex flex-col items-center">
@@ -158,9 +156,9 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
               className="flex flex-col items-center transition-opacity hover:opacity-80"
             >
               <img
-                src="/aura_logo.png?v=5"
+                src="/aura_logo.png?v=6"
                 alt="Aura Digital"
-                className="h-12 w-auto object-contain mb-1 mix-blend-hard-light contrast-125 brightness-110"
+                className="h-12 w-auto object-contain mb-1 erase-bg neural-anim"
               />
               <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
             </a>
