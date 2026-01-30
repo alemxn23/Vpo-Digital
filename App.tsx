@@ -153,12 +153,19 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
             <p className="text-[10px] text-gray-400 mb-2">Desarrollado por:</p>
             <a
               href="mailto:contacto@auradigital.com"
-              className="flex flex-col items-center transition-opacity hover:opacity-80"
+              className="flex flex-col items-center transition-opacity hover:opacity-80 relative"
             >
+              {/* Synaptic Animation Overlay */}
+              <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+                <span className="absolute w-1 h-1 bg-cyan-400 rounded-full blur-[1px] opacity-0 animate-[synapse_3s_infinite_0.5s]" style={{ top: '30%', left: '40%' }}></span>
+                <span className="absolute w-1 h-1 bg-purple-400 rounded-full blur-[1px] opacity-0 animate-[synapse_4s_infinite_1.5s]" style={{ top: '50%', left: '60%' }}></span>
+                <span className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full blur-[0.5px] opacity-0 animate-[synapse_2.5s_infinite_1s]" style={{ top: '40%', left: '50%' }}></span>
+              </div>
+
               <img
-                src="/aura_logo.png?v=6"
+                src="/aura_logo.png?v=7"
                 alt="Aura Digital"
-                className="h-12 w-auto object-contain mb-1 erase-bg neural-anim"
+                className="h-12 w-auto object-contain mb-1 mix-blend-multiply"
               />
               <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
             </a>

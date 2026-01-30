@@ -84,49 +84,27 @@
       /* Firefox */
     }
 
-    /* Neural Pulse Effect */
-    @keyframes neural-pulse {
-
-      0%,
-      100% {
-        opacity: 1;
-        filter: brightness(100%);
+    /* Synapse Animation */
+    @keyframes synapse {
+      0% {
+        opacity: 0;
+        transform: scale(0.5);
       }
 
-      5% {
+      20% {
         opacity: 0.8;
-        filter: brightness(130%);
+        transform: scale(1.5);
+        box-shadow: 0 0 4px rgba(50, 200, 255, 0.6);
       }
 
-      10% {
-        opacity: 1;
-        filter: brightness(100%);
+      40% {
+        opacity: 0;
+        transform: scale(0.5);
       }
 
-      50% {
-        opacity: 1;
-        filter: brightness(100%);
+      100% {
+        opacity: 0;
       }
-
-      55% {
-        opacity: 0.9;
-        filter: brightness(150%) drop-shadow(0 0 2px rgba(50, 200, 255, 0.5));
-      }
-
-      60% {
-        opacity: 1;
-        filter: brightness(100%);
-      }
-    }
-
-    .neural-anim {
-      animation: neural-pulse 3s infinite;
-    }
-
-    /* Background Eraser for White Sidebar */
-    .erase-bg {
-      mix-blend-mode: multiply;
-      filter: contrast(150%) brightness(110%);
     }
   </style>
 </head>
