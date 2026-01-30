@@ -209,7 +209,7 @@ const RiskScales: React.FC = () => {
         const coeffCr = parse(data.creatinina) > 1.5 ? 0.6 : 0;
         let coeffAsa = 0;
         // We use calculated ASA base for Gupta to avoid circular logic
-        const asaVal = data.asa ? data.asa.replace('-E', '') : 'I';
+        const asaVal = finalASA ? finalASA.replace('-E', '') : 'I';
         if (asaVal === "II") coeffAsa = 0.11;
         if (asaVal === "III") coeffAsa = 0.69;
         if (asaVal === "IV" || asaVal === "V") coeffAsa = 1.99;

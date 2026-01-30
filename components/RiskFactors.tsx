@@ -61,17 +61,21 @@ const RiskFactors: React.FC = () => {
     // Smoking Index Calculation
     useEffect(() => {
         if (tabaquismo && cigarros > 0 && anios > 0) {
-            const it = (cigarros * anios) / 20;
-            setValue('indiceTabaquico', parseFloat(it.toFixed(1)));
+            const it = parseFloat(((cigarros * anios) / 20).toFixed(1));
+            if (watch('indiceTabaquico') !== it) {
+                setValue('indiceTabaquico', it);
+            }
             let riesgo = "Leve";
             if (it >= 10 && it < 20) riesgo = "Moderado";
             if (it >= 20) riesgo = "Intenso (Alto Riesgo EPOC)";
-            setValue('riesgoEPOC', riesgo);
+            if (watch('riesgoEPOC') !== riesgo) {
+                setValue('riesgoEPOC', riesgo);
+            }
         } else {
-            setValue('indiceTabaquico', 0);
-            setValue('riesgoEPOC', "");
+            if (watch('indiceTabaquico') !== 0) setValue('indiceTabaquico', 0);
+            if (watch('riesgoEPOC') !== "") setValue('riesgoEPOC', "");
         }
-    }, [tabaquismo, cigarros, anios, setValue]);
+    }, [tabaquismo, cigarros, anios, setValue, watch]);
 
     return (
         <div className="space-y-4">
