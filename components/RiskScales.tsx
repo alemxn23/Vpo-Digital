@@ -318,6 +318,30 @@ const RiskScales: React.FC = () => {
 
         safeSet('stopbang_risk', sbRisk);
 
+        // --- 10. KHORANA SCALE (VTE in Cancer) ---
+        let khoranaPoints = 0;
+        const siteSitio = data.cancer_tipo_sitio;
+
+        // Site of Cancer
+        if (["estomago", "pancreas"].includes(siteSitio)) khoranaPoints += 2;
+        else if (["pulmon", "linfoma", "ginecologico", "vejiga", "testicular"].includes(siteSitio)) khoranaPoints += 1;
+
+        // Labs
+        if (parse(data.plaquetas) >= 350000) khoranaPoints += 1;
+        if (parse(data.hb) < 10) khoranaPoints += 1; // Assuming anemia or EPO use
+        if (parse(data.leucocitos) > 11000) khoranaPoints += 1;
+        if (parse(data.imc) >= 35) khoranaPoints += 1;
+
+        safeSet('khorana_total', khoranaPoints);
+
+        let khoranaRisk: "Bajo" | "Intermedio" | "Alto" | "" = "";
+        if (data.cancer_activo) {
+            if (khoranaPoints >= 3) khoranaRisk = "Alto";
+            else if (khoranaPoints >= 1) khoranaRisk = "Intermedio";
+            else khoranaRisk = "Bajo";
+        }
+        safeSet('khorana_riesgo', khoranaRisk);
+
     }, [
         data.edad, data.imc, data.genero, data.hta, data.hta_control, data.diabetes, data.usaInsulina,
         data.cardiopatiaIsquemica, data.cardio_tipo_evento, data.cardio_fecha_evento,
@@ -338,6 +362,7 @@ const RiskScales: React.FC = () => {
         data.capD_artroplastia, data.capD_fxCadera, data.capD_trauma,
         data.hasbled_inr_labil, data.hasbled_alcohol, data.vrc_epoc, data.vrc_beta_blocker,
         data.tabaquismo, data.inr, data.urea, data.asa_manual_class, data.risk_overrides,
+        data.cancer_activo, data.cancer_tipo_sitio, data.hb, data.plaquetas, data.leucocitos,
         setValue
     ]);
 
@@ -725,6 +750,47 @@ const RiskScales: React.FC = () => {
                     </div>
                 );
             }
+            else if (selectedScale === 'khorana') {
+                title = "Escala de Khorana (ETV)";
+                riskStr = `Puntaje: ${data.khorana_total} (${data.khorana_riesgo})`;
+                const ptsSite = (["estomago", "pancreas"].includes(data.cancer_tipo_sitio)) ? 2 : (["pulmon", "linfoma", "ginecologico", "vejiga", "testicular"].includes(data.cancer_tipo_sitio)) ? 1 : 0;
+
+                content = (
+                    <div className="space-y-4">
+                        <div className="bg-blue-50 p-2 rounded text-xs text-blue-900 border border-blue-100">
+                            <p>Evalúa el riesgo de tromboembolismo venoso en pacientes oncológicos ambulatorios.</p>
+                        </div>
+                        <div className="space-y-2">
+                            <div className={`flex justify-between p-2 rounded border ${ptsSite > 0 ? 'bg-red-50 border-red-200' : 'bg-gray-50'}`}>
+                                <span className="text-xs font-bold">Sitio del Cáncer ({data.cancer_tipo_sitio})</span>
+                                <span className="text-xs font-bold">+{ptsSite}</span>
+                            </div>
+                            <div className={`flex justify-between p-2 rounded border ${data.plaquetas >= 350000 ? 'bg-red-50 border-red-200' : 'bg-gray-50'}`}>
+                                <span className="text-xs font-bold">Plaquetas &ge; 350,000/mm&sup3;</span>
+                                <span className="text-xs font-bold">{data.plaquetas >= 350000 ? '+1' : '0'}</span>
+                            </div>
+                            <div className={`flex justify-between p-2 rounded border ${data.hb < 10 ? 'bg-red-50 border-red-200' : 'bg-gray-50'}`}>
+                                <span className="text-xs font-bold">Hemoglobina &lt; 10 g/dL o uso de EPO</span>
+                                <span className="text-xs font-bold">{data.hb < 10 ? '+1' : '0'}</span>
+                            </div>
+                            <div className={`flex justify-between p-2 rounded border ${data.leucocitos > 11000 ? 'bg-red-50 border-red-200' : 'bg-gray-50'}`}>
+                                <span className="text-xs font-bold">Leucocitos &gt; 11,000/mm&sup3;</span>
+                                <span className="text-xs font-bold">{data.leucocitos > 11000 ? '+1' : '0'}</span>
+                            </div>
+                            <div className={`flex justify-between p-2 rounded border ${data.imc >= 35 ? 'bg-red-50 border-red-200' : 'bg-gray-50'}`}>
+                                <span className="text-xs font-bold">IMC &ge; 35 kg/m&sup2;</span>
+                                <span className="text-xs font-bold">{data.imc >= 35 ? '+1' : '0'}</span>
+                            </div>
+                        </div>
+                        <div className="mt-4 p-3 rounded-lg border bg-slate-50 text-[10px]">
+                            <p className="font-bold border-b mb-1 pb-1">Interpretación (Riesgo ETV a 6 meses):</p>
+                            <p>• 0 pts: Bajo (0.3 - 0.8%)</p>
+                            <p>• 1-2 pts: Intermedio (1.8 - 2.0%)</p>
+                            <p>• &ge; 3 pts: Alto (6.7 - 7.1%)</p>
+                        </div>
+                    </div>
+                );
+            }
 
             if (!content) {
                 content = (
@@ -1001,6 +1067,20 @@ const RiskScales: React.FC = () => {
                             </p>
                         </div>
                     </ScaleCard>
+
+                    {/* KHORANA CARD (Conditional) */}
+                    {data.cancer_activo && !['mieloma', 'snc'].includes(data.cancer_tipo_sitio) && (
+                        <ScaleCard label="KHORANA" desc="Riesgo ETV Cáncer" autoCalc={true} onClick={() => setSelectedScale('khorana')}>
+                            <div className="text-center flex flex-col items-center justify-center">
+                                <span className={`text-xl font-bold ${data.khorana_total >= 3 ? 'text-red-600' : data.khorana_total >= 1 ? 'text-amber-600' : 'text-clinical-navy'}`}>
+                                    {data.khorana_total || 0}
+                                </span>
+                                <p className={`text-[10px] font-bold ${data.khorana_total >= 3 ? 'text-red-600' : data.khorana_total >= 1 ? 'text-amber-600' : 'text-gray-400'}`}>
+                                    {data.khorana_riesgo || 'Bajo'}
+                                </p>
+                            </div>
+                        </ScaleCard>
+                    )}
                 </div>
 
             </div>

@@ -4,7 +4,7 @@ import { VPOData, SelectedMed } from '../types';
 import { Pill, Search, X, AlertTriangle, Syringe, Tablets, RefreshCcw, CheckCircle, Ban, ArrowRightLeft, Info, ChevronRight, Activity, ShieldAlert } from 'lucide-react';
 import { MEDICATIONS_DB } from '../data/medications';
 import { fetchDrugSafetyInfo, FDASafetyInfo } from '../custom_services/OpenFDAClient';
-import { getMedicationRecommendation, MedicationRecommendation } from '../custom_services/PharmacologyEngine';
+import { getMedicationRecommendation, MedicationRecommendation, calculateStressDose } from '../custom_services/PharmacologyEngine';
 import { searchOpenFDAMeds } from '../custom_services/UniversalSearchService';
 import { Shield, CloudOff, FileText, Database, Zap } from 'lucide-react';
 import { checkMedicationInteractions, InteractionResult } from '../custom_services/DDIClient';
@@ -481,34 +481,16 @@ const MedicationReconciliation: React.FC = () => {
                                             </p>
 
                                             {(() => {
-                                                // Stress Dose Calculator Logic inline
-                                                const site = formData.gupta_surgical_site || 'minor';
-                                                let risk = 'minor';
-
-                                                const modRisk = ['abdominal', 'orthopedic', 'spine', 'head-neck'];
-                                                const highRisk = ['cardiac', 'aortic', 'transplant', 'esopha'];
-                                                // Mapping simplistic for demo
-                                                if (modRisk.some(r => site.includes(r))) risk = 'moderate';
-                                                if (highRisk.some(r => site.includes(r))) risk = 'severe';
-                                                if (formData.capB_cxMayor) risk = 'moderate'; // Default major
-
-                                                const weight = formData.peso || 70;
-                                                const hydroDose = weight < 40 ? '25mg' : (risk === 'severe' ? '100mg' : (risk === 'moderate' ? '50mg' : '25mg'));
-                                                const maintainDose = risk === 'severe' ? '50mg c/8h' : (risk === 'moderate' ? '25mg c/8h' : 'Dosis usual');
+                                                // Dynamic Stress Dose Calculator Logic (Unified)
+                                                const previewText = calculateStressDose(formData, activeModalMed.med);
 
                                                 return (
-                                                    <ul className="text-xs space-y-1 text-indigo-900">
-                                                        <li>🛡️ <b>Inducción:</b> Hidrocortisona {hydroDose} IV.</li>
-                                                        {risk !== 'minor' && (
-                                                            <li>🕓 <b>Mantenimiento:</b> Hidrocortisona {maintainDose} por 24h, luego reducir.</li>
-                                                        )}
-                                                        {risk === 'minor' && (
-                                                            <li>💊 <b>Post-op:</b> Continuar dosis habitual en cuanto tolere VO.</li>
-                                                        )}
-                                                        <li className="text-[10px] italic text-indigo-500 mt-1">
-                                                            *Ajustado a peso ({weight}kg) y riesgo Qx.
-                                                        </li>
-                                                    </ul>
+                                                    <div className="text-xs text-indigo-900 font-medium whitespace-pre-wrap leading-relaxed animate-fadeIn">
+                                                        {previewText}
+                                                        <p className="text-[10px] italic text-indigo-500 mt-2">
+                                                            *Ajustado a peso ({formData.peso || 70}kg), riesgo Qx y dosis basal.
+                                                        </p>
+                                                    </div>
                                                 );
                                             })()}
                                         </div>

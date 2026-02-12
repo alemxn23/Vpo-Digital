@@ -155,7 +155,7 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
         if (med.isChronic) {
             recommendation.alertLevel = 'yellow';
             recommendation.action = 'adjust';
-            const stressDose = calculateStressDose(patient);
+            const stressDose = calculateStressDose(patient, med);
             recommendation.instructions = stressDose;
             recommendation.stressDoseRecommendation = stressDose;
             recommendation.rationale = "Uso crónico (>3 sem/dosis altas). Riesgo insuficiencia adrenal aguda.";
@@ -221,9 +221,7 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
     return recommendation;
 };
 
-// --- HELPER FUNCTIONS ---
-
-const calculateStressDose = (patient: VPOData): string => {
+export const calculateStressDose = (patient: VPOData, med: SelectedMed): string => {
     const site = patient.gupta_surgical_site || 'minor';
     let risk = 'minor';
 
@@ -237,27 +235,85 @@ const calculateStressDose = (patient: VPOData): string => {
 
     const weight = patient.peso || 70;
 
-    // Dosing Logic
-    // Minor: Hydrocortisone 25mg induction only OR just continue usual dose
-    // Moderate: Hydro 50mg induction + 25mg q8h (or 50-75mg/24h)
-    // Severe: Hydro 100mg induction + 50mg q8h (or 100-150mg/24h)
-
-    let hydroDose = '25mg';
-    let maintainDose = 'Dosis usual';
-
-    if (risk === 'severe') {
-        hydroDose = '100mg';
-        maintainDose = '50mg IV c/8h';
-    } else if (risk === 'moderate') {
-        hydroDose = '50mg';
-        maintainDose = '25mg IV c/8h';
-    } else {
-        // Minor
-        if (weight < 40) hydroDose = '25mg'; // Pediatrics/Low weight
-        else hydroDose = '25mg'; // Standard minor often just usual dose, but induction 25mg is safe buffer.
+    // 1. Calculate Patient's Current Home Dose Equivalent
+    const homeEquiv = calculateHydrocortisoneEquivalent(med);
+    let equivMsg = "";
+    if (homeEquiv > 0) {
+        equivMsg = ` (Tu dosis actual equivale a aprox. ${homeEquiv.toFixed(0)}mg de Hidrocortisona/día).`;
     }
 
-    return `Inducción: Hidrocortisona ${hydroDose} IV. Mantenimiento: ${maintainDose} por 24h, luego reducir.`;
+    // 2. Define Target Stress Requirement (Total Daily Hydrocortisone)
+    let targetDailyHydro = 25; // Minor
+    if (risk === 'moderate') targetDailyHydro = 75; // 50 ind + 25 maintenance (approx)
+    if (risk === 'severe') targetDailyHydro = 150; // 100 ind + 50 maintenance (approx)
+
+    // 3. Compare and Recommend
+    // If home dose is significantly higher than stress dose, we might need to match it to prevent insufficiency relative to their baseline.
+    // "Sick Day" / Stress rules: If already on high dose, maintain usually sufficient, but if super high stress, adding basal + stress might be needed.
+    // Current consensus: If on supraphysiologic dose > stress dose, just CONTINUE current dose (convert to IV) + consider small boost if unstable.
+
+    let recommendation = "";
+
+    if (homeEquiv > targetDailyHydro) {
+        // Patient takes MORE than the stress dose normally.
+        // Recommendation: Maintain equivalent dose IV.
+        // Example: Patient takes 200mg Hydro equiv. Stress dose is 100mg. 
+        // We should NOT reduce them to 100mg.
+        const ivDose = Math.ceil(homeEquiv / 3); // Split q8h
+        recommendation = `Dosis basal ALTA${equivMsg}. NO REDUCIR DOSIS. Administrar equiv. a Hidrocortisona ${ivDose}mg IV c/8h.`;
+    } else {
+        // Standard Stress Dose Logic override
+        let hydroDose = '25mg';
+        let maintainDose = 'Dosis usual';
+
+        if (risk === 'severe') { // Major Surgery
+            hydroDose = '100mg';
+            maintainDose = '50mg IV c/8h'; // Total ~250mg 1st 24h
+        } else if (risk === 'moderate') { // Moderate Surgery
+            hydroDose = '50mg';
+            maintainDose = '25mg IV c/8h'; // Total ~125mg 1st 24h
+        } else {
+            // Minor Surgery
+            // Sick day rule: double dose?
+            // Or standard 25mg induction.
+            if (homeEquiv > 0) {
+                recommendation = `Riesgo Menor${equivMsg}. Opción 1: Duplicar dosis habitual VO por 24h. Opción 2: Hidrocortisona 25mg IV inducción + Dosis habitual.`;
+                return recommendation;
+            }
+            hydroDose = '25mg';
+        }
+
+        recommendation = `Inducción: Hidrocortisona ${hydroDose} IV. Mantenimiento: ${maintainDose} por 24h, luego reducir.`;
+        if (homeEquiv > 0) recommendation += equivMsg;
+    }
+
+    return recommendation;
+};
+
+const calculateHydrocortisoneEquivalent = (med: SelectedMed): number => {
+    // Potency relative to Hydrocortisone (1)
+    // Prednisone: 4
+    // Prednisolone: 4
+    // Methylprednisolone: 5
+    // Dexamethasone: 25
+    // Deflazacort: ~3 (6mg Def = 5mg Pred = 20mg Hydro) -> 20/6 = 3.33
+    // Betamethasone: 25
+
+    // Hydrocortisone: 1
+
+    const dose = med.dose || med.steroidDose || 0;
+    if (!dose) return 0;
+
+    const name = med.name.toLowerCase();
+
+    if (name.includes('prednisona') || name.includes('prednisolone')) return dose * 4;
+    if (name.includes('metilprednisolona') || name.includes('methylprednisolone')) return dose * 5;
+    if (name.includes('dexametasona') || name.includes('dexamethasone')) return dose * 25;
+    if (name.includes('betametasona')) return dose * 25;
+    if (name.includes('deflazacort')) return dose * 3.33;
+    if (name.includes('hidrocortisona') || name.includes('hydrocortisone')) return dose * 1;
+
+    return 0;
 };
 
 const getSurgicalBleedingRisk = (patient: VPOData): 'low' | 'high' => {

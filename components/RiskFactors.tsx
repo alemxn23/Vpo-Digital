@@ -567,6 +567,60 @@ const RiskFactors: React.FC = () => {
                     </div>
                 </RiskAccordion>
 
+                {/* 14. CÁNCER Y HEMATOLOGÍA (KHORANA) */}
+                <RiskAccordion label="Cáncer y Hematología" name="cancer_activo" icon={AlertCircle} warningIf={watch('cancer_activo')}>
+                    <div className="space-y-4">
+                        <div className="bg-amber-50 p-3 rounded-lg border border-amber-100 text-xs text-amber-900">
+                            <p>La Escala de Khorana estima el riesgo de ETV en pacientes con cáncer ambulatorios que recibirán quimioterapia.</p>
+                        </div>
+
+                        <div>
+                            <label className="text-[10px] font-bold text-gray-500 uppercase block mb-1">Sitio Primario del Cáncer</label>
+                            <select
+                                {...register('cancer_tipo_sitio')}
+                                className="w-full p-2 border rounded-lg text-sm bg-white focus:ring-2 focus:ring-clinical-navy outline-none"
+                                onChange={(e) => {
+                                    const val = e.target.value;
+                                    setValue('cancer_tipo_sitio', val as any);
+                                    // Sincronizar con Caprini
+                                    if (val !== "") {
+                                        setValue('capB_cancer', true);
+                                    }
+                                }}
+                            >
+                                <option value="">-- Seleccione el Sitio --</option>
+                                <option value="estomago">Estómago (Muy Alto Riesgo)</option>
+                                <option value="pancreas">Páncreas (Muy Alto Riesgo)</option>
+                                <option value="pulmon">Pulmón (Alto Riesgo)</option>
+                                <option value="linfoma">Linfoma (Alto Riesgo)</option>
+                                <option value="ginecologico">Ginecológico (Alto Riesgo)</option>
+                                <option value="vejiga">Vejiga (Alto Riesgo)</option>
+                                <option value="testicular">Testicular (Alto Riesgo)</option>
+                                <option value="mieloma">Mieloma (Excluido Khorana)</option>
+                                <option value="snc">SNC / Cerebral (Excluido Khorana)</option>
+                                <option value="otro">Otro Sitio (Riesgo Bajo)</option>
+                            </select>
+                            {watch('cancer_tipo_sitio') === 'mieloma' || watch('cancer_tipo_sitio') === 'snc' ? (
+                                <p className="text-[10px] text-blue-600 font-bold mt-1 italic">
+                                    ℹ️ La escala de Khorana no se aplica en este tipo de neoplasia.
+                                </p>
+                            ) : null}
+                        </div>
+
+                        <label className="flex items-center gap-2 p-2 bg-blue-50 border border-blue-100 rounded cursor-pointer">
+                            <input
+                                type="checkbox"
+                                {...register('capB_cancer')}
+                                className="w-4 h-4 text-clinical-navy rounded"
+                            />
+                            <div className="flex flex-col">
+                                <span className="text-xs font-bold text-slate-700">Incluir en Criterio Caprini</span>
+                                <span className="text-[9px] text-gray-500">Cáncer activo (o en tratamiento últimos 6 meses)</span>
+                            </div>
+                        </label>
+                    </div>
+                </RiskAccordion>
+
                 {/* ANTECEDENTES QX */}
                 <div className="bg-white p-4 border border-gray-200 rounded-xl mt-4">
                     <label className="text-sm font-bold text-slate-700 flex items-center gap-2 mb-2">

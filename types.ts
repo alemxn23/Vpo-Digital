@@ -146,6 +146,10 @@ export interface VPOData {
   coagulopatia: boolean;
   coag_tipo: string;
 
+  // 14. Cáncer (Para Escala Khorana)
+  cancer_activo: boolean;
+  cancer_tipo_sitio: "estomago" | "pancreas" | "pulmon" | "linfoma" | "ginecologico" | "vejiga" | "testicular" | "mieloma" | "snc" | "otro" | "";
+
   // --- VARIABLES DERIVADAS PARA ESCALAS (Auto-flagged by logic) ---
   flag_iam_reciente: boolean; // < 6m
   flag_iam_antiguo: boolean; // > 6m
@@ -261,6 +265,10 @@ export interface VPOData {
   hasbled: number;
   hasbled_inr_labil: boolean; // Manual toggle
   hasbled_alcohol: boolean; // Manual toggle
+
+  // Khorana
+  khorana_total: number;
+  khorana_riesgo: "Bajo" | "Intermedio" | "Alto" | "";
 
 
 
