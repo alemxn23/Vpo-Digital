@@ -403,6 +403,26 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, [methods.watch]);
 
+  // Cleanup legacy defaults that might be stuck in localStorage
+  useEffect(() => {
+    const currentData = methods.getValues();
+    let needsReset = false;
+    const cleanValues = { ...currentData };
+
+    if (currentData.unidadMedica === 'IMSS' || currentData.unidadMedica === 'CMN SIGLO XXI') {
+      cleanValues.unidadMedica = '';
+      needsReset = true;
+    }
+    if (currentData.servicioSolicitante === 'CIRUGÍA GENERAL' || currentData.servicioSolicitante === 'MEDICINA INTERNA') {
+      cleanValues.servicioSolicitante = '';
+      needsReset = true;
+    }
+
+    if (needsReset) {
+      methods.reset(cleanValues);
+    }
+  }, [methods]);
+
 
   const generatePDFDoc = async (): Promise<jsPDF> => {
     const page1 = document.getElementById('print-page-1');
