@@ -485,12 +485,14 @@ const App: React.FC = () => {
 
   const handleDriveUpload = () => {
     setIsUploading(true);
+    console.log("Starting Drive upload process...");
     const safetyTimeout = setTimeout(() => {
       setIsUploading(false);
+      console.warn("Drive upload timed out after 60s.");
     }, 60000);
 
     if (!window.google || !window.google.accounts) {
-      alert("Servicios de Google no listos.");
+      alert("Servicios de Google no listos. Intente recargar la página.");
       setIsUploading(false);
       return;
     }
@@ -502,46 +504,66 @@ const App: React.FC = () => {
         scope: 'https://www.googleapis.com/auth/drive.file',
         callback: async (tokenResponse: any) => {
           clearTimeout(safetyTimeout);
+          console.log("Token received, starting file generation...", tokenResponse);
+
           if (tokenResponse && tokenResponse.access_token) {
             try {
+              // 1. Obtener o crear carpeta
+              console.log("Checking/Creating folder...");
+              const folderId = await getOrCreateFolder(tokenResponse.access_token);
+
+              // 2. Generar PDF
+              console.log("Generating PDF Document...");
               const doc = await generatePDFDoc();
               const pdfBlob = doc.output('blob');
+
               const dateStr = new Date().toISOString().split('T')[0];
               const safeName = (methods.getValues().nombre || 'Paciente').replace(/[^a-zA-Z0-9]/g, '_');
               const fileName = `${dateStr}_${safeName}_VPO.pdf`;
-              const folderId = await getOrCreateFolder(tokenResponse.access_token);
 
-              // 1. Subir PDF
+              // 3. Subir PDF
+              console.log(`Uploading PDF: ${fileName} to folder ${folderId}`);
               await uploadFileToDrive(tokenResponse.access_token, pdfBlob, fileName, folderId);
 
-              // 2. Subir RX si existe
+              // 4. Subir RX si existe
               const rxData = methods.getValues('rx_imagen');
               if (rxData) {
+                console.log("Uploading RX image...");
                 const rxBlob = base64ToBlob(rxData);
                 const rxName = `${dateStr}_${safeName}_RX.png`;
                 await uploadFileToDrive(tokenResponse.access_token, rxBlob, rxName, folderId);
               }
 
-              // 3. Subir EKG si existe
+              // 5. Subir EKG si existe
               const ekgData = methods.getValues('ekg_imagen');
               if (ekgData) {
+                console.log("Uploading EKG image...");
                 const ekgBlob = base64ToBlob(ekgData);
                 const ekgName = `${dateStr}_${safeName}_EKG.png`;
                 await uploadFileToDrive(tokenResponse.access_token, ekgBlob, ekgName, folderId);
               }
 
-              alert("✅ Guardado exitoso en Drive (Reporte + Imágenes).");
+              console.log("Upload sequence completed successfully.");
+              alert("✅ Guardado exitoso. Abriendo tu carpeta de Drive...");
+
+              // Abrir la carpeta de Drive directamente
+              window.open(`https://drive.google.com/drive/u/0/folders/${folderId}`, '_blank');
+
             } catch (err) {
-              console.error(err);
-              alert("Error al guardar.");
+              console.error("Drive Upload Error:", err);
+              alert("Hubo un error al procesar los archivos. Verifique su conexión y permisos.");
             } finally {
               setIsUploading(false);
             }
+          } else {
+            console.error("No access token in response:", tokenResponse);
+            setIsUploading(false);
           }
         }
       });
       client.requestAccessToken();
     } catch (e) {
+      console.error("OAuth Client Initialization Error:", e);
       setIsUploading(false);
     }
   };
