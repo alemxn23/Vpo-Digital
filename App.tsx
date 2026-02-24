@@ -304,6 +304,40 @@ const App: React.FC = () => {
   const [paywallMode, setPaywallMode] = useState<'paywall' | 'account'>('paywall');
   const [isCheckingCredits, setIsCheckingCredits] = useState(false);
 
+  const methods = useForm<VPOData>({
+    defaultValues: {
+      fecha: new Date().toISOString().split('T')[0],
+      hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      unidadMedica: localStorage.getItem('vpo_unidad_medica') || 'IMSS',
+      servicioSolicitante: localStorage.getItem('vpo_servicio') || 'CIRUGÍA GENERAL',
+      elab_nombre: localStorage.getItem('vpo_doctor_name') || '',
+      elab_cedula: localStorage.getItem('vpo_doctor_cedula') || '',
+      elab_institucion: localStorage.getItem('vpo_doctor_inst') || '',
+      tipoCirugia: 'MAYOR',
+      gender: 'M',
+      ritmo: 'SINSUSAL',
+      urgencia: 'ELECTIVA',
+      asa: 'II',
+      lee: 'I',
+      mets_estimated: 4,
+      mets_manual: false,
+      khorana_total: 0,
+      vienna_cats_total: 0,
+      ariscat_total: 0,
+      caprini: 3,
+      goldman: 'I',
+      detsky: 'I',
+      gupta: 0.1,
+      cha2ds2vasc: 0,
+      hasbled: 0,
+      fragilidad_score: 1,
+      stopbang_total: 0,
+      cancer_activo: false
+    }
+  });
+
+  const { watch, setValue } = methods;
+
   const openAccountModal = () => {
     setPaywallMode('account');
     setShowPaywall(true);
@@ -329,9 +363,9 @@ const App: React.FC = () => {
 
           if (profile) {
             // Update form values for header badge visibility/sync
-            methods.setValue('paid_credits_live', profile.paid_credits || 0);
-            methods.setValue('free_vpos_used_today_live', profile.free_vpos_used_today || 0);
-            methods.setValue('is_vip_live', user.email === 'mcfidel98@gmail.com');
+            setValue('paid_credits_live', profile.paid_credits || 0);
+            setValue('free_vpos_used_today_live', profile.free_vpos_used_today || 0);
+            setValue('is_vip_live', user.email === 'mcfidel98@gmail.com');
           }
         }
       } catch (err) {
@@ -347,25 +381,7 @@ const App: React.FC = () => {
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  const methods = useForm<VPOData>({
-    defaultValues: {
-      fecha: new Date().toISOString().split('T')[0],
-      hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      genero: Gender.FEMALE,
-      tipoCirugia: "Electiva",
-      ayuno: "Ayuno de 6-8 horas para sólidos y 2 horas para líquidos claros.",
-      soluciones: "Solución Hartmann 1000cc para 8 horas.",
-      tabaquismo: false,
-      diabetes: false,
-      hta: false,
-      servicioSolicitante: "Medicina Interna",
-      unidadMedica: "CMN SIGLO XXI",
-      selectedMeds: []
-    },
-    mode: "onChange"
-  });
+  }, [setValue]);
 
   useEffect(() => {
     const savedData = localStorage.getItem('vpo_current_data');
@@ -377,7 +393,8 @@ const App: React.FC = () => {
         console.error("Failed to load saved data", e);
       }
     }
-  }, []);
+  }, [methods]);
+
 
   useEffect(() => {
     const subscription = methods.watch((value) => {
