@@ -591,13 +591,18 @@ const RiskFactors: React.FC = () => {
                                 <option value="">-- Seleccione el Sitio --</option>
                                 <option value="estomago">Estómago (Muy Alto Riesgo)</option>
                                 <option value="pancreas">Páncreas (Muy Alto Riesgo)</option>
+                                <option value="snc">SNC / Cerebral (Muy Alto Riesgo)</option>
                                 <option value="pulmon">Pulmón (Alto Riesgo)</option>
                                 <option value="linfoma">Linfoma (Alto Riesgo)</option>
                                 <option value="ginecologico">Ginecológico (Alto Riesgo)</option>
                                 <option value="vejiga">Vejiga (Alto Riesgo)</option>
                                 <option value="testicular">Testicular (Alto Riesgo)</option>
-                                <option value="mieloma">Mieloma (Excluido Khorana)</option>
-                                <option value="snc">SNC / Cerebral (Excluido Khorana)</option>
+                                <option value="rinon">Riñón (Alto Riesgo)</option>
+                                <option value="esofago">Esófago (Alto Riesgo)</option>
+                                <option value="colorectal">Colorectal (Alto Riesgo)</option>
+                                <option value="sarcoma">Sarcoma (Alto Riesgo)</option>
+                                <option value="cabeza_cuello">Cabeza y Cuello (Alto Riesgo)</option>
+                                <option value="mieloma">Mieloma (Excluido Khorana/Cats)</option>
                                 <option value="otro">Otro Sitio (Riesgo Bajo)</option>
                             </select>
                             {watch('cancer_tipo_sitio') === 'mieloma' || watch('cancer_tipo_sitio') === 'snc' ? (

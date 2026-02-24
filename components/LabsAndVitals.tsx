@@ -4,19 +4,19 @@ import { VPOData, Gender } from '../types';
 import { TestTube, Activity, Minus, Plus, AlertTriangle, Droplets, Stethoscope, HeartPulse } from 'lucide-react';
 
 // --- Stepper Input Component ---
-const StepperInput = ({ 
-  label, 
-  name, 
-  step = 1, 
+const StepperInput = ({
+  label,
+  name,
+  step = 1,
   unit = '',
   min = 0,
   max = 9999,
   warningLow = -Infinity,
   warningHigh = Infinity
-}: { 
-  label: string, 
-  name: keyof VPOData, 
-  step?: number, 
+}: {
+  label: string,
+  name: keyof VPOData,
+  step?: number,
   unit?: string,
   min?: number,
   max?: number,
@@ -42,21 +42,21 @@ const StepperInput = ({
         {unit && <span className="text-[10px] text-gray-400">{unit}</span>}
       </div>
       <div className="flex items-center gap-2">
-        <button 
-          type="button" 
+        <button
+          type="button"
           onClick={() => adjust(-step)}
           className={`w-10 h-10 flex items-center justify-center rounded-lg touch-manipulation active:scale-95 transition-transform ${isWarning ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
         >
           <Minus size={18} />
         </button>
-        <input 
-          type="number" 
+        <input
+          type="number"
           step={step}
           {...register(name, { valueAsNumber: true })}
           className={`w-full text-center font-bold text-lg p-1 bg-transparent border-b outline-none ${isWarning ? 'text-clinical-red border-clinical-red' : 'text-slate-800 border-transparent'}`}
         />
-        <button 
-          type="button" 
+        <button
+          type="button"
           onClick={() => adjust(step)}
           className={`w-10 h-10 flex items-center justify-center rounded-lg touch-manipulation active:scale-95 transition-transform ${isWarning ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
         >
@@ -80,24 +80,24 @@ const AlertBanner = ({ message, type = 'danger' }: { message: string, type?: 'da
 
 // --- Checkbox Card Component ---
 const CriticalFinding = ({ name, label, points, alert }: { name: keyof VPOData, label: string, points?: string, alert?: boolean }) => {
-    const { register, watch } = useFormContext<VPOData>();
-    const isChecked = watch(name);
-    
-    return (
-        <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${isChecked ? (alert ? 'bg-red-100 border-red-300' : 'bg-red-50 border-red-200') : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
-            <input type="checkbox" {...register(name)} className="mt-1 w-4 h-4 text-clinical-red focus:ring-clinical-red rounded border-gray-300" />
-            <div>
-                <span className={`text-sm font-bold block ${isChecked ? 'text-red-800' : 'text-gray-700'}`}>{label}</span>
-                {points && isChecked && <span className="text-[10px] font-bold text-red-600 uppercase bg-white/50 px-1 rounded mt-1 inline-block">{points}</span>}
-                {alert && isChecked && <div className="text-[10px] text-red-700 font-bold mt-1 animate-pulse">⚠️ ALERTA RIESGO CRÍTICO</div>}
-            </div>
-        </label>
-    );
+  const { register, watch } = useFormContext<VPOData>();
+  const isChecked = watch(name);
+
+  return (
+    <label className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${isChecked ? (alert ? 'bg-red-100 border-red-300' : 'bg-red-50 border-red-200') : 'bg-white border-gray-200 hover:bg-gray-50'}`}>
+      <input type="checkbox" {...register(name)} className="mt-1 w-4 h-4 text-clinical-red focus:ring-clinical-red rounded border-gray-300" />
+      <div>
+        <span className={`text-sm font-bold block ${isChecked ? 'text-red-800' : 'text-gray-700'}`}>{label}</span>
+        {points && isChecked && <span className="text-[10px] font-bold text-red-600 uppercase bg-white/50 px-1 rounded mt-1 inline-block">{points}</span>}
+        {alert && isChecked && <div className="text-[10px] text-red-700 font-bold mt-1 animate-pulse">⚠️ ALERTA RIESGO CRÍTICO</div>}
+      </div>
+    </label>
+  );
 };
 
 const LabsAndVitals: React.FC = () => {
   const { register, watch, setValue } = useFormContext<VPOData>();
-  
+
   // Logic dependencies
   const creatinina = watch('creatinina');
   const edad = watch('edad');
@@ -113,20 +113,20 @@ const LabsAndVitals: React.FC = () => {
   useEffect(() => {
     if (creatinina > 0 && edad > 0) {
       const isFemale = genero === Gender.FEMALE;
-      
+
       // CKD-EPI Constants
       const kappa = isFemale ? 0.7 : 0.9;
       const alpha = isFemale ? -0.241 : -0.302;
       const genderFactor = isFemale ? 1.012 : 1;
-      
+
       const crOverKappa = creatinina / kappa;
       const minVal = Math.min(crOverKappa, 1);
       const maxVal = Math.max(crOverKappa, 1);
-      
+
       // Formula
       // GFR = 142 * min(Scr/k, 1)^a * max(Scr/k, 1)^-1.200 * 0.9938^Age * GenderFactor
       const gfr = 142 * Math.pow(minVal, alpha) * Math.pow(maxVal, -1.2) * Math.pow(0.9938, edad) * genderFactor;
-      
+
       setValue('tfg', parseFloat(gfr.toFixed(1)));
     } else {
       // Reset if missing data
@@ -136,7 +136,7 @@ const LabsAndVitals: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-4">
-      
+
       {/* Vitals Section */}
       <div>
         <div className="flex items-center gap-2 mb-3 px-1">
@@ -155,41 +155,41 @@ const LabsAndVitals: React.FC = () => {
 
       {/* NEW: Physical Exam Critical Findings */}
       <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-          <div className="flex items-center gap-2 mb-3 text-slate-800">
-             <Stethoscope size={18} className="text-clinical-navy" />
-             <h3 className="font-bold text-sm uppercase">Hallazgos Físicos (Valoración Escalas)</h3>
-          </div>
-          
-          <div className="space-y-4">
-              {/* GROUP: Signs of HF */}
-              <div>
-                  <h4 className="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-1">
-                      <HeartPulse size={12} /> Signos Insuficiencia Cardíaca (+11 pts Goldman)
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                      <CriticalFinding name="exploracion_ingurgitacion" label="Ingurgitación Yugular" points="+11 Goldman" />
-                      <CriticalFinding name="exploracion_s3" label="Tercer Ruido (S3)" points="+11 Goldman / +10 Detsky" />
-                      <CriticalFinding name="exploracion_estertores" label="Estertores Crepitantes" points="+11 Goldman" />
-                      <CriticalFinding name="exploracion_edema" label="Edema Miembros Inf." points="+1 Caprini" />
-                  </div>
-              </div>
+        <div className="flex items-center gap-2 mb-3 text-slate-800">
+          <Stethoscope size={18} className="text-clinical-navy" />
+          <h3 className="font-bold text-sm uppercase">Hallazgos Físicos (Valoración Escalas)</h3>
+        </div>
 
-              {/* GROUP: Murmurs & Focal */}
-              <div>
-                  <h4 className="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-1">
-                      <Activity size={12} /> Soplos y Otros
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                       <CriticalFinding 
-                            name="exploracion_estenosis_aortica" 
-                            label="Estenosis Aórtica (Soplo)" 
-                            points="+3 Goldman / +20 Detsky" 
-                            alert={true}
-                        />
-                       <CriticalFinding name="exploracion_soplo_carotideo" label="Soplo Carotídeo / Déficit Focal" />
-                  </div>
-              </div>
+        <div className="space-y-4">
+          {/* GROUP: Signs of HF */}
+          <div>
+            <h4 className="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-1">
+              <HeartPulse size={12} /> Signos Insuficiencia Cardíaca (+11 pts Goldman)
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <CriticalFinding name="exploracion_ingurgitacion" label="Ingurgitación Yugular" points="+11 Goldman" />
+              <CriticalFinding name="exploracion_s3" label="Tercer Ruido (S3)" points="+11 Goldman / +10 Detsky" />
+              <CriticalFinding name="exploracion_estertores" label="Estertores Crepitantes" points="+11 Goldman" />
+              <CriticalFinding name="exploracion_edema" label="Edema Miembros Inf." points="+1 Caprini" />
+            </div>
           </div>
+
+          {/* GROUP: Murmurs & Focal */}
+          <div>
+            <h4 className="text-xs font-bold text-gray-500 uppercase mb-2 flex items-center gap-1">
+              <Activity size={12} /> Soplos y Otros
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <CriticalFinding
+                name="exploracion_estenosis_aortica"
+                label="Estenosis Aórtica (Soplo)"
+                points="+3 Goldman / +20 Detsky"
+                alert={true}
+              />
+              <CriticalFinding name="exploracion_soplo_carotideo" label="Soplo Carotídeo / Déficit Focal" />
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Labs Section */}
@@ -201,26 +201,26 @@ const LabsAndVitals: React.FC = () => {
 
         {/* --- SAFETY ALERTS AREA --- */}
         {isArrhythmiaRisk && (
-           <AlertBanner 
-             message="Riesgo de Arritmia: Corregir electrolitos antes de cirugía." 
-             type="danger" 
-           />
+          <AlertBanner
+            message="Riesgo de Arritmia: Corregir electrolitos antes de cirugía."
+            type="danger"
+          />
         )}
         {isBleedingRisk && (
-           <AlertBanner 
-             message="Riesgo de sangrado elevado (Plaquetas < 50k). Valorar transfusión." 
-             type="danger" 
-           />
+          <AlertBanner
+            message="Riesgo de sangrado elevado (Plaquetas < 50k). Valorar transfusión."
+            type="danger"
+          />
         )}
-        
+
         <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 px-1">Hemático</h3>
         <div className="grid grid-cols-2 gap-3 mb-4">
           <StepperInput label="Hb" name="hb" step={0.1} warningLow={10} unit="g/dL" />
           <div className="col-span-1">
-             <StepperInput label="Plaquetas" name="plaquetas" step={5000} warningLow={50000} />
+            <StepperInput label="Plaquetas" name="plaquetas" step={5000} warningLow={50000} />
           </div>
           <div className="col-span-2">
-             <StepperInput label="Leucocitos" name="leucocitos" step={500} />
+            <StepperInput label="Leucocitos" name="leucocitos" step={500} />
           </div>
         </div>
 
@@ -232,27 +232,30 @@ const LabsAndVitals: React.FC = () => {
             <StepperInput label="Creatinina" name="creatinina" step={0.1} warningHigh={1.5} />
           </div>
           <div className="col-span-2 bg-blue-50 p-3 rounded-xl border border-blue-100 flex justify-between items-center shadow-inner">
-             <div className="flex flex-col">
-                <span className="text-sm font-bold text-blue-900">TFG (CKD-EPI)</span>
-                <span className="text-[10px] text-blue-600">Calculado por Cr, Edad, Género</span>
-             </div>
-             <div className="flex items-baseline">
-                <input readOnly {...register('tfg')} className="bg-transparent text-right font-bold text-2xl text-blue-900 w-24 outline-none" />
-                <span className="text-xs text-blue-700 ml-1">ml/min</span>
-             </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-bold text-blue-900">TFG (CKD-EPI)</span>
+              <span className="text-[10px] text-blue-600">Calculado por Cr, Edad, Género</span>
+            </div>
+            <div className="flex items-baseline">
+              <input readOnly {...register('tfg')} className="bg-transparent text-right font-bold text-2xl text-blue-900 w-24 outline-none" />
+              <span className="text-xs text-blue-700 ml-1">ml/min</span>
+            </div>
           </div>
         </div>
 
         <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 px-1">Electrolitos y Coagulación</h3>
         <div className="grid grid-cols-3 gap-2 mb-4">
-           <StepperInput label="Na+" name="na" step={1} />
-           <StepperInput label="K+" name="k" step={0.1} warningLow={3.0} warningHigh={5.5} />
-           <StepperInput label="Cl-" name="cl" step={1} />
+          <StepperInput label="Na+" name="na" step={1} />
+          <StepperInput label="K+" name="k" step={0.1} warningLow={3.0} warningHigh={5.5} />
+          <StepperInput label="Cl-" name="cl" step={1} />
         </div>
         <div className="grid grid-cols-3 gap-2">
-           <StepperInput label="TP" name="tp" step={0.1} />
-           <StepperInput label="TTP" name="ttp" step={0.1} />
-           <StepperInput label="INR" name="inr" step={0.1} warningHigh={1.5} />
+          <StepperInput label="TP" name="tp" step={0.1} />
+          <StepperInput label="TTP" name="ttp" step={0.1} />
+          <StepperInput label="INR" name="inr" step={0.1} warningHigh={1.5} />
+          <div className="col-span-3 mt-2">
+            <StepperInput label="D-Dímero" name="ddimer" step={100} unit="ng/mL (ug/L)" warningHigh={500} />
+          </div>
         </div>
 
       </div>

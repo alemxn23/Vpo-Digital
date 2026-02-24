@@ -9,21 +9,39 @@ interface ScaleCardProps {
     children?: React.ReactNode;
     autoCalc?: boolean;
     onClick?: () => void;
+    isAuthorized?: boolean;
+    onToggleAuth?: (e: React.MouseEvent) => void;
 }
 
-const ScaleCard = ({ label, desc, children, autoCalc = false, onClick }: ScaleCardProps) => (
+const ScaleCard = ({ label, desc, children, autoCalc = false, onClick, isAuthorized, onToggleAuth }: ScaleCardProps) => (
     <div
         onClick={onClick}
         className={`bg-white p-4 rounded-xl border shadow-sm transition-all relative group 
     ${autoCalc ? 'border-blue-200 bg-blue-50/30' : 'border-gray-200'} 
     ${onClick ? 'cursor-pointer hover:shadow-md hover:border-blue-300' : ''}`}
     >
+        {/* Publish Toggle - Absolute Top Right */}
+        {onToggleAuth && (
+            <div
+                onClick={onToggleAuth}
+                className={`absolute -top-2 -right-2 w-7 h-7 rounded-full border flex items-center justify-center transition-all z-20 shadow-sm cursor-pointer
+                    ${isAuthorized
+                        ? 'bg-green-500 border-green-600 text-white scale-100'
+                        : 'bg-white border-gray-300 text-gray-300 hover:border-gray-400 scale-90 hover:scale-100'}`}
+                title={isAuthorized ? "Incluido en reporte (Click para ocultar)" : "Oculto en reporte (Click para publicar)"}
+            >
+                <Check size={16} strokeWidth={isAuthorized ? 3 : 2} />
+            </div>
+        )}
+
         <div className="flex justify-between items-start mb-2">
             <div className="flex items-center gap-2">
                 <label className={`text-base font-bold text-clinical-navy ${onClick ? 'group-hover:underline' : ''}`}>{label}</label>
                 {autoCalc && <Calculator size={14} className="text-blue-500" />}
             </div>
-            <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded-full">{desc}</span>
+            <div className="pr-2">
+                <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-1 rounded-full whitespace-nowrap">{desc}</span>
+            </div>
         </div>
         {children}
         {/* Hint for interactivity - Only render if onClick is present */}
@@ -62,6 +80,16 @@ const RiskScales: React.FC = () => {
     // Watch fields for Automatic Logic
     const data = watch();
     const overrides = data.risk_overrides || {};
+    const authorized = data.authorized_report_scales || {};
+
+    const toggleAuth = (scaleId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        const current = authorized[scaleId] !== false; // Default to true
+        setValue('authorized_report_scales', {
+            ...authorized,
+            [scaleId]: !current
+        });
+    };
 
     // --- MASTER SCORE FUNCTION LOGIC ---
     // --- MASTER SCORE FUNCTION LOGIC ---
@@ -342,6 +370,44 @@ const RiskScales: React.FC = () => {
         }
         safeSet('khorana_riesgo', khoranaRisk);
 
+        // --- 11. VIENNA CATS SCORE (ESMO 2024) ---
+        let viennaPoints = -1;
+        let viennaRisk = "";
+
+        if (data.cancer_activo) {
+            let siteScore = 0;
+            const site = data.cancer_tipo_sitio;
+
+            // Level 2: Very High
+            if (['estomago', 'pancreas', 'snc'].includes(site)) siteScore = 2;
+            // Level 1: High
+            else if (['pulmon', 'linfoma', 'ginecologico', 'vejiga', 'testicular', 'colorectal', 'esofago', 'rinon', 'sarcoma', 'cabeza_cuello'].includes(site)) siteScore = 1;
+            // Level 0: Low/Reference (Breast, Prostate, Other)
+
+            // D-dimer conversion: ng/mL -> ug/mL
+            const ddimerUg = data.ddimer / 1000;
+            const logDdimer = Math.log2(ddimerUg + 1);
+
+            // Formula
+            const preIndex = (0.6709 * siteScore) + (0.2793 * logDdimer);
+            const hazard = Math.exp(preIndex);
+
+            // Baseline Survival at 6 months (0.97863) -> 1 - S0^hazard
+            const riskDecimal = 1 - Math.pow(0.97863, hazard);
+            const riskPercent = riskDecimal * 100;
+
+            viennaPoints = parseFloat(riskPercent.toFixed(1));
+
+            if (viennaPoints >= 8) viennaRisk = "Alto (Considerar Tromboprofilaxis)";
+            else viennaRisk = "Bajo / Intermedio";
+
+            safeSet('vienna_cats_total', viennaPoints);
+            safeSet('vienna_cats_risk', viennaRisk);
+        } else {
+            safeSet('vienna_cats_total', 0);
+            safeSet('vienna_cats_risk', "");
+        }
+
     }, [
         data.edad, data.imc, data.genero, data.hta, data.hta_control, data.diabetes, data.usaInsulina,
         data.cardiopatiaIsquemica, data.cardio_tipo_evento, data.cardio_fecha_evento,
@@ -362,7 +428,7 @@ const RiskScales: React.FC = () => {
         data.capD_artroplastia, data.capD_fxCadera, data.capD_trauma,
         data.hasbled_inr_labil, data.hasbled_alcohol, data.vrc_epoc, data.vrc_beta_blocker,
         data.tabaquismo, data.inr, data.urea, data.asa_manual_class, data.risk_overrides,
-        data.cancer_activo, data.cancer_tipo_sitio, data.hb, data.plaquetas, data.leucocitos,
+        data.cancer_activo, data.cancer_tipo_sitio, data.hb, data.plaquetas, data.leucocitos, data.ddimer,
         setValue
     ]);
 
@@ -791,10 +857,56 @@ const RiskScales: React.FC = () => {
                     </div>
                 );
             }
+            else if (selectedScale === 'vienna_cats') {
+                title = "Vienna CATS Score (ESMO 2024)";
+                riskStr = `Riesgo 6 meses: ${data.vienna_cats_total}% (${data.vienna_cats_risk})`;
+
+                const site = data.cancer_tipo_sitio;
+                let siteRisk = "Bajo/Intermedio (0)";
+                if (['estomago', 'pancreas', 'snc'].includes(site)) siteRisk = "Muy Alto (2)";
+                else if (['pulmon', 'linfoma', 'ginecologico', 'vejiga', 'testicular', 'colorectal', 'esofago', 'rinon', 'sarcoma', 'cabeza_cuello'].includes(site)) siteRisk = "Alto (1)";
+
+                content = (
+                    <div className="space-y-4">
+                        <div className="bg-blue-50 p-2 rounded text-xs text-blue-900 border border-blue-100">
+                            <p>Nomograma validado (ESMO 2024) que integra sitio tumoral y Dímero-D continuo.</p>
+                        </div>
+                        <div className="space-y-3">
+                            <div className="bg-slate-50 p-3 rounded border">
+                                <h4 className="text-xs font-bold text-gray-700 mb-2">Variables del Modelo:</h4>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between text-xs">
+                                        <span>Sitio ({site || 'No especificado'}):</span>
+                                        <span className="font-bold text-clinical-navy">{siteRisk}</span>
+                                    </div>
+                                    <div className="flex justify-between text-xs">
+                                        <span>Dímero-D:</span>
+                                        <span className="font-bold text-clinical-navy">{data.ddimer} ng/mL</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="text-center p-4 bg-white rounded border border-blue-100 shadow-sm">
+                                <span className={`text-3xl font-bold ${data.vienna_cats_total >= 8 ? 'text-red-600' : 'text-clinical-navy'}`}>
+                                    {data.vienna_cats_total}%
+                                </span>
+                                <p className="text-[10px] uppercase text-gray-400 mt-1">Probabilidad ETV acumulada a 6 meses</p>
+                                {data.vienna_cats_total >= 8 && (
+                                    <div className="mt-2 p-2 bg-red-50 text-red-800 text-[10px] font-bold rounded">
+                                        Considere Tromboprofilaxis Primaria
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            }
 
             if (!content) {
+                // ... generic content fallback ...
                 content = (
                     <div className="space-y-2">
+                        {/* ... generic implementation ... */}
                         <div className="bg-blue-50 text-blue-800 text-xs p-2 rounded mb-3 flex items-start gap-2">
                             <Info size={16} className="shrink-0 mt-0.5" />
                             <p>Los criterios en <span className="font-bold text-red-600">ROJO</span> están presentes. <span className="font-bold text-green-600">VERDE</span> ausentes.</p>
@@ -864,11 +976,18 @@ const RiskScales: React.FC = () => {
                 <ClipboardCheck className="text-clinical-navy" size={20} />
                 <h2 className="text-lg font-bold text-slate-800">Escalas y Riesgo</h2>
             </div>
-
+            {/* ... rest of render ... */}
             <div className="space-y-3">
 
                 {/* ASA */}
-                <ScaleCard label="ASA" desc="Estado Físico" autoCalc={true} onClick={() => setSelectedScale('asa')}>
+                <ScaleCard
+                    label="ASA"
+                    desc="Estado Físico"
+                    autoCalc={true}
+                    onClick={() => setSelectedScale('asa')}
+                    isAuthorized={authorized['asa'] !== false}
+                    onToggleAuth={(e) => toggleAuth('asa', e)}
+                >
                     <div className="relative">
                         <div className="w-full p-3 bg-blue-50 border border-blue-200 rounded-lg text-center">
                             <span className="text-2xl font-bold text-blue-900">{watch('asa')}</span>
@@ -883,6 +1002,8 @@ const RiskScales: React.FC = () => {
                     desc="Riesgo Trombótico"
                     autoCalc={true}
                     onClick={() => setSelectedScale('caprini')} // Restore full clickability
+                    isAuthorized={authorized['caprini'] !== false}
+                    onToggleAuth={(e) => toggleAuth('caprini', e)}
                 >
                     <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-3">
@@ -914,7 +1035,13 @@ const RiskScales: React.FC = () => {
                 {/* --- SPECIALTY SCALES --- */}
                 <div className="grid grid-cols-2 gap-3">
                     {/* CLINICAL FRAILTY SCALE */}
-                    <ScaleCard label="Fragilidad" desc="CFS (1-9)" autoCalc={false}>
+                    <ScaleCard
+                        label="Fragilidad"
+                        desc="CFS (1-9)"
+                        autoCalc={false}
+                        isAuthorized={authorized['fragilidad'] !== false}
+                        onToggleAuth={(e) => toggleAuth('fragilidad', e)}
+                    >
                         <div className="p-2">
                             <input
                                 type="range"
@@ -928,7 +1055,7 @@ const RiskScales: React.FC = () => {
                             <div className="flex justify-between items-center mt-2">
                                 <span className="text-xl font-bold text-clinical-navy">{watch('fragilidad_score') || 1}</span>
                                 <span className={`text-[10px] font-bold px-2 py-1 rounded 
-                                    ${(watch('fragilidad_score') || 1) <= 3 ? 'bg-green-100 text-green-800' :
+                                                ${(watch('fragilidad_score') || 1) <= 3 ? 'bg-green-100 text-green-800' :
                                         (watch('fragilidad_score') || 1) <= 6 ? 'bg-amber-100 text-amber-800' :
                                             'bg-red-100 text-red-800'}`}>
                                     {(watch('fragilidad_score') || 1) <= 3 ? 'ROBUSTO' :
@@ -944,7 +1071,13 @@ const RiskScales: React.FC = () => {
                     </ScaleCard>
 
                     {/* METs ESTIMATION */}
-                    <ScaleCard label="METs" desc="Capacidad Funcional" autoCalc={false}>
+                    <ScaleCard
+                        label="METs"
+                        desc="Capacidad Funcional"
+                        autoCalc={false}
+                        isAuthorized={authorized['mets'] !== false}
+                        onToggleAuth={(e) => toggleAuth('mets', e)}
+                    >
                         <div className="p-2">
                             <input
                                 type="number"
@@ -958,7 +1091,7 @@ const RiskScales: React.FC = () => {
                             />
                             <div className="text-center">
                                 <span className={`text-[10px] font-bold px-2 py-1 rounded 
-                                    ${(watch('mets_estimated') || 4) >= 10 ? 'bg-green-100 text-green-800' :
+                                                ${(watch('mets_estimated') || 4) >= 10 ? 'bg-green-100 text-green-800' :
                                         (watch('mets_estimated') || 4) >= 4 ? 'bg-amber-100 text-amber-800' :
                                             'bg-red-100 text-red-800'}`}>
                                     {(watch('mets_estimated') || 4) >= 10 ? 'EXCELENTE' :
@@ -971,7 +1104,13 @@ const RiskScales: React.FC = () => {
 
                     {/* VRC SCALE (Conditional) */}
                     {(watch('gupta_surgical_site') === 'vascular' || watch('gupta_surgical_site') === 'aortic' || watch('gupta_surgical_site') === 'amputation') && (
-                        <ScaleCard label="VRC Score" desc="VSGNE Vascular" autoCalc={true}>
+                        <ScaleCard
+                            label="VRC Score"
+                            desc="VSGNE Vascular"
+                            autoCalc={true}
+                            isAuthorized={authorized['vrc'] !== false}
+                            onToggleAuth={(e) => toggleAuth('vrc', e)}
+                        >
                             <div className="text-center flex flex-col items-center justify-center">
                                 <span className={`text-xl font-bold ${(watch('vrc_total') || 0) >= 4 ? 'text-red-600' : 'text-clinical-navy'}`}>
                                     {watch('vrc_total') !== -1 ? watch('vrc_total') : '-'}
@@ -988,14 +1127,28 @@ const RiskScales: React.FC = () => {
 
                 {/* --- CARDIAC SCALES GRID (CLICKABLE AUDIT) --- */}
                 <div className="grid grid-cols-2 gap-3">
-                    <ScaleCard label="LEE (RCRI)" desc="Riesgo CV" autoCalc={true} onClick={() => setSelectedScale('lee')}>
+                    <ScaleCard
+                        label="LEE (RCRI)"
+                        desc="Riesgo CV"
+                        autoCalc={true}
+                        onClick={() => setSelectedScale('lee')}
+                        isAuthorized={authorized['lee'] !== false}
+                        onToggleAuth={(e) => toggleAuth('lee', e)}
+                    >
                         <div className="text-center">
                             <span className="text-2xl font-bold text-clinical-navy">{watch('lee')}</span>
                             <p className="text-[10px] text-gray-400">Clase I-IV</p>
                         </div>
                     </ScaleCard>
 
-                    <ScaleCard label="GOLDMAN" desc="Original '77" autoCalc={true} onClick={() => setSelectedScale('goldman')}>
+                    <ScaleCard
+                        label="GOLDMAN"
+                        desc="Original '77"
+                        autoCalc={true}
+                        onClick={() => setSelectedScale('goldman')}
+                        isAuthorized={authorized['goldman'] !== false}
+                        onToggleAuth={(e) => toggleAuth('goldman', e)}
+                    >
                         <div className="text-center">
                             <span className="text-2xl font-bold text-clinical-navy">{watch('goldman')}</span>
                             <p className="text-[10px] text-gray-400">Clase I-IV</p>
@@ -1005,14 +1158,28 @@ const RiskScales: React.FC = () => {
                         </div>
                     </ScaleCard>
 
-                    <ScaleCard label="DETSKY" desc="Modificado" autoCalc={true} onClick={() => setSelectedScale('detsky')}>
+                    <ScaleCard
+                        label="DETSKY"
+                        desc="Modificado"
+                        autoCalc={true}
+                        onClick={() => setSelectedScale('detsky')}
+                        isAuthorized={authorized['detsky'] !== false}
+                        onToggleAuth={(e) => toggleAuth('detsky', e)}
+                    >
                         <div className="text-center">
                             <span className="text-2xl font-bold text-clinical-navy">{watch('detsky')}</span>
                             <p className="text-[10px] text-gray-400">Clase I-III</p>
                         </div>
                     </ScaleCard>
 
-                    <ScaleCard label="GUPTA" desc="MICA (NSQIP)" autoCalc={true} onClick={() => setSelectedScale('gupta')}>
+                    <ScaleCard
+                        label="GUPTA"
+                        desc="MICA (NSQIP)"
+                        autoCalc={true}
+                        onClick={() => setSelectedScale('gupta')}
+                        isAuthorized={authorized['gupta'] !== false}
+                        onToggleAuth={(e) => toggleAuth('gupta', e)}
+                    >
                         <div className="text-center flex flex-col items-center justify-center">
                             <span className={`text-xl font-bold ${(watch('gupta') || 0) > 1 ? 'text-red-600' : 'text-clinical-navy'}`}>
                                 {watch('gupta') || 0}%
@@ -1022,7 +1189,14 @@ const RiskScales: React.FC = () => {
                     </ScaleCard>
 
                     {/* DUKE CARD */}
-                    <ScaleCard label="DUKE" desc="Endocarditis" autoCalc={true} onClick={() => setSelectedScale('duke')}>
+                    <ScaleCard
+                        label="DUKE"
+                        desc="Endocarditis"
+                        autoCalc={true}
+                        onClick={() => setSelectedScale('duke')}
+                        isAuthorized={authorized['duke'] !== false}
+                        onToggleAuth={(e) => toggleAuth('duke', e)}
+                    >
                         <div className="text-center flex flex-col items-center justify-center">
                             <div className="flex items-center gap-1 mb-1">
                                 <Bug size={14} className={watch('duke_resultado') === 'Definitivo' ? 'text-red-600' : 'text-gray-400'} />
@@ -1037,7 +1211,14 @@ const RiskScales: React.FC = () => {
                     </ScaleCard>
 
                     {/* CHA2DS2-VASc CARD */}
-                    <ScaleCard label="CHA₂DS₂-VASc" desc="Riesgo Cardioembólico" autoCalc={true} onClick={() => setSelectedScale('cha2ds2vasc')}>
+                    <ScaleCard
+                        label="CHA₂DS₂-VASc"
+                        desc="Riesgo Cardioembólico"
+                        autoCalc={true}
+                        onClick={() => setSelectedScale('cha2ds2vasc')}
+                        isAuthorized={authorized['cha2ds2vasc'] !== false}
+                        onToggleAuth={(e) => toggleAuth('cha2ds2vasc', e)}
+                    >
                         <div className="text-center flex flex-col items-center justify-center">
                             <span className={`text-xl font-bold ${(watch('cha2ds2vasc') || 0) >= 2 ? 'text-red-600' : 'text-clinical-navy'}`}>
                                 {watch('cha2ds2vasc') || 0}
@@ -1047,7 +1228,14 @@ const RiskScales: React.FC = () => {
                     </ScaleCard>
 
                     {/* HAS-BLED CARD */}
-                    <ScaleCard label="HAS-BLED" desc="Riesgo Sangrado" autoCalc={true} onClick={() => setSelectedScale('hasbled')}>
+                    <ScaleCard
+                        label="HAS-BLED"
+                        desc="Riesgo Sangrado"
+                        autoCalc={true}
+                        onClick={() => setSelectedScale('hasbled')}
+                        isAuthorized={authorized['hasbled'] !== false}
+                        onToggleAuth={(e) => toggleAuth('hasbled', e)}
+                    >
                         <div className="text-center flex flex-col items-center justify-center">
                             <span className={`text-xl font-bold ${(watch('hasbled') || 0) >= 3 ? 'text-red-600' : 'text-clinical-navy'}`}>
                                 {watch('hasbled') || 0}
@@ -1057,7 +1245,14 @@ const RiskScales: React.FC = () => {
                     </ScaleCard>
 
                     {/* STOP-BANG CARD */}
-                    <ScaleCard label="STOP-BANG" desc="Apnea Sueño" autoCalc={true} onClick={() => setSelectedScale('stopBang')}>
+                    <ScaleCard
+                        label="STOP-BANG"
+                        desc="Apnea Sueño"
+                        autoCalc={true}
+                        onClick={() => setSelectedScale('stopBang')}
+                        isAuthorized={authorized['stopBang'] !== false}
+                        onToggleAuth={(e) => toggleAuth('stopBang', e)}
+                    >
                         <div className="text-center flex flex-col items-center justify-center">
                             <span className={`text-xl font-bold ${(watch('stopbang_total') || 0) >= 5 ? 'text-red-600' : (watch('stopbang_total') || 0) >= 3 ? 'text-amber-600' : 'text-clinical-navy'}`}>
                                 {watch('stopbang_total') || 0}
@@ -1070,7 +1265,14 @@ const RiskScales: React.FC = () => {
 
                     {/* KHORANA CARD (Conditional) */}
                     {data.cancer_activo && !['mieloma', 'snc'].includes(data.cancer_tipo_sitio) && (
-                        <ScaleCard label="KHORANA" desc="Riesgo ETV Cáncer" autoCalc={true} onClick={() => setSelectedScale('khorana')}>
+                        <ScaleCard
+                            label="KHORANA"
+                            desc="Riesgo ETV Cáncer"
+                            autoCalc={true}
+                            onClick={() => setSelectedScale('khorana')}
+                            isAuthorized={authorized['khorana'] !== false}
+                            onToggleAuth={(e) => toggleAuth('khorana', e)}
+                        >
                             <div className="text-center flex flex-col items-center justify-center">
                                 <span className={`text-xl font-bold ${data.khorana_total >= 3 ? 'text-red-600' : data.khorana_total >= 1 ? 'text-amber-600' : 'text-clinical-navy'}`}>
                                     {data.khorana_total || 0}
@@ -1081,10 +1283,31 @@ const RiskScales: React.FC = () => {
                             </div>
                         </ScaleCard>
                     )}
+
+                    {/* VIENNA CATS CARD (Conditional) */}
+                    {data.cancer_activo && (
+                        <ScaleCard
+                            label="VIENNA CATS"
+                            desc="Riesgo ETV 6m"
+                            autoCalc={true}
+                            onClick={() => setSelectedScale('vienna_cats')}
+                            isAuthorized={authorized['vienna_cats'] !== false}
+                            onToggleAuth={(e) => toggleAuth('vienna_cats', e)}
+                        >
+                            <div className="text-center flex flex-col items-center justify-center">
+                                <span className={`text-xl font-bold ${(data.vienna_cats_total || 0) >= 8 ? 'text-red-600' : 'text-clinical-navy'}`}>
+                                    {data.vienna_cats_total || 0}%
+                                </span>
+                                <p className={`text-[10px] font-bold ${(data.vienna_cats_total || 0) >= 8 ? 'text-red-600' : 'text-gray-400'}`}>
+                                    {data.vienna_cats_risk || 'Sin Riesgo'}
+                                </p>
+                            </div>
+                        </ScaleCard>
+                    )}
                 </div>
 
             </div>
-        </div >
+        </div>
     );
 };
 

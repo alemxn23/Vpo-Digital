@@ -350,48 +350,54 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                 <table border={1} cellPadding={4} cellSpacing={0} style={{ ...baseTable, border: '1px solid black', backgroundColor: '#fafafa' }}>
                     <thead>
                         <tr bgcolor="#f3f4f6" height="25">
-                            <th style={{ ...labelStyle, fontSize: '9px', width: '35px' }}>ASA</th>
-                            <th style={{ ...labelStyle, fontSize: '9px' }}>GOLDMAN</th>
-                            <th style={{ ...labelStyle, fontSize: '9px' }}>DETSKY</th>
-                            <th style={{ ...labelStyle, fontSize: '9px' }}>LEE</th>
-                            <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>CAPRINI</th>
-                            <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>GUPTA</th>
-                            <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>METs</th>
-                            <th style={{ ...labelStyle, fontSize: '9px' }}>CHADSVASC</th>
-                            <th style={{ ...labelStyle, fontSize: '9px' }}>HASBLED</th>
-                            <th style={{ ...labelStyle, fontSize: '9px' }}>STOP-BANG</th>
-                            <th style={{ ...labelStyle, fontSize: '9px', backgroundColor: '#e0f2fe' }}>VRC</th>
-                            <th style={{ ...labelStyle, fontSize: '9px', backgroundColor: '#fef3c7' }}>CFS (1-9)</th>
+                            {(data.authorized_report_scales?.asa !== false) && <th style={{ ...labelStyle, fontSize: '9px', width: '35px' }}>ASA</th>}
+                            {(data.authorized_report_scales?.goldman !== false) && <th style={{ ...labelStyle, fontSize: '9px' }}>GOLDMAN</th>}
+                            {(data.authorized_report_scales?.detsky !== false) && <th style={{ ...labelStyle, fontSize: '9px' }}>DETSKY</th>}
+                            {(data.authorized_report_scales?.lee !== false) && <th style={{ ...labelStyle, fontSize: '9px' }}>LEE</th>}
+                            {(data.authorized_report_scales?.caprini !== false) && <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>CAPRINI</th>}
+                            {(data.authorized_report_scales?.gupta !== false) && <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>GUPTA</th>}
+                            {(data.authorized_report_scales?.mets !== false) && <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>METs</th>}
+                            {(data.authorized_report_scales?.cha2ds2vasc !== false) && <th style={{ ...labelStyle, fontSize: '9px' }}>CHADSVASC</th>}
+                            {(data.authorized_report_scales?.hasbled !== false) && <th style={{ ...labelStyle, fontSize: '9px' }}>HASBLED</th>}
+                            {(data.authorized_report_scales?.stopBang !== false) && <th style={{ ...labelStyle, fontSize: '9px' }}>STOP-BANG</th>}
+                            {(data.authorized_report_scales?.vrc !== false) && <th style={{ ...labelStyle, fontSize: '9px', backgroundColor: '#e0f2fe' }}>VRC</th>}
+                            {(data.authorized_report_scales?.fragilidad !== false) && <th style={{ ...labelStyle, fontSize: '9px', backgroundColor: '#fef3c7' }}>CFS (1-9)</th>}
                         </tr>
                     </thead>
                     <tbody>
                         <tr align="center" height="30">
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.asa}</td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.goldman}</td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.detsky}</td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.lee}</td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.caprini}</td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.gupta || 0}%</td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.mets_estimated || 4}</td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.cha2ds2vasc || 0}</td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.hasbled || 0}</td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold' }}>
-                                {typeof data.stopbang_total === 'number' ? data.stopbang_total : 0} pts
-                                <br />
-                                <span style={{ fontSize: '8px' }}>{((data.stopbang_risk || 'Bajo') + '').toUpperCase()}</span>
-                            </td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: (data.vrc_total || 0) >= 4 ? '#fecaca' : 'transparent' }}>
-                                {(data.vrc_total !== undefined && data.vrc_total !== -1) ?
-                                    <>
-                                        {data.vrc_total} pts
-                                        <br />
-                                        <span style={{ fontSize: '8px' }}>{((data.vrc_riesgo || 'Bajo') + '').toUpperCase()}</span>
-                                    </>
-                                    : '-'}
-                            </td>
-                            <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: (data.fragilidad_score || 1) >= 5 ? '#fecaca' : 'transparent' }}>
-                                {data.fragilidad_score || 1}
-                            </td>
+                            {(data.authorized_report_scales?.asa !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.asa}</td>}
+                            {(data.authorized_report_scales?.goldman !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.goldman}</td>}
+                            {(data.authorized_report_scales?.detsky !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.detsky}</td>}
+                            {(data.authorized_report_scales?.lee !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.lee}</td>}
+                            {(data.authorized_report_scales?.caprini !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.caprini}</td>}
+                            {(data.authorized_report_scales?.gupta !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.gupta || 0}%</td>}
+                            {(data.authorized_report_scales?.mets !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.mets_estimated || 4}</td>}
+                            {(data.authorized_report_scales?.cha2ds2vasc !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.cha2ds2vasc || 0}</td>}
+                            {(data.authorized_report_scales?.hasbled !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.hasbled || 0}</td>}
+                            {(data.authorized_report_scales?.stopBang !== false) && (
+                                <td style={{ fontSize: '10px', fontWeight: 'bold' }}>
+                                    {typeof data.stopbang_total === 'number' ? data.stopbang_total : 0} pts
+                                    <br />
+                                    <span style={{ fontSize: '8px' }}>{((data.stopbang_risk || 'Bajo') + '').toUpperCase()}</span>
+                                </td>
+                            )}
+                            {(data.authorized_report_scales?.vrc !== false) && (
+                                <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: (data.vrc_total || 0) >= 4 ? '#fecaca' : 'transparent' }}>
+                                    {(data.vrc_total !== undefined && data.vrc_total !== -1) ?
+                                        <>
+                                            {data.vrc_total} pts
+                                            <br />
+                                            <span style={{ fontSize: '8px' }}>{((data.vrc_riesgo || 'Bajo') + '').toUpperCase()}</span>
+                                        </>
+                                        : '-'}
+                                </td>
+                            )}
+                            {(data.authorized_report_scales?.fragilidad !== false) && (
+                                <td style={{ fontSize: '10px', fontWeight: 'bold', backgroundColor: (data.fragilidad_score || 1) >= 5 ? '#fecaca' : 'transparent' }}>
+                                    {data.fragilidad_score || 1}
+                                </td>
+                            )}
                         </tr>
                     </tbody>
                 </table>

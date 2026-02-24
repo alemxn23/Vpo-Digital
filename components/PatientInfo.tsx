@@ -142,6 +142,7 @@ const PatientInfo: React.FC = () => {
         tp: 0,
         ttp: 0,
         inr: 0,
+        ddimer: 0,
         glucosaCentral: 0,
         urea: 0,
         creatinina: 0,
@@ -269,7 +270,11 @@ const PatientInfo: React.FC = () => {
         esUrgencia: false,
         peso: 0,
         talla: 0,
-        imc: 0
+        imc: 0,
+        // Vienna CATS
+        vienna_cats_total: 0,
+        vienna_cats_risk: "",
+        authorized_report_scales: {}
       };
 
       reset(resetValues);

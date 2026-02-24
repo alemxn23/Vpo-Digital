@@ -11,6 +11,7 @@ export interface SelectedMed {
   action: 'stop' | 'continue' | 'adjust';
   daysPrior?: number; // 0 = Day of surgery, 1 = 24h before, 7 = 7 days before
   instructions: string;
+  source?: string;
   englishName?: string; // For OpenFDA queries
   isChronic?: boolean;
   stressDoseRecommendation?: string;
@@ -146,9 +147,9 @@ export interface VPOData {
   coagulopatia: boolean;
   coag_tipo: string;
 
-  // 14. Cáncer (Para Escala Khorana)
+  // 14. Cáncer (Para Escala Khorana / Vienna CATS)
   cancer_activo: boolean;
-  cancer_tipo_sitio: "estomago" | "pancreas" | "pulmon" | "linfoma" | "ginecologico" | "vejiga" | "testicular" | "mieloma" | "snc" | "otro" | "";
+  cancer_tipo_sitio: "estomago" | "pancreas" | "pulmon" | "linfoma" | "ginecologico" | "vejiga" | "testicular" | "mieloma" | "snc" | "colorectal" | "esofago" | "rinon" | "sarcoma" | "cabeza_cuello" | "otro" | "";
 
   // --- VARIABLES DERIVADAS PARA ESCALAS (Auto-flagged by logic) ---
   flag_iam_reciente: boolean; // < 6m
@@ -201,6 +202,7 @@ export interface VPOData {
   na: number;
   k: number;
   cl: number;
+  ddimer: number;
 
   // Calculados automáticamente
   tfg: number; // Tasa Filtración Glomerular
@@ -266,9 +268,11 @@ export interface VPOData {
   hasbled_inr_labil: boolean; // Manual toggle
   hasbled_alcohol: boolean; // Manual toggle
 
-  // Khorana
+  // Khorana & Vienna CATS
   khorana_total: number;
   khorana_riesgo: "Bajo" | "Intermedio" | "Alto" | "";
+  vienna_cats_total: number; // Score (points)
+  vienna_cats_risk: string; // Probability % and Risk Level
 
 
 
@@ -352,6 +356,9 @@ export interface VPOData {
   matricula: string;
   residente: string;
   residente_matricula: string;
+
+  // Reporting & Publication
+  authorized_report_scales: Record<string, boolean>;
 
   // External
   driveLink?: string; // To store the uploaded file URL

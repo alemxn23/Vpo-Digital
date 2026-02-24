@@ -29,6 +29,9 @@ import Recommendations from './components/Recommendations';
 import PrintView from './components/PrintView';
 import Gabinete from './components/Gabinete';
 import MedicalNoteGenerator from './components/MedicalNoteGenerator';
+import { supabase } from './utils/supabase';
+import PaywallModal from './components/PaywallModal';
+import { AuthGuard } from './components/AuthGuard';
 
 // --- Configuration ---
 // Google Drive Client ID. Sigue los pasos en GOOGLE_DRIVE_SETUP.md para configurar el tuyo.
@@ -256,6 +259,8 @@ const App: React.FC = () => {
   const [activeStep, setActiveStep] = useState(0);
   const [showToast, setShowToast] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [showPaywall, setShowPaywall] = useState(false);
+  const [isCheckingCredits, setIsCheckingCredits] = useState(false);
 
   const methods = useForm<VPOData>({
     defaultValues: {
@@ -350,7 +355,73 @@ const App: React.FC = () => {
   };
 
   const handlePrintPDF = async () => {
+    if (isCheckingCredits) return;
+    setIsCheckingCredits(true);
+
     try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData?.user) {
+        alert("Debes iniciar sesión para imprimir el PDF.");
+        setIsCheckingCredits(false);
+        return;
+      }
+
+      const userId = userData.user.id;
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('plan_type, free_vpos_used_today, paid_credits, last_vpo_date')
+        .eq('id', userId)
+        .single();
+
+      if (profileError || !profileData) {
+        console.error("Error fetching profile:", profileError);
+        alert("No se pudo verificar el estado de la cuenta.");
+        setIsCheckingCredits(false);
+        return;
+      }
+
+      let canPrint = false;
+      const today = new Date().toISOString().split('T')[0];
+
+      if (profileData.plan_type === 'unlimited') {
+        canPrint = true;
+      } else if (profileData.plan_type === 'free' || !profileData.plan_type) {
+        let currentFreeVpos = profileData.free_vpos_used_today || 0;
+        const lastVpoDate = profileData.last_vpo_date;
+
+        if (lastVpoDate !== today) {
+          currentFreeVpos = 0;
+        }
+
+        if (currentFreeVpos < 2) {
+          canPrint = true;
+          await supabase
+            .from('profiles')
+            .update({
+              free_vpos_used_today: currentFreeVpos + 1,
+              last_vpo_date: today
+            })
+            .eq('id', userId);
+        } else if (profileData.paid_credits > 0) {
+          canPrint = true;
+          await supabase
+            .from('profiles')
+            .update({
+              paid_credits: profileData.paid_credits - 1,
+              last_vpo_date: today
+            })
+            .eq('id', userId);
+        } else {
+          canPrint = false;
+        }
+      }
+
+      if (!canPrint) {
+        setShowPaywall(true);
+        setIsCheckingCredits(false);
+        return;
+      }
+
       const doc = await generatePDFDoc();
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
@@ -372,6 +443,8 @@ const App: React.FC = () => {
     } catch (e) {
       console.error(e);
       alert("Error al generar vista de impresión.");
+    } finally {
+      setIsCheckingCredits(false);
     }
   };
 
@@ -494,56 +567,66 @@ const App: React.FC = () => {
   };
 
   return (
-    <FormProvider {...methods}>
-      <div className="min-h-screen bg-clinical-bg font-sans pb-20 lg:pb-0 lg:flex items-start">
-        <Sidebar activeStep={activeStep} setStep={setActiveStep} />
-        <div className="flex-1 min-w-0 flex flex-col min-h-screen">
-          <StickyHeader />
-          <main className="pt-4 md:pt-8 pb-8 px-4 w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto flex-1">
-            <div className={activeStep === 0 ? 'block' : 'hidden'}><PatientInfo /></div>
-            <div className={activeStep === 1 ? 'block' : 'hidden'}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><RiskFactors /><LabsAndVitals /></div>
-            </div>
-            <div className={activeStep === 2 ? 'block' : 'hidden'}><Gabinete /></div>
-            <div className={activeStep === 3 ? 'block' : 'hidden'}><MedicationReconciliation /></div>
-            <div className={activeStep === 4 ? 'block' : 'hidden'}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><RiskScales /><Recommendations /></div>
-            </div>
-            <div className={activeStep === 5 ? 'block h-full' : 'hidden'}><MedicalNoteGenerator /></div>
-            <div className={activeStep === 6 ? 'block' : 'hidden'}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="bg-white p-4 rounded-xl shadow-sm border h-[500px] overflow-auto"><PrintView /></div>
-                <div className="space-y-4 bg-white p-6 rounded-xl shadow-sm border">
-                  <button onClick={handlePrintPDF} className="w-full bg-clinical-navy text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2"><Printer size={20} /> IMPRIMIR PDF</button>
-                  <div className="grid grid-cols-2 gap-3">
-                    <button onClick={handleDriveUpload} className="bg-white border-2 border-clinical-navy text-clinical-navy py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-xs"><Save size={16} /> DRIVE</button>
-                    <button onClick={handleWhatsApp} className="bg-[#25D366] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-xs"><MessageCircle size={16} /> WHATSAPP</button>
+    <AuthGuard>
+      <FormProvider {...methods}>
+        <div className="min-h-screen bg-clinical-bg font-sans pb-20 lg:pb-0 lg:flex items-start">
+          <Sidebar activeStep={activeStep} setStep={setActiveStep} />
+          <div className="flex-1 min-w-0 flex flex-col min-h-screen">
+            <StickyHeader />
+            <main className="pt-4 md:pt-8 pb-8 px-4 w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto flex-1">
+              <div className={activeStep === 0 ? 'block' : 'hidden'}><PatientInfo /></div>
+              <div className={activeStep === 1 ? 'block' : 'hidden'}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><RiskFactors /><LabsAndVitals /></div>
+              </div>
+              <div className={activeStep === 2 ? 'block' : 'hidden'}><Gabinete /></div>
+              <div className={activeStep === 3 ? 'block' : 'hidden'}><MedicationReconciliation /></div>
+              <div className={activeStep === 4 ? 'block' : 'hidden'}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><RiskScales /><Recommendations /></div>
+              </div>
+              <div className={activeStep === 5 ? 'block h-full' : 'hidden'}><MedicalNoteGenerator /></div>
+              <div className={activeStep === 6 ? 'block' : 'hidden'}>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-white p-4 rounded-xl shadow-sm border h-[500px] overflow-auto"><PrintView /></div>
+                  <div className="space-y-4 bg-white p-6 rounded-xl shadow-sm border">
+                    <button
+                      onClick={handlePrintPDF}
+                      disabled={isCheckingCredits}
+                      className={`w-full bg-clinical-navy text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${isCheckingCredits ? 'opacity-70 cursor-wait' : 'hover:scale-[1.02] active:scale-[0.98]'}`}>
+                      <Printer size={20} />
+                      {isCheckingCredits ? 'EVALUANDO ACCESOS...' : 'IMPRIMIR PDF'}
+                    </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      <button onClick={handleDriveUpload} className="bg-white border-2 border-clinical-navy text-clinical-navy py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-xs"><Save size={16} /> DRIVE</button>
+                      <button onClick={handleWhatsApp} className="bg-[#25D366] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-xs"><MessageCircle size={16} /> WHATSAPP</button>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </main>
+            </main>
+          </div>
+          {activeStep === 6 && (
+            <button onClick={handleCopyNote} className="fixed bottom-24 right-4 bg-green-600 text-white p-4 rounded-full shadow-xl z-40 flex items-center gap-2">
+              <Copy size={24} /><span className="hidden md:inline font-bold">Copiar Texto</span>
+            </button>
+          )}
         </div>
-        {activeStep === 6 && (
-          <button onClick={handleCopyNote} className="fixed bottom-24 right-4 bg-green-600 text-white p-4 rounded-full shadow-xl z-40 flex items-center gap-2">
-            <Copy size={24} /><span className="hidden md:inline font-bold">Copiar Texto</span>
-          </button>
-        )}
-      </div>
-      {showToast && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full z-50 animate-bounce">Nota copiada</div>}
-      <BottomNav activeStep={activeStep} setStep={setActiveStep} />
+        {showToast && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full z-50 animate-bounce">Nota copiada</div>}
+        <BottomNav activeStep={activeStep} setStep={setActiveStep} />
 
-      {/* Hidden Container for high-res PDF generation - THIS IS THE ONLY ONE WITH IDs print-page-1/2 */}
-      <div id="print-content" style={{
-        position: 'fixed',
-        left: '-10000px',
-        top: '0',
-        width: '794px',
-        zIndex: -1000
-      }}>
-        <PrintView isPrintMode={true} />
-      </div>
-    </FormProvider>
+        {/* Hidden Container for high-res PDF generation - THIS IS THE ONLY ONE WITH IDs print-page-1/2 */}
+        <div id="print-content" style={{
+          position: 'fixed',
+          left: '-10000px',
+          top: '0',
+          width: '794px',
+          zIndex: -1000
+        }}>
+          <PrintView isPrintMode={true} />
+        </div>
+
+        <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} />
+      </FormProvider>
+    </AuthGuard>
   );
 };
 

@@ -8,6 +8,8 @@ import { getMedicationRecommendation, MedicationRecommendation, calculateStressD
 import { searchOpenFDAMeds } from '../custom_services/UniversalSearchService';
 import { Shield, CloudOff, FileText, Database, Zap } from 'lucide-react';
 import { checkMedicationInteractions, InteractionResult } from '../custom_services/DDIClient';
+import { simulateAdminNotification } from '../custom_services/AdminNotificationService';
+import { searchEMAMeds } from '../custom_services/EMAClient';
 
 const MedicationReconciliation: React.FC = () => {
     const { setValue, watch } = useFormContext<VPOData>();
@@ -26,6 +28,10 @@ const MedicationReconciliation: React.FC = () => {
 
     const [activeModalMed, setActiveModalMed] = useState<{ med: SelectedMed, rec: MedicationRecommendation, fda?: FDASafetyInfo | null, loadingFda?: boolean, isChronic?: boolean, fdaWarning?: string, dose?: number } | null>(null);
     const [isBlackBoxOpen, setIsBlackBoxOpen] = useState(false);
+
+    // Custom Med State
+    const [showCustomMedModal, setShowCustomMedModal] = useState(false);
+    const [customMedData, setCustomMedData] = useState({ name: '', category: 'Otro', action: 'continue', daysPrior: 0, instructions: '' });
 
     // FDA Verification Handler
     // -------------------------------------------------------------------------
@@ -153,16 +159,34 @@ const MedicationReconciliation: React.FC = () => {
                 });
                 setFilteredMeds(local);
 
-                // 2. If low local results, fetch API (Universal Search)
+                // 2. Search EMA & API (Universal Search)
                 if (searchTerm.length >= 3) {
                     setIsSearchingApi(true);
                     try {
-                        const results = await searchOpenFDAMeds(searchTerm);
-                        // Filter out duplicates that match local DB by name (approx)
-                        const newResults = results.filter(r =>
-                            !local.some(l => l.name.toLowerCase() === r.openfda.brand_name?.[0]?.toLowerCase())
+                        const [emaResults, fdaResults] = await Promise.all([
+                            searchEMAMeds(searchTerm),
+                            searchOpenFDAMeds(searchTerm)
+                        ]);
+
+                        // Merge & Filter Duplicates
+                        const uniqueEma = emaResults.filter(e => !local.some(l => l.name === e.name));
+
+                        const uniqueFda = fdaResults.filter(r =>
+                            !local.some(l => l.name.toLowerCase() === r.openfda.brand_name?.[0]?.toLowerCase()) &&
+                            !uniqueEma.some(e => e.name.toLowerCase() === r.openfda.brand_name?.[0]?.toLowerCase())
                         );
-                        setApiResults(newResults);
+
+                        // Hack: Store EMA results in specific state or merge? 
+                        // For simplicity, we'll merge them into filteredMeds but mark them as source='EMA'
+                        // Actually, better to keep separate or use a flag.
+                        // Let's treat EMA matches as "High Confidence" and put them top of API list, or append to filteredMeds?
+                        // Appending to filteredMeds is safer for UI consistency.
+
+                        const emaSelectedMeds = uniqueEma.map(e => ({ ...e, source: 'EMA' }));
+                        setFilteredMeds(prev => [...prev, ...emaSelectedMeds]);
+
+                        setApiResults(uniqueFda);
+
                     } catch (e) {
                         console.error(e);
                     } finally {
@@ -301,6 +325,7 @@ const MedicationReconciliation: React.FC = () => {
             id: `enox-${Date.now()}`,
             name: "Enoxaparina (Terapia Puente)",
             category: "Anticoagulante",
+            keywords: [],
             dose: dose,
             route: "SC",
             action: "continue",
@@ -312,16 +337,52 @@ const MedicationReconciliation: React.FC = () => {
         setValue('selectedMeds', [...selectedMeds, enoxaparin]);
     };
 
+    const handleSaveCustomMed = async () => {
+        if (!customMedData.name) return;
+        const newCustomMed: SelectedMed = {
+            id: `custom-${Date.now()}`,
+            name: customMedData.name,
+            category: customMedData.category,
+            action: customMedData.action as 'stop' | 'continue' | 'adjust',
+            alertLevel: 'yellow', // Default caution
+            daysPrior: customMedData.daysPrior,
+            instructions: customMedData.instructions || 'Indicación personalizada por el médico tratante.',
+            dose: 0,
+            route: 'VO'
+        };
+        setValue('selectedMeds', [...selectedMeds, newCustomMed]);
+
+        // Notify Admin (Simulated)
+        await simulateAdminNotification(newCustomMed.name, newCustomMed.category, newCustomMed.instructions);
+
+        setShowCustomMedModal(false);
+        setCustomMedData({ name: '', category: 'Otro', action: 'continue', daysPrior: 0, instructions: '' });
+        setSearchTerm('');
+        setFilteredMeds([]);
+    };
+
     const renderSearchResults = () => {
         if (filteredMeds.length === 0 && apiResults.length === 0 && !isSearchingApi && searchTerm.length > 3) {
             return (
-                <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 p-4 text-center text-xs text-gray-400 italic">
-                    No se encontraron resultados.
-                </ul>
+                <div className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 p-4 text-center animate-fadeIn">
+                    <p className="text-xs text-gray-500 italic mb-3">
+                        No se encontraron resultados. ¿Deseas solicitar su inclusión?
+                        <br />
+                        <span className="text-[10px] text-gray-400">Se agregará temporalmente a tu lista y se notificará al Administrador.</span>
+                    </p>
+
+                    <button
+                        onClick={() => {
+                            setCustomMedData(prev => ({ ...prev, name: searchTerm }));
+                            setShowCustomMedModal(true);
+                        }}
+                        className="w-full bg-clinical-navy text-white px-4 py-3 rounded-lg text-xs font-bold hover:bg-blue-900 flex items-center justify-center gap-2 transition-all shadow-md transform hover:scale-[1.02]"
+                    >
+                        <Pill size={16} /> Solicitar y Agregar "{searchTerm}"
+                    </button>
+                </div>
             );
         }
-
-        if (filteredMeds.length === 0 && apiResults.length === 0 && !isSearchingApi) return null;
 
         return (
             <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-1 max-h-80 overflow-y-auto animate-fadeIn divide-y divide-gray-100">
@@ -334,7 +395,10 @@ const MedicationReconciliation: React.FC = () => {
                 {filteredMeds.map(med => (
                     <li key={med.id} onClick={() => handleAddMed(med)} className="p-3 hover:bg-blue-50 cursor-pointer flex justify-between items-center group transition-colors">
                         <div className="flex flex-col">
-                            <span className="font-bold text-slate-700 group-hover:text-clinical-navy">{med.name}</span>
+                            <span className="font-bold text-slate-700 group-hover:text-clinical-navy flex items-center gap-1">
+                                {med.name}
+                                {med.source === 'EMA' && <span className="bg-blue-100 text-blue-700 text-[9px] px-1 rounded border border-blue-200">🇪🇺 EMA</span>}
+                            </span>
                             {med.category && <span className="text-[10px] text-gray-400">{med.category}</span>}
                         </div>
                         <span className={`text-[10px] px-2 py-1 rounded-full uppercase font-bold text-white ${med.alertLevel === 'red' ? 'bg-red-500' : med.alertLevel === 'yellow' ? 'bg-amber-500' : 'bg-green-500'}`}>
@@ -400,8 +464,8 @@ const MedicationReconciliation: React.FC = () => {
             {/* --- MODAL FOR CONFIRMATION / WARNINGS --- */}
             {activeModalMed && (
                 <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
-                    <div className="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
-                        <div className={`p-4 text-white flex justify-between items-center ${activeModalMed.rec.alertLevel === 'red' ? 'bg-red-600' : 'bg-clinical-navy'}`}>
+                    <div className="bg-white rounded-xl w-full max-w-md shadow-2xl flex flex-col max-h-[80vh] sm:max-h-[90vh]">
+                        <div className={`p-4 text-white flex justify-between items-center shrink-0 ${activeModalMed.rec.alertLevel === 'red' ? 'bg-red-600' : 'bg-clinical-navy'}`}>
                             <h3 className="font-bold flex items-center gap-2">
                                 {activeModalMed.rec.alertLevel === 'red' ? <AlertTriangle size={20} /> : <Info size={20} />}
                                 {activeModalMed.med.name}
@@ -409,7 +473,7 @@ const MedicationReconciliation: React.FC = () => {
                             <button onClick={() => setActiveModalMed(null)}><X size={20} /></button>
                         </div>
 
-                        <div className="p-5 space-y-4">
+                        <div className="p-5 space-y-4 overflow-y-auto flex-1">
                             <div className={`p-4 rounded-lg border ${activeModalMed.rec.alertLevel === 'red' ? 'bg-red-50 border-red-200 text-red-900' : 'bg-blue-50 border-blue-200 text-blue-900'}`}>
                                 <h4 className="font-bold text-sm uppercase mb-2">Recomendación del Motor (Basada en Evidencia)</h4>
                                 <p className="text-sm font-medium leading-relaxed">
@@ -459,40 +523,38 @@ const MedicationReconciliation: React.FC = () => {
 
                             {/* STEROID SPECIFIC LOGIC */}
                             {activeModalMed.med.isSteroid && (
-                                <div className="space-y-3 bg-indigo-50 p-3 rounded-lg border border-indigo-100">
-                                    <div className="flex items-start gap-2">
+                                <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 transition-all duration-300">
+                                    <div className="flex items-center gap-2">
                                         <input
                                             type="checkbox"
                                             id="chronicCheck"
-                                            className="mt-1"
+                                            className="w-4 h-4 text-indigo-600 rounded focus:ring-indigo-500 cursor-pointer"
                                             checked={activeModalMed.isChronic || false}
                                             onChange={(e) => setActiveModalMed({ ...activeModalMed, isChronic: e.target.checked })}
                                         />
-                                        <label htmlFor="chronicCheck" className="text-xs text-indigo-900 font-medium cursor-pointer">
-                                            <b>¿Uso Crónico?</b> ({'>'}3 semanas, dosis altas, o fenotipo Cushingoide)
+                                        <label htmlFor="chronicCheck" className="text-xs text-indigo-900 font-bold cursor-pointer select-none flex-1">
+                                            ¿Uso Crónico? <span className="font-normal opacity-80">({'>'}3 sem, dosis altas)</span>
                                         </label>
                                     </div>
 
                                     {activeModalMed.isChronic && (
-                                        <div className="bg-white p-3 rounded border border-indigo-200 animate-fadeIn">
-                                            <h5 className="font-bold text-xs text-indigo-800 uppercase mb-1">Pauta Dosis de Estrés</h5>
-                                            <p className="text-[10px] text-gray-500 mb-2">
-                                                Basado en Cirugía: <b>{formData.gupta_surgical_site || 'No especificada'}</b>
-                                            </p>
-
-                                            {(() => {
-                                                // Dynamic Stress Dose Calculator Logic (Unified)
-                                                const previewText = calculateStressDose(formData, activeModalMed.med);
-
-                                                return (
-                                                    <div className="text-xs text-indigo-900 font-medium whitespace-pre-wrap leading-relaxed animate-fadeIn">
-                                                        {previewText}
-                                                        <p className="text-[10px] italic text-indigo-500 mt-2">
-                                                            *Ajustado a peso ({formData.peso || 70}kg), riesgo Qx y dosis basal.
+                                        <div className="mt-2 pl-6 animate-fadeIn">
+                                            <div className="bg-white/80 p-2 rounded border border-indigo-100 shadow-sm">
+                                                <div className="flex justify-between items-center mb-1">
+                                                    <span className="font-bold text-[10px] text-indigo-700 uppercase">Pauta Sugerida (Estrés Qx)</span>
+                                                    <span className="text-[9px] bg-indigo-100 text-indigo-600 px-1.5 py-0.5 rounded-full font-medium truncate max-w-[100px]">
+                                                        {formData.gupta_surgical_site || 'General'}
+                                                    </span>
+                                                </div>
+                                                {(() => {
+                                                    const previewText = calculateStressDose(formData, activeModalMed.med);
+                                                    return (
+                                                        <p className="text-[11px] text-indigo-900 font-medium leading-snug">
+                                                            {previewText}
                                                         </p>
-                                                    </div>
-                                                );
-                                            })()}
+                                                    );
+                                                })()}
+                                            </div>
                                         </div>
                                     )}
                                 </div>
@@ -523,24 +585,19 @@ const MedicationReconciliation: React.FC = () => {
                                 {activeModalMed.fda && (
                                     <div className="space-y-2 animate-fadeIn">
                                         {activeModalMed.fda.hasBoxedWarning ? (
-                                            <div className="border border-red-800 rounded overflow-hidden">
-                                                {/* Collapsible Header */}
-                                                <div
+                                            <div className="mt-2 text-center">
+                                                <button
                                                     onClick={() => setIsBlackBoxOpen(!isBlackBoxOpen)}
-                                                    className="p-3 bg-black text-white flex items-center justify-between cursor-pointer hover:bg-gray-900 transition-colors"
+                                                    className="w-full py-2 px-3 bg-black text-white rounded flex items-center justify-center gap-2 hover:bg-gray-800 transition-colors shadow-md"
                                                 >
-                                                    <div className="flex items-center gap-2">
-                                                        <AlertTriangle size={16} className="text-red-500 animate-pulse" />
-                                                        <span className="font-bold text-xs uppercase tracking-wider text-red-500">
-                                                            ⚠️ BLACK BOX WARNING DETECTADO
-                                                        </span>
-                                                    </div>
-                                                    <ChevronRight size={16} className={`text-gray-400 transition-transform ${isBlackBoxOpen ? 'rotate-90' : ''}`} />
-                                                </div>
+                                                    <AlertTriangle size={16} className="text-red-500" />
+                                                    <span className="font-bold text-xs uppercase">
+                                                        {isBlackBoxOpen ? 'Ocultar Black Box Warning' : '⚠️ Ver Black Box Warning'}
+                                                    </span>
+                                                </button>
 
-                                                {/* Collapsible Content */}
                                                 {isBlackBoxOpen && (
-                                                    <div className="p-3 bg-gray-900 text-gray-300 text-[10px] leading-relaxed border-t border-gray-800 animate-slideDown">
+                                                    <div className="mt-2 p-3 bg-gray-900 border border-red-900/30 text-gray-300 text-[10px] leading-relaxed rounded animate-slideDown text-left">
                                                         <p className="opacity-90">{activeModalMed.fda.boxedWarning[0]}</p>
                                                         <p className="mt-2 text-xs italic text-gray-500">
                                                             *Texto original de la FDA (Inglés).
@@ -577,11 +634,17 @@ const MedicationReconciliation: React.FC = () => {
                         </div>
 
                         {/* (Original Buttons Section of Modal) */}
-                        <div className="p-4 bg-gray-50 border-t flex justify-end gap-2">
-                            <button onClick={() => setActiveModalMed(null)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">Cancelar</button>
+                        {/* (Original Buttons Section of Modal) */}
+                        <div className="p-4 bg-gray-50 border-t flex flex-col-reverse sm:flex-row justify-end gap-3 shrink-0">
+                            <button
+                                onClick={() => setActiveModalMed(null)}
+                                className="w-full sm:w-auto px-4 py-3 sm:py-2 text-gray-500 font-bold hover:bg-gray-100 rounded text-sm transition-colors"
+                            >
+                                Cancelar
+                            </button>
                             <button
                                 onClick={handleConfirmAddMed}
-                                className="bg-clinical-navy text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-blue-900"
+                                className="w-full sm:w-auto bg-clinical-navy text-white px-6 py-3 sm:py-2 rounded-lg font-bold shadow hover:bg-blue-900 text-sm transition-colors flex justify-center items-center"
                             >
                                 Confirmar y Agregar
                             </button>
@@ -709,6 +772,74 @@ const MedicationReconciliation: React.FC = () => {
                     ))}
                 </div>
             </div>
+            {/* CUSTOM MED MODAL */}
+            {showCustomMedModal && (
+                <div className="fixed inset-0 bg-black/60 z-[70] flex items-center justify-center p-4 backdrop-blur-sm animate-fadeIn">
+                    <div className="bg-white rounded-xl w-full max-w-md shadow-2xl overflow-hidden">
+                        <div className="bg-clinical-navy p-4 text-white flex justify-between items-center">
+                            <h3 className="font-bold flex items-center gap-2"><Pill size={18} /> Agregar Medicamento Personalizado</h3>
+                            <button onClick={() => setShowCustomMedModal(false)}><X size={20} /></button>
+                        </div>
+                        <div className="p-5 space-y-4">
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase">Nombre del Fármaco</label>
+                                <input
+                                    type="text"
+                                    className="w-full border rounded p-2 font-bold"
+                                    value={customMedData.name}
+                                    onChange={(e) => setCustomMedData({ ...customMedData, name: e.target.value })}
+                                    placeholder="Ej: Nuevo Medicamento X"
+                                />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Acción</label>
+                                    <select
+                                        className="w-full border rounded p-2 text-sm"
+                                        value={customMedData.action}
+                                        onChange={(e) => setCustomMedData({ ...customMedData, action: e.target.value })}
+                                    >
+                                        <option value="continue">Continuar</option>
+                                        <option value="stop">Suspender</option>
+                                        <option value="adjust">Ajustar / Puente</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="text-xs font-bold text-gray-500 uppercase">Días Previos (Suspensión)</label>
+                                    <input
+                                        type="number"
+                                        className="w-full border rounded p-2 text-sm"
+                                        value={customMedData.daysPrior}
+                                        onChange={(e) => setCustomMedData({ ...customMedData, daysPrior: parseInt(e.target.value) || 0 })}
+                                        disabled={customMedData.action === 'continue'}
+                                    />
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="text-xs font-bold text-gray-500 uppercase">Instrucciones / Notas</label>
+                                <textarea
+                                    className="w-full border rounded p-2 text-sm h-24"
+                                    value={customMedData.instructions}
+                                    onChange={(e) => setCustomMedData({ ...customMedData, instructions: e.target.value })}
+                                    placeholder="Ej: Suspender 24h antes por riesgo de sagrado..."
+                                />
+                            </div>
+
+                            <div className="flex justify-end gap-2 pt-2 border-t">
+                                <button onClick={() => setShowCustomMedModal(false)} className="px-4 py-2 text-gray-500 font-bold hover:bg-gray-100 rounded">Cancelar</button>
+                                <button
+                                    onClick={handleSaveCustomMed}
+                                    className="bg-clinical-navy text-white px-6 py-2 rounded-lg font-bold shadow hover:bg-blue-900"
+                                >
+                                    Guardar Fármaco
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

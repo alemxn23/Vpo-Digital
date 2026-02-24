@@ -2,19 +2,28 @@
 <img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
 </div>
 
-# Run and deploy your AI Studio app
+# VPO Digital (Team Workflow)
 
-This contains everything you need to run your app locally.
+Bienvenidos al repositorio de **VPO Digital** con integración de motor de VPO, lógica de Supabase y pasarela de Stripe.
 
-View your app in AI Studio: https://ai.studio/apps/drive/17DPlXnZ8GRZ2aIpXFkQqvEP1o1Jggx3v
+## Cómo levantar el proyecto localmente
 
-## Run Locally
+Sigue estos pasos para obtener una copia local y ejecutar el entorno de desarrollo:
 
-**Prerequisites:**  Node.js
+### 1. Variables de entorno (¡MUY IMPORTANTE!)
+Por motivos de seguridad, los archivos `.env` (incluyendo las llaves de Supabase y Stripe) no están subidos al repositorio. 
+**Debes solicitar el archivo `.env` por un canal seguro (ej: Slack, Discord, correo interno)** al administrador del proyecto antes de continuar. Una vez lo tengas, ubícalo en la raíz del proyecto.
 
+### 2. Instalación de dependencias
+Asegúrate de tener Node.js instalado. Luego ejecuta:
+```bash
+npm install
+```
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 3. Ejecutar la aplicación
+Una vez que las dependencias estén instaladas y el archivo `.env` configurado, lanza el entorno de desarrollo con:
+```bash
+npm run dev
+```
+
+Esto levantará la aplicación en el puerto asignado.

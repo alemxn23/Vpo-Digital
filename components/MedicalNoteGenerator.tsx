@@ -40,20 +40,47 @@ const MedicalNoteGenerator: React.FC = () => {
     };
 
     const generateAssessment = () => {
+        const auth = data.authorized_report_scales || {};
         const goldmanMap: Record<string, string> = { "I": "0.2%", "II": "1%", "III": "7%", "IV": "22%" };
         const goldmanRisk = goldmanMap[data.goldman || "I"];
 
-        let extraScales = `\n6. Riesgo MACE (Gupta): ${data.gupta || 0}%.\n7. Capacidad Funcional (Duke): ${data.duke_resultado || '-'}.`;
+        const lines = ["ANÁLISIS Y VALORACIÓN (RIESGOS):"];
+        let count = 1;
 
-        if (data.arritmia_tipo === 'fa' || data.valvula_protesis) {
-            extraScales += `\n8. Riesgo Embólico (CHA₂DS₂-VASc): ${data.cha2ds2vasc || 0} pts.\n9. Riesgo Sangrado (HAS-BLED): ${data.hasbled || 0} pts.`;
+        if (auth.asa !== false) lines.push(`${count++}. ASA: Clase ${data.asa || '-'}.`);
+        if (auth.goldman !== false) lines.push(`${count++}. Riesgo Cardiaco (Goldman): Clase ${data.goldman || '-'} (MACE estimado: ${goldmanRisk}).`);
+        if (auth.lee !== false) lines.push(`${count++}. Riesgo Cardiaco (Lee/RCRI): Clase ${data.lee || '-'}.`);
+        if (auth.caprini !== false) lines.push(`${count++}. Riesgo Tromboembólico (Caprini): ${data.caprini || '-'} puntos.`);
+
+        // ARISCAT is currently not in authorized list, let's assume it's always on or add it to list
+        // For now, I'll keep it as is, or add it to the list if I want consistency.
+        lines.push(`${count++}. Riesgo Pulmonar (ARISCAT): ${data.ariscat_total || '-'} puntos (${data.ariscat_categoria || '-'}).`);
+
+        if (auth.gupta !== false) lines.push(`${count++}. Riesgo MACE (Gupta): ${data.gupta || 0}%.`);
+        if (auth.duke !== false) lines.push(`${count++}. Capacidad Funcional / Duke: ${data.duke_resultado || '-'}.`);
+
+        if (auth.cha2ds2vasc !== false && (data.arritmia_tipo === 'fa' || data.valvula_protesis)) {
+            lines.push(`${count++}. Riesgo Embólico (CHA₂DS₂-VASc): ${data.cha2ds2vasc || 0} pts.`);
+        }
+        if (auth.hasbled !== false && (data.arritmia_tipo === 'fa' || data.valvula_protesis)) {
+            lines.push(`${count++}. Riesgo Sangrado (HAS-BLED): ${data.hasbled || 0} pts.`);
         }
 
-        const sb = data.stopbang_total || 0;
-        const saosRisk = sb >= 5 ? 'Alto' : sb >= 3 ? 'Intermedio' : 'Bajo';
-        extraScales += `\n10. Riesgo SAOS (STOP-BANG): ${sb} pts (${saosRisk}).`;
+        if (auth.stopBang !== false) {
+            const sb = data.stopbang_total || 0;
+            const saosRisk = sb >= 5 ? 'Alto' : sb >= 3 ? 'Intermedio' : 'Bajo';
+            lines.push(`${count++}. Riesgo SAOS (STOP-BANG): ${sb} pts (${saosRisk}).`);
+        }
 
-        return `ANÁLISIS Y VALORACIÓN (RIESGOS):\n1. ASA: Clase ${data.asa || '-'}.\n2. Riesgo Cardiaco (Goldman): Clase ${data.goldman || '-'} (MACE estimado: ${goldmanRisk}).\n3. Riesgo Cardiaco (Lee/RCRI): Clase ${data.lee || '-'}.\n4. Riesgo Tromboembólico (Caprini): ${data.caprini || '-'} puntos.\n5. Riesgo Pulmonar (ARISCAT): ${data.ariscat_total || '-'} puntos (${data.ariscat_categoria || '-'}).${extraScales}`.trim();
+        if (auth.fragilidad !== false) {
+            lines.push(`${count++}. Escala de Fragilidad (CFS): ${data.fragilidad_score || 1}.`);
+        }
+
+        if (auth.khorana !== false && data.cancer_activo) {
+            lines.push(`${count++}. Escala de Khorana: ${data.khorana_total || 0} pts (${data.khorana_riesgo || 'Bajo'}).`);
+        }
+
+        return lines.join('\n').trim();
     };
 
     const generatePlan = () => {
