@@ -31,7 +31,7 @@ serve(async (req) => {
             throw new Error('Not logged in')
         }
 
-        const { priceId, mode, successUrl, cancelUrl } = await req.json()
+        const { priceId, mode, successUrl, cancelUrl, credits } = await req.json()
 
         // Create checkout session
         const session = await stripe.checkout.sessions.create({
@@ -47,6 +47,9 @@ serve(async (req) => {
             cancel_url: cancelUrl,
             client_reference_id: user.id, // Identifica al usuario en el webhook
             customer_email: user.email,
+            metadata: {
+                credits: credits ? Number(credits) : 0,
+            }
         })
 
         return new Response(

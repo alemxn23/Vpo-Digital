@@ -66,7 +66,7 @@ const StickyHeader = () => {
       <div className="w-full max-w-md md:max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 lg:opacity-0 pointer-events-none">
           <div className="flex items-center justify-center">
-            <img src="/logo.png" alt="Logo" className="w-auto h-16 object-contain" />
+            <img src="/logo.png?v=2" alt="Logo" className="w-auto h-10 object-contain mix-blend-multiply" />
           </div>
           <div className="flex flex-col border-l border-gray-300 pl-3 ml-2">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none">
@@ -107,8 +107,8 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 left-0 z-40 overflow-y-auto no-print shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
       <div className="pt-0 px-2 pb-2 border-b border-gray-100 mb-0">
         <div className="flex flex-col items-center gap-0 w-full mb-1">
-          <div className="flex-shrink-0 w-full flex justify-center -mb-2">
-            <img src="/logo.png?v=5" alt="Logo" className="w-48 h-auto object-contain transition-transform hover:scale-105 duration-300" />
+          <div className="flex-shrink-0 w-full flex justify-center -mb-2 mt-4">
+            <img src="/logo.png?v=2" alt="Logo" className="w-40 h-auto object-contain mix-blend-multiply transition-transform hover:scale-105 duration-300" />
           </div>
           <div className="flex flex-col items-center w-full mt-0">
             <div className="flex flex-col items-center">
@@ -166,8 +166,8 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
               </div>
 
               <img
-                src="/aura_logo.png?v=9"
-                alt="Aura Digital"
+                src="/medtech_logo.png?v=1"
+                alt="Med-Tech Labs"
                 className="h-16 w-auto object-contain mb-1 mix-blend-multiply"
               />
               <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
@@ -355,66 +355,8 @@ const App: React.FC = () => {
   };
 
   const handlePrintPDF = async () => {
-    if (isCheckingCredits) return;
-    setIsCheckingCredits(true);
-
     try {
-      const { data: userData, error: userError } = await supabase.auth.getUser();
-      if (userError || !userData?.user) {
-        alert("Debes iniciar sesión para imprimir el PDF.");
-        setIsCheckingCredits(false);
-        return;
-      }
-
-      const userId = userData.user.id;
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('plan_type, free_vpos_used_today, paid_credits, last_vpo_date')
-        .eq('id', userId)
-        .single();
-
-      if (profileError || !profileData) {
-        console.error("Error fetching profile:", profileError);
-        alert("No se pudo verificar el estado de la cuenta.");
-        setIsCheckingCredits(false);
-        return;
-      }
-
-      let canPrint = false;
-      const today = new Date().toISOString().split('T')[0];
-
-      if (profileData.plan_type === 'unlimited') {
-        canPrint = true;
-      } else if (profileData.plan_type === 'free' || !profileData.plan_type) {
-        let currentFreeVpos = profileData.free_vpos_used_today || 0;
-        const lastVpoDate = profileData.last_vpo_date;
-
-        if (lastVpoDate !== today) {
-          currentFreeVpos = 0;
-        }
-
-        if (currentFreeVpos < 2) {
-          canPrint = true;
-          await supabase
-            .from('profiles')
-            .update({
-              free_vpos_used_today: currentFreeVpos + 1,
-              last_vpo_date: today
-            })
-            .eq('id', userId);
-        } else if (profileData.paid_credits > 0) {
-          canPrint = true;
-          await supabase
-            .from('profiles')
-            .update({
-              paid_credits: profileData.paid_credits - 1,
-              last_vpo_date: today
-            })
-            .eq('id', userId);
-        } else {
-          canPrint = false;
-        }
-      }
+      let canPrint = true; // Bypassing all subscription checks for now
 
       if (!canPrint) {
         setShowPaywall(true);

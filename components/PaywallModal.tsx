@@ -1,5 +1,6 @@
-import React from 'react';
-import { CreditCard, X, ShieldCheck, Zap } from 'lucide-react';
+import React, { useState } from 'react';
+import { CreditCard, X, ShieldCheck, Zap, Loader2 } from 'lucide-react';
+import { supabase } from '../utils/supabase';
 
 interface PaywallModalProps {
     isOpen: boolean;
@@ -7,7 +8,35 @@ interface PaywallModalProps {
 }
 
 const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose }) => {
+    const [loading, setLoading] = useState<string | null>(null);
+
     if (!isOpen) return null;
+
+    const handleBuy = async (priceId: string, creditsAmount: number, packName: string) => {
+        setLoading(packName);
+        try {
+            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                body: {
+                    priceId: priceId,
+                    mode: 'payment',
+                    successUrl: `${window.location.origin}/?success=true`,
+                    cancelUrl: `${window.location.origin}/?canceled=true`,
+                    credits: creditsAmount, // We pass this so the webhook can read metadata.credits
+                }
+            });
+
+            if (error) throw error;
+
+            if (data?.url) {
+                window.location.href = data.url;
+            }
+        } catch (error) {
+            console.error('Error creating checkout session:', error);
+            alert('Ocurrió un error al procesar el pago. Por favor intenta de nuevo.');
+        } finally {
+            setLoading(null);
+        }
+    };
 
     return (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
@@ -34,24 +63,44 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose }) => {
                             <div className="bg-green-100 p-2 rounded-full text-green-600">
                                 <Zap size={20} />
                             </div>
-                            <p className="text-gray-700 font-medium text-sm">Desbloquea generación de PDFs ilimitada</p>
+                            <p className="text-gray-700 font-medium text-sm">Desbloquea generación de PDFs al instante</p>
                         </div>
                         <div className="flex items-center gap-3">
                             <div className="bg-blue-100 p-2 rounded-full text-blue-600">
                                 <ShieldCheck size={20} />
                             </div>
-                            <p className="text-gray-700 font-medium text-sm">Respaldo seguro en la nube (Google Drive)</p>
+                            <p className="text-gray-700 font-medium text-sm">Respaldo seguro en la nube y privacidad</p>
                         </div>
                     </div>
 
                     <div className="space-y-3">
-                        <button className="w-full bg-clinical-navy hover:bg-blue-900 text-white font-bold py-4 px-6 rounded-xl flex justify-center items-center gap-2 transition-transform active:scale-95 shadow-lg shadow-blue-900/20">
-                            <CreditCard size={20} />
-                            Adquirir Créditos
+                        <button
+                            onClick={() => handleBuy('price_1T4HWkKtp6JiUcWzTNSg9D8h', 5, '5vpos')}
+                            disabled={loading !== null}
+                            className="w-full bg-clinical-navy hover:bg-blue-900 text-white font-bold py-4 px-6 rounded-xl flex justify-between items-center transition-transform active:scale-95 shadow-lg shadow-blue-900/20 disabled:opacity-70 disabled:active:scale-100"
+                        >
+                            <div className="flex items-center gap-2">
+                                {loading === '5vpos' ? <Loader2 size={20} className="animate-spin" /> : <CreditCard size={20} />}
+                                Paquete 5 VPOs
+                            </div>
+                            <span>$250 MXN</span>
                         </button>
+
+                        <button
+                            onClick={() => handleBuy('price_1T4HX1Ktp6JiUcWzb6Jm2Utk', 10, '10vpos')}
+                            disabled={loading !== null}
+                            className="w-full bg-clinical-navy hover:bg-blue-900 text-white font-bold py-4 px-6 rounded-xl flex justify-between items-center transition-transform active:scale-95 shadow-lg shadow-blue-900/20 disabled:opacity-70 disabled:active:scale-100"
+                        >
+                            <div className="flex items-center gap-2">
+                                {loading === '10vpos' ? <Loader2 size={20} className="animate-spin" /> : <CreditCard size={20} />}
+                                Paquete 10 VPOs
+                            </div>
+                            <span>$400 MXN</span>
+                        </button>
+
                         <button
                             onClick={onClose}
-                            className="w-full bg-gray-50 hover:bg-gray-100 text-gray-500 font-medium py-3 px-6 rounded-xl transition-colors"
+                            className="w-full bg-gray-50 hover:bg-gray-100 text-gray-500 font-medium py-3 px-6 rounded-xl transition-colors mt-2"
                         >
                             Cancelar
                         </button>
