@@ -311,21 +311,31 @@ const App: React.FC = () => {
 
   // Fetch credits from Supabase
   useEffect(() => {
-    const fetchCredits = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('paid_credits, free_vpos_used_today')
-          .eq('id', user.id)
-          .single();
+    if (!supabase) {
+      console.warn("Supabase not initialized. Some features will be unavailable.");
+      return;
+    }
 
-        if (profile) {
-          // Update form values for header badge visibility/sync
-          methods.setValue('paid_credits_live', profile.paid_credits || 0);
-          methods.setValue('free_vpos_used_today_live', profile.free_vpos_used_today || 0);
-          methods.setValue('is_vip_live', user.email === 'mcfidel98@gmail.com');
+    const fetchCredits = async () => {
+      try {
+        const { data: authData } = await supabase.auth.getUser();
+        const user = authData?.user;
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('paid_credits, free_vpos_used_today')
+            .eq('id', user.id)
+            .single();
+
+          if (profile) {
+            // Update form values for header badge visibility/sync
+            methods.setValue('paid_credits_live', profile.paid_credits || 0);
+            methods.setValue('free_vpos_used_today_live', profile.free_vpos_used_today || 0);
+            methods.setValue('is_vip_live', user.email === 'mcfidel98@gmail.com');
+          }
         }
+      } catch (err) {
+        console.error("Error fetching credits:", err);
       }
     };
     fetchCredits();

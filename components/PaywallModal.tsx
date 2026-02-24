@@ -123,17 +123,23 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
     }, [isOpen, mode]);
 
     const fetchProfile = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
+        if (!supabase) return;
+        try {
+            const { data: authData } = await supabase.auth.getUser();
+            const user = authData?.user;
+            if (!user) return;
 
-        const { data } = await supabase
-            .from('profiles')
-            .select('paid_credits, free_vpos_used_today, plan_type, last_vpo_date')
-            .eq('id', user.id)
-            .single();
+            const { data } = await supabase
+                .from('profiles')
+                .select('paid_credits, free_vpos_used_today, plan_type, last_vpo_date')
+                .eq('id', user.id)
+                .single();
 
-        if (data) setProfile(data);
-        setIsVIP(user.email === 'mcfidel98@gmail.com');
+            if (data) setProfile(data);
+            setIsVIP(user.email === 'mcfidel98@gmail.com');
+        } catch (err) {
+            console.error('Error fetching profile:', err);
+        }
     };
 
     const handleBuy = async (priceId: string, creditsAmount: number, packName: string) => {
@@ -146,20 +152,22 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
         };
 
         try {
-            // Intentar Edge Function primero (si está desplegada)
-            const { data, error } = await supabase.functions.invoke('create-checkout-session', {
-                body: {
-                    priceId,
-                    mode: 'payment',
-                    successUrl: `${window.location.origin}/?success=true`,
-                    cancelUrl: `${window.location.origin}/?canceled=true`,
-                    credits: creditsAmount,
-                }
-            });
+            // Intentar Edge Function primero (si está desplegada y supabase existe)
+            if (supabase) {
+                const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                    body: {
+                        priceId,
+                        mode: 'payment',
+                        successUrl: `${window.location.origin}/?success=true`,
+                        cancelUrl: `${window.location.origin}/?canceled=true`,
+                        credits: creditsAmount,
+                    }
+                });
 
-            if (!error && data?.url) {
-                window.location.href = data.url;
-                return;
+                if (!error && data?.url) {
+                    window.location.href = data.url;
+                    return;
+                }
             }
 
             // Fallback: abrir Payment Link directo de Stripe
