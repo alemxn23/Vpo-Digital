@@ -150,7 +150,6 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
           </p>
 
           <div className="mt-4 pt-3 border-t border-slate-200 flex flex-col items-center">
-            <p className="text-[10px] text-gray-400 mb-2 font-medium">By Med-Techs Labs</p>
             <a
               href="mailto:mcfidel98@gmail.com"
               className="flex flex-col items-center transition-opacity hover:opacity-80 relative"
