@@ -38,47 +38,96 @@ import { AuthGuard } from './components/AuthGuard';
 const DEFAULT_CLIENT_ID = '147428616428-bafn28uqehgsdhivcs766t6f49o6gpl6.apps.googleusercontent.com';
 
 // --- Badge Component for Header ---
-const ScoreBadge = ({ label, value, colorClass = "bg-clinical-navy" }: { label: string, value: string | number | undefined, colorClass?: string }) => (
-  <div className={`flex flex-col items-center justify-center px-2 py-1 rounded-lg ${colorClass} text-white min-w-[60px]`}>
-    <span className="text-[9px] font-bold opacity-80 uppercase tracking-wider">{label}</span>
-    <span className="text-xs font-bold">{value || '-'}</span>
-  </div>
-);
+const ScoreBadge = ({ label, value, colorClass = "bg-clinical-navy", subValue }: { label: string, value: string | number | undefined, colorClass?: string, subValue?: string }) => {
+  const hasValue = value !== undefined && value !== null && value !== '' && value !== -1;
+  if (!hasValue) return null;
+
+  return (
+    <div className={`flex flex-col items-center justify-center px-2 py-1 rounded-lg ${colorClass} text-white min-w-[64px] shadow-sm transform hover:scale-105 hover:brightness-110 transition-all cursor-default select-none border border-white/20 whitespace-nowrap`}>
+      <span className="text-[7.5px] font-black opacity-80 uppercase tracking-widest leading-none mb-0.5">{label}</span>
+      <div className="flex items-baseline gap-0.5">
+        <span className="text-[13px] font-black leading-none">{value}</span>
+        {subValue && <span className="text-[8px] font-bold opacity-75 leading-none">{subValue}</span>}
+      </div>
+    </div>
+  );
+};
 
 // --- Header Component ---
 const StickyHeader = () => {
   const { watch } = useFormContext<VPOData>();
+
+  // Watch scales
   const asa = watch('asa');
   const lee = watch('lee');
   const caprini = watch('caprini');
-  const unidadMedica = watch('unidadMedica');
-  const servicioSolicitante = watch('servicioSolicitante');
+  const goldman = watch('goldman');
+  const detsky = watch('detsky');
+  const gupta = watch('gupta');
+  const cha2ds2vasc = watch('cha2ds2vasc');
+  const hasbled = watch('hasbled');
+  const ariscat = watch('ariscat_total');
+  const duke = watch('duke_resultado');
+  const fragilidad = watch('fragilidad_score');
+  const mets = watch('mets_estimated');
+  const stopbang = watch('stopbang_total');
+  const vienna = watch('vienna_cats_total');
+  const khorana = watch('khorana_total');
+  const cancerActivo = watch('cancer_activo');
+  const doctorName = watch('elaboro') || "Dr. Fidel Aleman"; // Example name per user request
 
-  const getSeverityColor = (val: string | number | undefined) => {
-    if (!val) return 'bg-gray-400';
-    if (val === 'IV' || (typeof val === 'number' && val > 5)) return 'bg-clinical-red';
-    if (val === 'III' || (typeof val === 'number' && val > 2)) return 'bg-orange-500';
+  const getSeverityColor = (val: string | number | undefined, type: 'asa' | 'lee' | 'caprini' | 'goldman' | 'detsky' | 'gupta' | 'other' = 'other') => {
+    if (val === undefined || val === null || val === '') return 'bg-gray-400';
+    const valStr = val.toString();
+
+    if (typeof val === 'number') {
+      if (type === 'caprini' && val >= 5) return 'bg-clinical-red';
+      if (type === 'caprini' && val >= 3) return 'bg-orange-500';
+      if (type === 'gupta' && val >= 1) return 'bg-clinical-red';
+      if (type === 'gupta' && val >= 0.5) return 'bg-orange-500';
+      if (type === 'other' && val > 5) return 'bg-clinical-red';
+    }
+
+    const highRisk = ['IV', 'V', 'Definitivo', 'III', 'Alto', 'ALTO RIESGO'];
+    const modRisk = ['III', 'II', 'Posible', 'Moderado', 'Riesgo Moderado'];
+
+    if (highRisk.includes(valStr)) return 'bg-clinical-red';
+    if (modRisk.includes(valStr)) return 'bg-orange-500';
+
     return 'bg-clinical-navy';
   };
 
   return (
-    <header className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-200 z-30 shadow-sm transition-all duration-200 no-print">
-      <div className="w-full max-w-md md:max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
-        <div className="flex items-center gap-3 lg:opacity-0 pointer-events-none">
-          <div className="flex items-center justify-center">
-            <img src="/logo.png?v=8" alt="Logo" className="w-auto h-10 object-contain" />
-          </div>
-          <div className="flex flex-col border-l border-gray-300 pl-3 ml-2 space-y-0.5">
-            <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
-              CMN S. XXI
-            </p>
-          </div>
+    <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-30 shadow-sm no-print">
+      <div className="w-full max-w-[1400px] mx-auto px-4 h-16 flex items-center justify-center relative">
+        {/* Physician Branding - Absolute Left */}
+        <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity pointer-events-none">
+          <div className="w-8 h-8 bg-clinical-navy/10 rounded-full flex items-center justify-center text-clinical-navy font-black text-[10px] border border-clinical-navy/20">FA</div>
+          <span className="text-[11px] font-black text-slate-700 tracking-tight">{doctorName}</span>
         </div>
 
-        <div className="flex gap-2">
-          <ScoreBadge label="LEE" value={lee} colorClass={getSeverityColor(lee)} />
-          <ScoreBadge label="ASA" value={asa} colorClass={getSeverityColor(asa)} />
-          <ScoreBadge label="CAPRINI" value={caprini} colorClass={getSeverityColor(caprini)} />
+        {/* Center Scales Container */}
+        <div className="flex items-center justify-center gap-2 md:gap-2.5 overflow-x-auto no-scrollbar py-2 px-4 max-w-full">
+          <ScoreBadge label="LEE" value={lee} colorClass={getSeverityColor(lee, 'lee')} />
+          <ScoreBadge label="ASA" value={asa} colorClass={getSeverityColor(asa, 'asa')} />
+          <ScoreBadge label="CAPRINI" value={caprini} subValue="pts" colorClass={getSeverityColor(caprini, 'caprini')} />
+          <ScoreBadge label="GOLDMAN" value={goldman} colorClass={getSeverityColor(goldman, 'goldman')} />
+          <ScoreBadge label="DETSKY" value={detsky} colorClass={getSeverityColor(detsky, 'detsky')} />
+          <ScoreBadge label="GUPTA" value={gupta} subValue="%" colorClass={getSeverityColor(gupta, 'gupta')} />
+          <ScoreBadge label="ARISCAT" value={ariscat} subValue="pts" colorClass={getSeverityColor(ariscat)} />
+          {/* Oncology Scales - Strictly Conditional */}
+          {cancerActivo && (
+            <>
+              <ScoreBadge label="KHORANA" value={khorana} subValue="pts" colorClass={khorana >= 3 ? 'bg-clinical-red' : khorana >= 1 ? 'bg-orange-500' : 'bg-clinical-navy'} />
+              <ScoreBadge label="VIENNA" value={vienna} subValue="%" colorClass={vienna >= 8 ? 'bg-clinical-red' : 'bg-clinical-navy'} />
+            </>
+          )}
+          <ScoreBadge label="CFS" value={fragilidad} subValue="pts" colorClass={getSeverityColor(fragilidad)} />
+          <ScoreBadge label="METs" value={mets} subValue="" colorClass={mets !== undefined && mets < 4 ? 'bg-clinical-red' : 'bg-clinical-navy'} />
+          <ScoreBadge label="DUKE" value={duke === 'Rechazado' ? undefined : (duke === 'Definitivo' ? 'DEF' : 'POS')} colorClass={getSeverityColor(duke)} />
+          <ScoreBadge label="CHA₂DS₂" value={cha2ds2vasc} colorClass={cha2ds2vasc >= 2 ? 'bg-clinical-red' : 'bg-clinical-navy'} />
+          <ScoreBadge label="HAS-BLED" value={hasbled} colorClass={hasbled >= 3 ? 'bg-clinical-red' : 'bg-clinical-navy'} />
+          <ScoreBadge label="STOP-BANG" value={stopbang} colorClass={getSeverityColor(stopbang)} />
         </div>
       </div>
     </header>
@@ -106,16 +155,6 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
         <div className="flex flex-col items-center gap-0 w-full mb-1">
           <div className="flex-shrink-0 w-full flex justify-center -mb-2 mt-4">
             <img src="/logo.png?v=8" alt="Logo" className="w-40 h-auto object-contain transition-transform hover:scale-105 duration-300" />
-          </div>
-          <div className="flex flex-col items-center w-full mt-2">
-            <div className="flex flex-col items-center space-y-1">
-              <p className="text-[10px] text-clinical-navy font-black uppercase tracking-[0.2em] leading-tight">
-                {servicioSolicitante || 'Medicina Interna'}
-              </p>
-              <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 leading-tight">
-                CMN SIGLO XXI
-              </p>
-            </div>
           </div>
         </div>
       </div>
