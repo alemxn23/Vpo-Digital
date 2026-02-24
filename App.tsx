@@ -573,13 +573,27 @@ const App: React.FC = () => {
     const res = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(q)}`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(`Error al buscar carpeta: ${errorData.error?.message || res.statusText}`);
+    }
+
     const data = await res.json();
     if (data.files && data.files.length > 0) return data.files[0].id;
+
+    // Si no existe, crearla
     const create = await fetch('https://www.googleapis.com/drive/v3/files', {
       method: 'POST',
       headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ name: 'VPO_Expedientes_MedicinaInterna', mimeType: 'application/vnd.google-apps.folder' })
     });
+
+    if (!create.ok) {
+      const errorData = await create.json();
+      throw new Error(`Error al crear carpeta: ${errorData.error?.message || create.statusText}`);
+    }
+
     const folder = await create.json();
     return folder.id;
   };
@@ -589,15 +603,21 @@ const App: React.FC = () => {
     const form = new FormData();
     form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
     form.append('file', blob);
+
     const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token}` },
       body: form
     });
-    if (res.ok) {
-      const data = await res.json();
-      if (name.endsWith('_VPO.pdf')) methods.setValue('driveLink', data.webViewLink);
+
+    if (!res.ok) {
+      const errorData = await res.json();
+      throw new Error(`Error al subir ${name}: ${errorData.error?.message || res.statusText}`);
     }
+
+    const data = await res.json();
+    if (name.endsWith('_VPO.pdf')) methods.setValue('driveLink', data.webViewLink);
+    return data;
   };
 
   const handleWhatsApp = () => {
