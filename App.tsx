@@ -308,8 +308,8 @@ const App: React.FC = () => {
     defaultValues: {
       fecha: new Date().toISOString().split('T')[0],
       hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      unidadMedica: localStorage.getItem('vpo_unidad_medica') || 'IMSS',
-      servicioSolicitante: localStorage.getItem('vpo_servicio') || 'CIRUGÍA GENERAL',
+      unidadMedica: localStorage.getItem('vpo_unidad_medica') || '',
+      servicioSolicitante: localStorage.getItem('vpo_servicio') || '',
       elab_nombre: localStorage.getItem('vpo_doctor_name') || '',
       elab_cedula: localStorage.getItem('vpo_doctor_cedula') || '',
       elab_institucion: localStorage.getItem('vpo_doctor_inst') || '',
