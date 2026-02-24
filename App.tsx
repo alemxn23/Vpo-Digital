@@ -32,6 +32,7 @@ import MedicalNoteGenerator from './components/MedicalNoteGenerator';
 import { supabase } from './utils/supabase';
 import PaywallModal from './components/PaywallModal';
 import { AuthGuard } from './components/AuthGuard';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 
 // --- Configuration ---
 // Google Drive Client ID. Sigue los pasos en GOOGLE_DRIVE_SETUP.md para configurar el tuyo.
@@ -625,6 +626,7 @@ const App: React.FC = () => {
         </div>
 
         <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} />
+        <SpeedInsights />
       </FormProvider>
     </AuthGuard>
   );
