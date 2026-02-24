@@ -40,8 +40,11 @@ const Gabinete: React.FC = () => {
         if (data.ariscat_duracion === 'mas_3') { points += 23; }
         else if (data.ariscat_duracion === '2_a_3') { points += 16; }
 
-        const currentTotal = watch('ariscat_total');
-        if (currentTotal !== points && !(isNaN(currentTotal) && isNaN(points))) {
+        // 7. Emergency Surgery
+        if (data.esUrgencia) { points += 8; }
+
+        const currentTotal = data.ariscat_total;
+        if (currentTotal !== points) {
             setValue('ariscat_total', points);
         }
 
@@ -50,11 +53,11 @@ const Gabinete: React.FC = () => {
         if (points >= 45) category = "ALTO RIESGO";
         else if (points >= 26) category = "Riesgo Moderado";
 
-        if (watch('ariscat_categoria') !== category) {
+        if (data.ariscat_categoria !== category) {
             setValue('ariscat_categoria', category);
         }
 
-    }, [data.edad, data.sato2, data.ariscat_infeccion, data.hb, data.ariscat_incision, data.ariscat_duracion, setValue, watch]);
+    }, [data.edad, data.sato2, data.ariscat_infeccion, data.hb, data.ariscat_incision, data.ariscat_duracion, data.esUrgencia, setValue]);
 
 
     // --- DUKE CRITERIA LOGIC (ENDOCARDITIS) ---

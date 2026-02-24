@@ -262,6 +262,10 @@ export interface VPOData {
   lee: "I" | "II" | "III" | "IV";
   gupta: number; // Percentage
 
+  // NSQIP Surgical Risk Calculator
+  nsqip_total: number; // % Risk of any major complication at 30 days
+  nsqip_riesgo: string; // "Bajo" | "Moderado" | "Alto"
+
   // Cardioembolic Scales
   cha2ds2vasc: number;
   hasbled: number;
