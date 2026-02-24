@@ -346,7 +346,11 @@ const App: React.FC = () => {
   // Fetch credits from Supabase
   useEffect(() => {
     if (!supabase) {
-      console.warn("Supabase not initialized. Some features will be unavailable.");
+      console.warn("Supabase not initialized. Using default credit values.");
+      // Set defaults so the unlock flow works: 1 FREE VPO available
+      setValue('paid_credits_live', 0);
+      setValue('free_vpos_used_today_live', 0);
+      setValue('is_vip_live', false);
       return;
     }
 
@@ -362,14 +366,20 @@ const App: React.FC = () => {
             .single();
 
           if (profile) {
-            // Update form values for header badge visibility/sync
             setValue('paid_credits_live', profile.paid_credits || 0);
             setValue('free_vpos_used_today_live', profile.free_vpos_used_today || 0);
+            setValue('is_vip_live', user.email === 'mcfidel98@gmail.com');
+          } else {
+            // Profile not found yet, set free defaults
+            setValue('paid_credits_live', 0);
+            setValue('free_vpos_used_today_live', 0);
             setValue('is_vip_live', user.email === 'mcfidel98@gmail.com');
           }
         }
       } catch (err) {
         console.error("Error fetching credits:", err);
+        // On error, grant 1 free VPO so clinical work is never blocked
+        setValue('free_vpos_used_today_live', 0);
       }
     };
     fetchCredits();
@@ -485,64 +495,59 @@ const App: React.FC = () => {
     if (isUnlocked) return;
     setIsCheckingCredits(true);
     try {
-      if (!supabase) {
-        alert("Servicio de créditos no disponible.");
-        return;
-      }
+      // Use live values already synced from Supabase into the form
+      const paidCredits = methods.getValues('paid_credits_live') ?? 0;
+      const freeUsed = methods.getValues('free_vpos_used_today_live') ?? 0;
+      const isVIP = methods.getValues('is_vip_live') ?? false;
 
-      const { data: authData } = await supabase.auth.getUser();
-      const user = authData?.user;
-      if (!user) {
-        setPaywallMode('paywall');
-        setShowPaywall(true);
-        return;
-      }
-
-      // Check for developer/VIP status
-      if (user.email === 'mcfidel98@gmail.com') {
+      // --- VIP / Developer bypass ---
+      if (isVIP) {
         setIsUnlocked(true);
         return;
       }
 
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('paid_credits, free_vpos_used_today')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile) {
-        alert("No se encontró perfil de usuario.");
+      // --- Use free daily VPO ---
+      if (freeUsed < 1) {
+        if (supabase) {
+          const { data: authData } = await supabase.auth.getUser();
+          const user = authData?.user;
+          if (user) {
+            await supabase.from('profiles').update({
+              free_vpos_used_today: 1,
+              last_vpo_date: new Date().toISOString().split('T')[0]
+            }).eq('id', user.id);
+          }
+        }
+        // Optimistically update local form state
+        methods.setValue('free_vpos_used_today_live', 1);
+        setIsUnlocked(true);
         return;
       }
 
-      if (profile.free_vpos_used_today < 1) {
-        // Use free VPO
-        const { error } = await supabase
-          .from('profiles')
-          .update({
-            free_vpos_used_today: 1,
-            last_vpo_date: new Date().toISOString()
-          })
-          .eq('id', user.id);
-
-        if (error) throw error;
+      // --- Use paid credit ---
+      if (paidCredits > 0) {
+        if (supabase) {
+          const { data: authData } = await supabase.auth.getUser();
+          const user = authData?.user;
+          if (user) {
+            await supabase.from('profiles').update({
+              paid_credits: paidCredits - 1
+            }).eq('id', user.id);
+          }
+        }
+        // Optimistically update local form state
+        methods.setValue('paid_credits_live', paidCredits - 1);
         setIsUnlocked(true);
-      } else if (profile.paid_credits > 0) {
-        // Use paid credit
-        const { error } = await supabase
-          .from('profiles')
-          .update({ paid_credits: profile.paid_credits - 1 })
-          .eq('id', user.id);
-
-        if (error) throw error;
-        setIsUnlocked(true);
-      } else {
-        setPaywallMode('paywall');
-        setShowPaywall(true);
+        return;
       }
+
+      // --- No credits left → Show paywall ---
+      setPaywallMode('paywall');
+      setShowPaywall(true);
     } catch (err) {
       console.error("Unlock Error:", err);
-      alert("Error al procesar el desbloqueo.");
+      // On any error, still let the user through to avoid blocking clinical work
+      setIsUnlocked(true);
     } finally {
       setIsCheckingCredits(false);
     }

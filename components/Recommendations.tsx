@@ -249,11 +249,18 @@ const Recommendations: React.FC = () => {
             ? "• Ayuno: Sólidos 6h. Líquidos claros (AGUA) hasta 2h previas.\n• ⚠️ DIABETES: EVITAR cargas de Carbohidratos/Maltodextrina (SAMBA 2024: Riesgo de Hiperglucemia/Variabilidad)."
             : "• Ayuno: Sólidos 6h. Líquidos claros hasta 2h previas.\n• Carga CHO: Maltodextrina recomendada 2h antes (Reduce resistencia a insulina).";
 
+        // NSQIP High Risk Alert
+        const nsqipAlert = (data.nsqip_total || 0) >= 10
+            ? `\n\n⚠️ NSQIP ALTO (${data.nsqip_total}%): Riesgo elevado de complicación quirúrgica mayor a 30 días. Se recomienda optimización de comorbilidades antes de proceder.`
+            : (data.nsqip_total || 0) >= 3
+                ? `\n• NSQIP Moderado (${data.nsqip_total}%): Riesgo de complicación mayor. Estratificar y documentar consentimiento informado ampliado.`
+                : "";
+
         return `${fastingRule}
 • ${aineInstruction}
 • Profilaxis antibiótica: ${antibioticRegimen} (Ref: ASHP Guidelines / Sanford 2024)
 • Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas según esquema (Ver Post)' : 'Deambulación temprana / Medias TEDs'}. (Ref: ACCP / PAUSE)
-• Soluciones: \n${fluidRec}${dukeAlert}${frailtyRec}${stopBangRec}`;
+• Soluciones: \n${fluidRec}${dukeAlert}${frailtyRec}${stopBangRec}${nsqipAlert}`;
     };
 
     const getEcoRecommendations = () => {
@@ -318,6 +325,19 @@ const Recommendations: React.FC = () => {
         const site = data.gupta_surgical_site || 'other';
         const antibioticDuration = (site === 'cardiac' || site === 'aortic') ? '48h' : '24h';
 
+        // Bariatric ERAS Protocol (ASMBS 2023)
+        const bariatricEras = site === 'bariatric'
+            ? `\n\n--- PROTOCOLO ERAS BARIÁTRICO (ASMBS 2023) ---
+• Monitorear saturación O2 continua min. 24h postop (Alto riesgo SAOS).
+• CPAP/BiPAP postoperatorio si STOP-BANG ≥ 3 o diagnóstico previo SAOS.
+• Suplementación proteica: 60-80g proteína/día al inicio de la vía oral.
+• Líquidos claros 2h postqx → progresión a líquidos espesos → papilla bariátrica.
+• Suplementos vitamínicos: Multivitamínico masticable, Vitamina B12, Calcio + Vitamina D.
+• Deambulación a las 4-6h postoperatorias (Protocolo antitrombótico agresivo).
+• Vigilar signos de fuga anastomótica (Taquicardia inexplicable, fiebre, dolor atípico) en las primeras 72h.
+• Seguimiento nutricional obligatorio a 1, 3, 6 y 12 meses. (Ref: ASMBS/IFSO 2023)`
+            : "";
+
         return `• Al tolerar la VO reiniciar tratamiento habitual.
 • METAS: Glucosa ${targets.glu.label} mg/dL. TA ${targets.bp.label} mmHg.
 • TROMBOPROFILAXIS: ${trombo}
@@ -325,7 +345,7 @@ const Recommendations: React.FC = () => {
 • Vigilar datos de sangrado e infección en sitio quirúrgico.
 • Deambulación temprana.
 • Analgesia multimodal ahorradora de opioides.
-• Seguimiento por UMF/HGZ al alta.`;
+• Seguimiento por UMF/HGZ al alta.${bariatricEras}`;
     };
 
     // --- EFFECT: APPLY STANDARD GOALS ---
@@ -339,7 +359,7 @@ const Recommendations: React.FC = () => {
             if (data.plan_trans !== trans) setValue('plan_trans', trans);
             if (data.plan_post !== post) setValue('plan_post', post);
         }
-    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica, data.flag_estenosis_aortica_severa, data.stopbang_risk, data.fragilidad_score, data.edad, data.enfRenalCronica, data.hta_control]);
+    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica, data.flag_estenosis_aortica_severa, data.stopbang_risk, data.fragilidad_score, data.edad, data.enfRenalCronica, data.hta_control, data.nsqip_total, data.gupta_surgical_site]);
 
     // Determine Meta Labels based on risk
     const isNephroCardio = data.enfRenalCronica || data.icc || data.cardiopatiaIsquemica;

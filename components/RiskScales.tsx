@@ -145,9 +145,13 @@ const RiskScales: React.FC = () => {
 
         // --- 1. Lee (RCRI) ---
         let leePoints = 0;
-        if (getVal('lee_cx_high', data.capB_cxMayor)) leePoints++;
+        // High-risk surgery criterion — from Gabinete incision site
+        if (getVal('lee_cx_high', data.capB_cxMayor || data.ariscat_incision === 'abdominal_sup' || data.ariscat_incision === 'intratoracica')) leePoints++;
+        // Ischemic heart disease: history OR ECG evidence (LBBB, ischemia pattern)
         if (getVal('lee_ischem', data.cardiopatiaIsquemica || data.capA_iam || data.ecg_isquemia || data.ecg_brihh_completo)) leePoints++;
+        // Heart failure: history OR physical OR echo FEVI
         if (getVal('lee_icc', data.icc || data.exploracion_s3 || data.exploracion_ingurgitacion || data.exploracion_estertores || (data.eco_fevi && data.eco_fevi < 40))) leePoints++;
+        // Stroke/TIA/peripheral vascular: history OR focal deficit OR EVC flag
         if (getVal('lee_evc', data.evc || data.capD_evc || data.exploracion_soplo_carotideo)) leePoints++;
         if (getVal('lee_insulin', data.diabetes && data.usaInsulina)) leePoints++;
         if (getVal('lee_renal', data.creatinina > 2.0 || (data.tfg && data.tfg < 60))) leePoints++;
@@ -172,7 +176,7 @@ const RiskScales: React.FC = () => {
         if (data.capA_cxMayorAnt) capPoints += 1;
         if (data.capA_varices) capPoints += 1;
         if (data.capA_eii) capPoints += 1;
-        if (isIAMReciente || isIAMAntiguo) capPoints += 1;
+        if (isIAMReciente || isIAMAntiguo || data.ecg_isquemia) capPoints += 1; // ECG ischemia also counts
         if (data.neumopatia || data.capA_epoc) capPoints += 1;
         if (data.capA_reposo) capPoints += 1;
         if (data.exploracion_edema) capPoints += 1;
@@ -209,16 +213,21 @@ const RiskScales: React.FC = () => {
 
         // --- 4. GOLDMAN ---
         let goldmanPoints = 0;
+        // S3/JVD/Rales — any sign of cardiac decompensation
         if (getVal('gold_s3', data.exploracion_s3 || data.exploracion_ingurgitacion || data.exploracion_estertores || (data.icc && (data.icc_nyha === 'IV' || data.icc_evolucion === 'aguda')) || (data.eco_fevi && data.eco_fevi < 40))) goldmanPoints += 11;
         if (getVal('gold_iam', isIAMReciente)) goldmanPoints += 10;
+        // Non-sinus rhythm: from history or ECG
         if (getVal('gold_ritmo', (data.arritmias && data.arritmia_tipo !== 'otra') || (data.ecg_ritmo_especifico && data.ecg_ritmo_especifico !== 'Sinusal'))) goldmanPoints += 7;
+        // >5 PVCs/min: from history or ECG
         if (getVal('gold_pvc', (data.arritmias && data.arritmia_tipo === 'extrasistoles') || data.ecg_extrasistoles)) goldmanPoints += 7;
         if (getVal('gold_age', parse(data.edad) > 70)) goldmanPoints += 5;
-
         if (getVal('gold_urg', data.esUrgencia)) goldmanPoints += 4;
+        // Severe aortic stenosis: from valve history, physical exam, or echo
         if (getVal('gold_ao', isEstenosisSevera)) goldmanPoints += 3;
+        // Poor general condition: labs, vitals, hepatic, bed rest
         if (getVal('gold_gen', malEstadoGeneral)) goldmanPoints += 3;
-        if (getVal('gold_cx', data.ariscat_incision === 'abdominal_sup' || data.ariscat_incision === 'intratoracica')) goldmanPoints += 3;
+        // Intraperitoneal/intrathoracic: from Gabinete incision site OR Gupta site
+        if (getVal('gold_cx', data.ariscat_incision === 'abdominal_sup' || data.ariscat_incision === 'intratoracica' || ['aortic', 'cardiac', 'thoracic', 'intracranial'].includes(data.gupta_surgical_site || ''))) goldmanPoints += 3;
 
         let goldmanClass: "I" | "II" | "III" | "IV" = "I";
         if (goldmanPoints >= 26) goldmanClass = "IV";
@@ -236,7 +245,8 @@ const RiskScales: React.FC = () => {
         if (getVal('det_eap', isEAPAgudo)) detskyPoints += 10;
         else if (getVal('det_eap_hist', data.icc_historia_eap)) detskyPoints += 5;
         if (getVal('det_ao', isEstenosisSevera)) detskyPoints += 20;
-        if (getVal('det_ritmo', (data.arritmias && data.arritmia_tipo !== 'otra') || (data.ecg_ritmo_especifico && data.ecg_ritmo_especifico !== 'Sinusal'))) detskyPoints += 5;
+        // Non-sinus rhythm: from history or ECG (includes high-degree blocks)
+        if (getVal('det_ritmo', (data.arritmias && data.arritmia_tipo !== 'otra') || (data.ecg_ritmo_especifico && data.ecg_ritmo_especifico !== 'Sinusal') || (data.ecg_bloqueo as string) === 'Mobitz_II' || (data.ecg_bloqueo as string) === '3er_Grado')) detskyPoints += 5;
         if (getVal('det_gen', malEstadoGeneral)) detskyPoints += 5;
         if (getVal('det_age', parse(data.edad) > 70)) detskyPoints += 5;
         if (getVal('det_urg', data.esUrgencia)) detskyPoints += 10;
@@ -489,13 +499,17 @@ const RiskScales: React.FC = () => {
     }, [
         data.edad, data.imc, data.genero, data.hta, data.hta_control, data.diabetes, data.usaInsulina,
         data.cardiopatiaIsquemica, data.cardio_tipo_evento, data.cardio_fecha_evento,
-        data.icc, data.icc_nyha, data.icc_evolucion, data.icc_historia_eap,
+        data.icc, data.icc_nyha, data.icc_evolucion, data.icc_historia_eap, data.icc_fecha_eap,
         data.neumopatia, data.neumo_o2, data.neumo_tipo, data.diagnosed_osa,
         data.enfRenalCronica, data.erc_dialisis, data.erc_estadio, data.creatinina, data.tfg,
         data.hepatopatia, data.hepato_child,
-        data.evc, data.evc_fecha,
-        data.arritmias, data.arritmia_tipo, data.valvulopatia,
-        data.ecg_ritmo_especifico, data.ecg_extrasistoles,
+        data.evc, data.evc_fecha, data.evc_secuelas,
+        data.arritmias, data.arritmia_tipo,
+        data.valvulopatia, data.valvula_afectada, data.valvula_patologia, data.valvula_severidad,
+        // All ECG findings - critical for Goldman, Detsky, Lee reactivity
+        data.ecg_ritmo_especifico, data.ecg_extrasistoles, data.ecg_hvi,
+        data.ecg_brihh_incompleto, data.ecg_brihh_completo, data.ecg_isquemia,
+        data.ecg_bloqueo, data.ecg_otras_alteraciones,
         data.esUrgencia, data.gupta_surgical_site, data.functional_status,
         data.stopBang_snoring, data.stopBang_tired, data.stopBang_observed, data.stopBang_neck,
         data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica,
@@ -505,13 +519,13 @@ const RiskScales: React.FC = () => {
         data.capC_historiaTVP, data.capC_historiaFam, data.capC_leiden, data.capC_lupico, data.capC_hit,
         data.capD_artroplastia, data.capD_fxCadera, data.capD_trauma,
         data.hasbled_inr_labil, data.hasbled_alcohol, data.vrc_epoc, data.vrc_beta_blocker,
-        data.tabaquismo, data.inr, data.urea, data.asa_manual_class, data.risk_overrides,
+        data.tabaquismo, data.active_smoking, data.inr, data.urea, data.asa_manual_class, data.risk_overrides,
         data.cancer_activo, data.cancer_tipo_sitio, data.hb, data.plaquetas, data.leucocitos, data.ddimer,
-        data.sato2, data.na, data.k, data.taSistolica, data.fc, data.taDiastolica, data.fr,
+        data.sato2, data.na, data.k, data.cl, data.taSistolica, data.fc, data.taDiastolica, data.fr, data.temp,
         data.exploracion_s3, data.exploracion_ingurgitacion, data.exploracion_estertores, data.exploracion_edema,
         data.exploracion_estenosis_aortica, data.exploracion_soplo_carotideo,
-        data.ariscat_incision, data.ariscat_duracion,
-        data.mets_method, data.esUrgencia,
+        data.ariscat_incision, data.ariscat_duracion, data.ariscat_total,
+        data.mets_method, data.mets_estimated,
         setValue
     ]);
 
@@ -773,15 +787,15 @@ const RiskScales: React.FC = () => {
                 content = (
                     <div className="space-y-3">
                         <div className={`p-3 rounded text-center border-2 ${(data.nsqip_total || 0) >= 10 ? 'bg-red-50 border-red-300' :
-                                (data.nsqip_total || 0) >= 3 ? 'bg-amber-50 border-amber-300' :
-                                    'bg-green-50 border-green-300'
+                            (data.nsqip_total || 0) >= 3 ? 'bg-amber-50 border-amber-300' :
+                                'bg-green-50 border-green-300'
                             }`}>
                             <span className={`text-3xl font-bold ${(data.nsqip_total || 0) >= 10 ? 'text-red-700' :
-                                    (data.nsqip_total || 0) >= 3 ? 'text-amber-700' : 'text-green-700'
+                                (data.nsqip_total || 0) >= 3 ? 'text-amber-700' : 'text-green-700'
                                 }`}>{data.nsqip_total}%</span>
                             <p className="text-[10px] uppercase text-gray-500 mt-1">Riesgo Complicación Mayor</p>
                             <p className={`text-xs font-black uppercase ${(data.nsqip_total || 0) >= 10 ? 'text-red-600' :
-                                    (data.nsqip_total || 0) >= 3 ? 'text-amber-600' : 'text-green-600'
+                                (data.nsqip_total || 0) >= 3 ? 'text-amber-600' : 'text-green-600'
                                 }`}>{data.nsqip_riesgo}</p>
                         </div>
                         <p className="text-[10px] font-bold text-gray-500 uppercase border-b pb-1">Factores Detectados</p>
@@ -1451,12 +1465,12 @@ const RiskScales: React.FC = () => {
                 >
                     <div className="text-center flex flex-col items-center justify-center">
                         <span className={`text-xl font-black ${(watch('nsqip_total') || 0) >= 10 ? 'text-red-600' :
-                                (watch('nsqip_total') || 0) >= 3 ? 'text-amber-600' : 'text-clinical-navy'
+                            (watch('nsqip_total') || 0) >= 3 ? 'text-amber-600' : 'text-clinical-navy'
                             }`}>
                             {watch('nsqip_total') || 0}%
                         </span>
                         <p className={`text-[9px] font-black uppercase ${(watch('nsqip_total') || 0) >= 10 ? 'text-red-600' :
-                                (watch('nsqip_total') || 0) >= 3 ? 'text-amber-600' : 'text-gray-400'
+                            (watch('nsqip_total') || 0) >= 3 ? 'text-amber-600' : 'text-gray-400'
                             }`}>
                             {watch('nsqip_riesgo') || 'Bajo'}
                         </p>

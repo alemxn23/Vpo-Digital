@@ -274,6 +274,9 @@ const PatientInfo: React.FC = () => {
         // Vienna CATS
         vienna_cats_total: 0,
         vienna_cats_risk: "",
+        // NSQIP
+        nsqip_total: 0,
+        nsqip_riesgo: "Bajo",
         authorized_report_scales: {}
       };
 

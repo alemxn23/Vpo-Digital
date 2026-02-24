@@ -339,33 +339,84 @@ const Gabinete: React.FC = () => {
                     </div>
 
                     <div className="space-y-2 mb-4">
-                        <label className="text-[10px] font-bold text-gray-400 uppercase">Alteraciones Específicas</label>
+                        <label className="text-[10px] font-bold text-gray-400 uppercase">Alteraciones Específicas (Impacto en Escalas)</label>
                         <div className="grid grid-cols-1 gap-2">
-                            <label className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                                <input type="checkbox" {...register('ecg_hvi')} className="w-4 h-4 text-clinical-navy rounded" />
-                                <span className="text-xs font-medium">HVI (Criterios Sokolow/Cornell)</span>
-                            </label>
-                            <label className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                                <input type="checkbox" {...register('ecg_brihh_incompleto')} className="w-4 h-4 text-clinical-navy rounded" />
-                                <span className="text-xs font-medium">BRIHH Incompleto</span>
-                            </label>
-                            <label className={`flex items-center gap-2 p-2 border rounded cursor-pointer ${watch('ecg_brihh_completo') ? 'bg-red-50 border-red-300' : 'hover:bg-gray-50'}`}>
-                                <input type="checkbox" {...register('ecg_brihh_completo')} className="w-4 h-4 text-clinical-navy rounded" />
-                                <span className={`text-xs font-bold ${watch('ecg_brihh_completo') ? 'text-red-700' : ''}`}>BRIHH Completo (Alerta Lee)</span>
-                            </label>
-                            <label className={`flex items-center gap-2 p-2 border rounded cursor-pointer ${watch('ecg_isquemia') ? 'bg-red-50 border-red-300' : 'hover:bg-gray-50'}`}>
-                                <input type="checkbox" {...register('ecg_isquemia')} className="w-4 h-4 text-clinical-navy rounded" />
-                                <div className="flex flex-col">
-                                    <span className={`text-xs font-bold ${watch('ecg_isquemia') ? 'text-red-700' : ''}`}>Isquemia / Necrosis</span>
-                                    <span className="text-[9px] text-gray-500">Q patológica, ST elevado/deprimido, T invertida</span>
+                            {/* HVI: ASA III marker, implies chronic hypertension */}
+                            <label className={`flex items-center justify-between gap-2 p-2 border rounded cursor-pointer ${watch('ecg_hvi') ? 'bg-amber-50 border-amber-300' : 'hover:bg-gray-50'}`}>
+                                <div className="flex items-center gap-2">
+                                    <input type="checkbox" {...register('ecg_hvi')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    <span className={`text-xs font-medium ${watch('ecg_hvi') ? 'text-amber-800 font-bold' : ''}`}>HVI (Criterios Sokolow/Cornell)</span>
                                 </div>
+                                {watch('ecg_hvi') && <span className="text-[9px] bg-amber-200 text-amber-800 font-bold px-1.5 py-0.5 rounded-full shrink-0">ASA III</span>}
                             </label>
-                            <label className="flex items-center gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
-                                <input type="checkbox" {...register('ecg_extrasistoles')} className="w-4 h-4 text-clinical-navy rounded" />
-                                <span className="text-xs font-medium">{'>'} 5 Extrasístoles Ventriculares/min</span>
+
+                            {/* BRIHH Incompleto: minor marker */}
+                            <label className="flex items-center justify-between gap-2 p-2 border rounded hover:bg-gray-50 cursor-pointer">
+                                <div className="flex items-center gap-2">
+                                    <input type="checkbox" {...register('ecg_brihh_incompleto')} className="w-4 h-4 text-clinical-navy rounded" />
+                                    <span className="text-xs font-medium">BRIHH Incompleto</span>
+                                </div>
+                                <span className="text-[9px] text-gray-400">Monitorear</span>
+                            </label>
+
+                            {/* BRIHH Completo: triggers Lee ischemic criterion */}
+                            <label className={`flex items-center justify-between gap-2 p-2 border rounded cursor-pointer ${watch('ecg_brihh_completo') ? 'bg-red-50 border-red-300' : 'hover:bg-gray-50'}`}>
+                                <div className="flex items-center gap-2">
+                                    <input type="checkbox" {...register('ecg_brihh_completo')} className="w-4 h-4 rounded" />
+                                    <div>
+                                        <span className={`text-xs font-bold ${watch('ecg_brihh_completo') ? 'text-red-700' : ''}`}>BRIHH Completo</span>
+                                        {watch('ecg_brihh_completo') && <p className="text-[9px] text-red-600">Sugiere cardiopatía subyacente</p>}
+                                    </div>
+                                </div>
+                                {watch('ecg_brihh_completo') && <span className="text-[9px] bg-red-200 text-red-900 font-bold px-1.5 py-0.5 rounded-full shrink-0">+1 Lee</span>}
+                            </label>
+
+                            {/* ECG Ischemia: triggers Goldman (+10 via IAM), Lee (+1), Caprini (+1) */}
+                            <label className={`flex items-center justify-between gap-2 p-2 border rounded cursor-pointer ${watch('ecg_isquemia') ? 'bg-red-50 border-red-300' : 'hover:bg-gray-50'}`}>
+                                <div className="flex items-center gap-2">
+                                    <input type="checkbox" {...register('ecg_isquemia')} className="w-4 h-4 rounded" />
+                                    <div>
+                                        <span className={`text-xs font-bold ${watch('ecg_isquemia') ? 'text-red-700' : ''}`}>Isquemia / Necrosis</span>
+                                        <p className="text-[9px] text-gray-500">Q patológica, ST elevado/deprimido, T invertida</p>
+                                    </div>
+                                </div>
+                                {watch('ecg_isquemia') && (
+                                    <div className="flex flex-col gap-0.5 items-end shrink-0">
+                                        <span className="text-[9px] bg-red-600 text-white font-bold px-1.5 py-0.5 rounded-full">+1 Lee</span>
+                                        <span className="text-[9px] bg-red-200 text-red-900 font-bold px-1.5 py-0.5 rounded-full">+1 Caprini</span>
+                                    </div>
+                                )}
+                            </label>
+
+                            {/* Extrasistoles: Goldman +7 */}
+                            <label className={`flex items-center justify-between gap-2 p-2 border rounded cursor-pointer ${watch('ecg_extrasistoles') ? 'bg-orange-50 border-orange-300' : 'hover:bg-gray-50'}`}>
+                                <div className="flex items-center gap-2">
+                                    <input type="checkbox" {...register('ecg_extrasistoles')} className="w-4 h-4 rounded" />
+                                    <span className={`text-xs font-medium ${watch('ecg_extrasistoles') ? 'text-orange-800 font-bold' : ''}`}>{'>'} 5 Extrasístoles Ventriculares/min</span>
+                                </div>
+                                {watch('ecg_extrasistoles') && <span className="text-[9px] bg-orange-200 text-orange-900 font-bold px-1.5 py-0.5 rounded-full shrink-0">+7 Goldman</span>}
                             </label>
                         </div>
                     </div>
+
+                    {/* Ritmo non-sinus impact */}
+                    {watch('ecg_ritmo_especifico') && watch('ecg_ritmo_especifico') !== 'Sinusal' && (
+                        <div className="mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg flex items-center justify-between">
+                            <span className="text-xs font-bold text-amber-800">Ritmo: {watch('ecg_ritmo_especifico')}</span>
+                            <div className="flex gap-1">
+                                <span className="text-[9px] bg-amber-600 text-white font-bold px-1.5 py-0.5 rounded-full">+7 Goldman</span>
+                                <span className="text-[9px] bg-amber-500 text-white font-bold px-1.5 py-0.5 rounded-full">+5 Detsky</span>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* High-degree block impact */}
+                    {(watch('ecg_bloqueo') === 'Mobitz_II' || watch('ecg_bloqueo') === '3er_Grado') && (
+                        <div className="mb-3 p-2 bg-red-50 border border-red-200 rounded-lg flex items-center justify-between">
+                            <span className="text-xs font-bold text-red-800">Bloqueo: {watch('ecg_bloqueo') === '3er_Grado' ? 'Completo (3er Grado)' : 'Mobitz II'}</span>
+                            <span className="text-[9px] bg-red-600 text-white font-bold px-1.5 py-0.5 rounded-full">+5 Detsky</span>
+                        </div>
+                    )}
 
                     <div>
                         <label className="text-[10px] font-bold text-gray-400 uppercase">Otras Alteraciones</label>
