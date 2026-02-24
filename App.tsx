@@ -143,33 +143,26 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
       </nav>
 
       <div className="p-6 mt-auto">
-        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100">
-          <p className="text-xs text-slate-500 text-center font-medium">
-            VPO Digital V2.3.1 (SW Fix)
-            <span className="block text-[10px] text-slate-400 mt-1">Act: {new Date().toLocaleDateString()}</span>
-          </p>
+        <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col items-center">
+          <a
+            href="mailto:mcfidel98@gmail.com"
+            className="flex flex-col items-center transition-opacity hover:opacity-80 relative"
+          >
+            {/* Synaptic Animation Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+              <span className="absolute w-1 h-1 bg-cyan-400 rounded-full blur-[1px] opacity-0 animate-[synapse_3s_infinite_0.5s]" style={{ top: '30%', left: '40%' }}></span>
+              <span className="absolute w-1 h-1 bg-purple-400 rounded-full blur-[1px] opacity-0 animate-[synapse_4s_infinite_1.5s]" style={{ top: '50%', left: '60%' }}></span>
+              <span className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full blur-[0.5px] opacity-0 animate-[synapse_2.5s_infinite_1s]" style={{ top: '40%', left: '50%' }}></span>
+            </div>
 
-          <div className="mt-4 pt-3 border-t border-slate-200 flex flex-col items-center">
-            <a
-              href="mailto:mcfidel98@gmail.com"
-              className="flex flex-col items-center transition-opacity hover:opacity-80 relative"
-            >
-              {/* Synaptic Animation Overlay */}
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-                <span className="absolute w-1 h-1 bg-cyan-400 rounded-full blur-[1px] opacity-0 animate-[synapse_3s_infinite_0.5s]" style={{ top: '30%', left: '40%' }}></span>
-                <span className="absolute w-1 h-1 bg-purple-400 rounded-full blur-[1px] opacity-0 animate-[synapse_4s_infinite_1.5s]" style={{ top: '50%', left: '60%' }}></span>
-                <span className="absolute w-0.5 h-0.5 bg-blue-400 rounded-full blur-[0.5px] opacity-0 animate-[synapse_2.5s_infinite_1s]" style={{ top: '40%', left: '50%' }}></span>
-              </div>
-
-              <img
-                src="/medtech_logo.png?v=8"
-                alt="Med-Tech Labs"
-                className="h-32 w-auto object-contain mb-1"
-              />
-              <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
-            </a>
-            <p className="text-[9px] text-gray-400 mt-1">v2.3.1</p>
-          </div>
+            <img
+              src="/medtech_logo.png?v=8"
+              alt="Med-Tech Labs"
+              className="h-32 w-auto object-contain mb-1"
+            />
+            <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
+          </a>
+          <p className="text-[9px] text-gray-400 mt-2 font-medium">Act: {new Date().toLocaleDateString()}</p>
         </div>
       </div>
     </aside>
