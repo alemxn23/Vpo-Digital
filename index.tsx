@@ -5,8 +5,7 @@ import App from './App';
 // Global error tracking to help debug "white screen" issues on Vercel
 window.onerror = function (message, source, lineno, colno, error) {
   console.error("Global Error Caught:", message, "at", source, ":", lineno);
-  // Optional: show alert for mobile testing
-  // alert("Runtime Error: " + message);
+  alert("Error Detectado: " + message + "\nEn: " + source + ":" + lineno);
   return false;
 };
 
