@@ -26,7 +26,9 @@ const StepperInput = ({
   const { register, watch, setValue } = useFormContext<VPOData>();
   const value = watch(name) as number || 0;
 
-  const isWarning = value > 0 && (value < warningLow || value > warningHigh);
+  const isLow = value > 0 && value < warningLow;
+  const isHigh = value > 0 && value > warningHigh;
+  const isWarning = isLow || isHigh;
 
   const adjust = (amount: number) => {
     const newValue = Number((value + amount).toFixed(1)); // Fix float precision
@@ -35,17 +37,29 @@ const StepperInput = ({
     }
   };
 
+  const getBorderColor = () => {
+    if (isHigh) return 'border-red-500 bg-red-50 shadow-sm';
+    if (isLow) return 'border-blue-400 bg-blue-50/30 shadow-sm';
+    return 'border-gray-200';
+  };
+
+  const getTextColor = () => {
+    if (isHigh) return 'text-red-700';
+    if (isLow) return 'text-blue-700';
+    return 'text-gray-500';
+  };
+
   return (
-    <div className={`bg-white p-3 rounded-xl border transition-colors duration-300 ${isWarning ? 'border-clinical-red shadow-md bg-red-50' : 'border-gray-200'}`}>
+    <div className={`bg-white p-3 rounded-xl border transition-all duration-300 ${getBorderColor()}`}>
       <div className="flex justify-between items-center mb-2">
-        <label className={`text-xs font-bold uppercase ${isWarning ? 'text-clinical-red' : 'text-gray-500'}`}>{label}</label>
-        {unit && <span className="text-[10px] text-gray-400">{unit}</span>}
+        <label className={`text-[10px] font-black uppercase tracking-tight ${getTextColor()}`}>{label}</label>
+        {unit && <span className="text-[10px] text-gray-400 font-medium">{unit}</span>}
       </div>
       <div className="flex items-center gap-2">
         <button
           type="button"
           onClick={() => adjust(-step)}
-          className={`w-10 h-10 flex items-center justify-center rounded-lg touch-manipulation active:scale-95 transition-transform ${isWarning ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-lg touch-manipulation active:scale-95 transition-all ${isHigh ? 'bg-red-100 text-red-700' : isLow ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}
         >
           <Minus size={18} />
         </button>
@@ -53,12 +67,12 @@ const StepperInput = ({
           type="number"
           step={step}
           {...register(name, { valueAsNumber: true })}
-          className={`w-full text-center font-bold text-lg p-1 bg-transparent border-b outline-none ${isWarning ? 'text-clinical-red border-clinical-red' : 'text-slate-800 border-transparent'}`}
+          className={`w-full text-center font-black text-xl p-1 bg-transparent border-b outline-none ${isHigh ? 'text-red-600 border-red-200' : isLow ? 'text-blue-600 border-blue-200' : 'text-slate-800 border-transparent'}`}
         />
         <button
           type="button"
           onClick={() => adjust(step)}
-          className={`w-10 h-10 flex items-center justify-center rounded-lg touch-manipulation active:scale-95 transition-transform ${isWarning ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-600'}`}
+          className={`w-10 h-10 flex items-center justify-center rounded-lg touch-manipulation active:scale-95 transition-all ${isHigh ? 'bg-red-100 text-red-700' : isLow ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-600'}`}
         >
           <Plus size={18} />
         </button>
@@ -104,10 +118,16 @@ const LabsAndVitals: React.FC = () => {
   const genero = watch('genero');
   const potasio = watch('k');
   const plaquetas = watch('plaquetas');
+  const glucosa = watch('glucosaCentral') || watch('glucosaCapilar');
+  const sodio = watch('na');
+  const sato2 = watch('sato2');
 
   // Safety Logic Check
   const isArrhythmiaRisk = potasio > 0 && (potasio < 3.0 || potasio > 5.5);
   const isBleedingRisk = plaquetas > 0 && plaquetas < 50000;
+  const isHypoxiaRisk = sato2 > 0 && sato2 < 90;
+  const isHyperglycemiaRisk = glucosa > 180;
+  const isDysnatremiaRisk = sodio > 0 && (sodio < 130 || sodio > 150);
 
   // Auto-Calculate GFR (CKD-EPI 2021)
   useEffect(() => {
@@ -144,11 +164,11 @@ const LabsAndVitals: React.FC = () => {
           <h2 className="text-lg font-bold text-slate-800">Signos Vitales</h2>
         </div>
         <div className="grid grid-cols-2 gap-3">
-          <StepperInput label="Sistólica" name="taSistolica" step={5} unit="mmHg" />
-          <StepperInput label="Diastólica" name="taDiastolica" step={5} unit="mmHg" />
-          <StepperInput label="FC" name="fc" step={1} unit="lpm" />
-          <StepperInput label="SatO2" name="sato2" step={1} unit="%" warningLow={90} />
-          <StepperInput label="FR" name="fr" step={1} unit="rpm" />
+          <StepperInput label="Sistólica" name="taSistolica" step={5} unit="mmHg" warningHigh={140} warningLow={90} />
+          <StepperInput label="Diastólica" name="taDiastolica" step={5} unit="mmHg" warningHigh={90} warningLow={60} />
+          <StepperInput label="FC" name="fc" step={1} unit="lpm" warningHigh={100} warningLow={60} />
+          <StepperInput label="SatO2" name="sato2" step={1} unit="%" warningLow={90} warningHigh={100} />
+          <StepperInput label="FR" name="fr" step={1} unit="rpm" warningHigh={20} warningLow={12} />
           <StepperInput label="Glucosa" name="glucosaCapilar" step={10} unit="mg/dL" warningHigh={180} warningLow={70} />
         </div>
       </div>
@@ -202,14 +222,32 @@ const LabsAndVitals: React.FC = () => {
         {/* --- SAFETY ALERTS AREA --- */}
         {isArrhythmiaRisk && (
           <AlertBanner
-            message="Riesgo de Arritmia: Corregir electrolitos antes de cirugía."
+            message={`Riesgo de Arritmia: Potasio en ${potasio} mEq/L. Corregir electrolitos antes de inducción anestésica.`}
             type="danger"
           />
         )}
         {isBleedingRisk && (
           <AlertBanner
-            message="Riesgo de sangrado elevado (Plaquetas < 50k). Valorar transfusión."
+            message={`Riesgo de sangrado elevado: Plaquetas en ${plaquetas}. Valorar transfusión para cirugía mayor (>50k).`}
             type="danger"
+          />
+        )}
+        {isHypoxiaRisk && (
+          <AlertBanner
+            message={`Hipoxia detectada: SatO2 ${sato2}%. Mal pronóstico en escalas Goldman/Detsky. Optimizar ventilación.`}
+            type="danger"
+          />
+        )}
+        {isHyperglycemiaRisk && (
+          <AlertBanner
+            message={`Hiperglucemia detectada: ${glucosa} mg/dL. Mantener meta transoperatoria 140-180 mg/dL.`}
+            type="warning"
+          />
+        )}
+        {isDysnatremiaRisk && (
+          <AlertBanner
+            message={`Disnatremia detectada: Sodio ${sodio} mEq/L. Riesgo de edema cerebral o mielinolisis si se corrige abruptamente.`}
+            type="warning"
           />
         )}
 
@@ -245,9 +283,9 @@ const LabsAndVitals: React.FC = () => {
 
         <h3 className="text-xs font-bold text-gray-400 uppercase mb-2 px-1">Electrolitos y Coagulación</h3>
         <div className="grid grid-cols-3 gap-2 mb-4">
-          <StepperInput label="Na+" name="na" step={1} />
-          <StepperInput label="K+" name="k" step={0.1} warningLow={3.0} warningHigh={5.5} />
-          <StepperInput label="Cl-" name="cl" step={1} />
+          <StepperInput label="Na+" name="na" step={1} warningLow={135} warningHigh={145} />
+          <StepperInput label="K+" name="k" step={0.1} warningLow={3.5} warningHigh={5.0} />
+          <StepperInput label="Cl-" name="cl" step={1} warningLow={98} warningHigh={107} />
         </div>
         <div className="grid grid-cols-3 gap-2">
           <StepperInput label="TP" name="tp" step={0.1} />

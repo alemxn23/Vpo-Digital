@@ -11,12 +11,12 @@ Esta guía paso a paso te permitirá resolver los problemas de conexión con Goo
 5.  **Nombre del proyecto**: `VPO Digital` (o el que prefieras).
 6.  Haz clic en **"CREAR"**. Espera unos segundos a que se cree y **asegúrate de seleccionarlo** una vez creado (debe aparecer el nombre arriba).
 
-## Paso 2: Habilitar la API de Google Drive
+## Paso 2: Habilitar la API de Google Drive (¡IMPORTANTE!)
 
-1.  En el menú de hamburguesa (tres líneas, arriba a la izquierda), ve a **"APIs y servicios"** > **"Biblioteca"**.
-2.  En el buscador escribe: `"Google Drive API"`.
-3.  Selecciona el resultado "Google Drive API".
-4.  Haz clic en el botón azul **"HABILITAR"**.
+1.  Ve directamente a este enlace: [https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=147428616428](https://console.developers.google.com/apis/api/drive.googleapis.com/overview?project=147428616428)
+    *   *(Nota: Asegúrate de estar usando la cuenta de Google correcta en la esquina superior derecha).*
+2.  Si el botón dice **"HABILITAR"**, haz clic en él.
+3.  Si ya está habilitada, verás un botón que dice "Gestionar". En ese caso, el problema podría ser que tardó en propagarse o necesitas revisar el Paso 4.
 
 ## Paso 3: Configurar la Pantalla de Consentimiento (OAuth Consent Screen)
 
@@ -49,8 +49,8 @@ Esta guía paso a paso te permitirá resolver los problemas de conexión con Goo
 5.  **Orígenes autorizados de JavaScript** (Authorized JavaScript origins):
     *   Haz clic en **"AGREGAR URI"**.
     *   Debes poner **EXACTAMENTE** la dirección donde corre tu app.
-    *   Si es local: `http://localhost:5173` o el puerto que estés usando.
-    *   Si ya la publicaste en internet: `https://torres-vpo-digital.vercel.app` (o el dominio correspondiente).
+    *   Si es local: `http://localhost:5173`
+    *   Si es producción: `https://www.vpo.mx` (o `https://torres-vpo-digital.vercel.app`)
     *   *Nota: No pongas barra `/` al final.*
 6.  Haz clic en **"CREAR"**.
 7.  Aparecerá una ventana con tu **ID de cliente**. Copia la cadena larga que termina en `.apps.googleusercontent.com`.

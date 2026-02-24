@@ -303,24 +303,24 @@ const App: React.FC = () => {
   const [showPaywall, setShowPaywall] = useState(false);
   const [paywallMode, setPaywallMode] = useState<'paywall' | 'account'>('paywall');
   const [isCheckingCredits, setIsCheckingCredits] = useState(false);
+  const [isUnlocked, setIsUnlocked] = useState(false);
 
   const methods = useForm<VPOData>({
     defaultValues: {
       fecha: new Date().toISOString().split('T')[0],
       hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      unidadMedica: localStorage.getItem('vpo_unidad_medica') || 'IMSS',
-      servicioSolicitante: localStorage.getItem('vpo_servicio') || 'CIRUGÍA GENERAL',
-      elab_nombre: localStorage.getItem('vpo_doctor_name') || '',
-      elab_cedula: localStorage.getItem('vpo_doctor_cedula') || '',
-      elab_institucion: localStorage.getItem('vpo_doctor_inst') || '',
-      tipoCirugia: 'MAYOR',
-      gender: 'M',
+      unidadMedica: localStorage.getItem('vpo_unidad_medica') || '',
+      servicioSolicitante: localStorage.getItem('vpo_servicio') || '',
+      elaboro: localStorage.getItem('vpo_doctor_name') || '',
+      matricula: localStorage.getItem('vpo_doctor_cedula') || '',
+      tipoCirugia: 'Electiva',
+      esUrgencia: false,
+      genero: Gender.MALE,
       ritmo: 'SINSUSAL',
-      urgencia: 'ELECTIVA',
       asa: 'II',
       lee: 'I',
       mets_estimated: 4,
-      mets_manual: false,
+      mets_method: 'auto',
       khorana_total: 0,
       vienna_cats_total: 0,
       ariscat_total: 0,
@@ -403,6 +403,26 @@ const App: React.FC = () => {
     return () => subscription.unsubscribe();
   }, [methods.watch]);
 
+  // Cleanup legacy defaults that might be stuck in localStorage
+  useEffect(() => {
+    const currentData = methods.getValues();
+    let needsReset = false;
+    const cleanValues = { ...currentData };
+
+    if (currentData.unidadMedica === 'IMSS' || currentData.unidadMedica === 'CMN SIGLO XXI') {
+      cleanValues.unidadMedica = '';
+      needsReset = true;
+    }
+    if (currentData.servicioSolicitante === 'CIRUGÍA GENERAL' || currentData.servicioSolicitante === 'MEDICINA INTERNA') {
+      cleanValues.servicioSolicitante = '';
+      needsReset = true;
+    }
+
+    if (needsReset) {
+      methods.reset(cleanValues);
+    }
+  }, [methods]);
+
 
   const generatePDFDoc = async (): Promise<jsPDF> => {
     const page1 = document.getElementById('print-page-1');
@@ -413,7 +433,7 @@ const App: React.FC = () => {
     const pdfWidth = pdf.internal.pageSize.getWidth();
 
     const capturePage = async (element: HTMLElement) => {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise(resolve => setTimeout(resolve, 500));
       const canvas = await html2canvas(element, {
         scale: 3,
         useCORS: true,
@@ -461,20 +481,80 @@ const App: React.FC = () => {
     return pdf;
   };
 
-  const handlePrintPDF = async () => {
+  const handleUnlockVPO = async () => {
+    if (isUnlocked) return;
+    setIsCheckingCredits(true);
     try {
-      const paidCredits = methods.getValues('paid_credits_live') || 0;
-      const freeUsed = methods.getValues('free_vpos_used_today_live') || 0;
-      const isVIP = methods.getValues('is_vip_live') || false;
-      let canPrint = isVIP || paidCredits > 0 || freeUsed < 1;
-
-      if (!canPrint) {
-        setPaywallMode('paywall');
-        setShowPaywall(true);
-        setIsCheckingCredits(false);
+      if (!supabase) {
+        alert("Servicio de créditos no disponible.");
         return;
       }
 
+      const { data: authData } = await supabase.auth.getUser();
+      const user = authData?.user;
+      if (!user) {
+        setPaywallMode('paywall');
+        setShowPaywall(true);
+        return;
+      }
+
+      // Check for developer/VIP status
+      if (user.email === 'mcfidel98@gmail.com') {
+        setIsUnlocked(true);
+        return;
+      }
+
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('paid_credits, free_vpos_used_today')
+        .eq('id', user.id)
+        .single();
+
+      if (!profile) {
+        alert("No se encontró perfil de usuario.");
+        return;
+      }
+
+      if (profile.free_vpos_used_today < 1) {
+        // Use free VPO
+        const { error } = await supabase
+          .from('profiles')
+          .update({
+            free_vpos_used_today: 1,
+            last_vpo_date: new Date().toISOString()
+          })
+          .eq('id', user.id);
+
+        if (error) throw error;
+        setIsUnlocked(true);
+      } else if (profile.paid_credits > 0) {
+        // Use paid credit
+        const { error } = await supabase
+          .from('profiles')
+          .update({ paid_credits: profile.paid_credits - 1 })
+          .eq('id', user.id);
+
+        if (error) throw error;
+        setIsUnlocked(true);
+      } else {
+        setPaywallMode('paywall');
+        setShowPaywall(true);
+      }
+    } catch (err) {
+      console.error("Unlock Error:", err);
+      alert("Error al procesar el desbloqueo.");
+    } finally {
+      setIsCheckingCredits(false);
+    }
+  };
+
+  const handlePrintPDF = async () => {
+    if (!isUnlocked) {
+      await handleUnlockVPO();
+      return;
+    }
+
+    try {
       const doc = await generatePDFDoc();
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
       if (isMobile) {
@@ -510,7 +590,12 @@ const App: React.FC = () => {
     return new Blob([uInt8Array], { type: contentType });
   };
 
-  const handleDriveUpload = () => {
+  const handleDriveUpload = async () => {
+    if (!isUnlocked) {
+      await handleUnlockVPO();
+      return;
+    }
+
     setIsUploading(true);
     const currentOrigin = window.location.origin;
     alert(`Iniciando Drive en: ${currentOrigin}\nSi no sale ventana de Google, revise bloqueador de popups.`);
@@ -544,7 +629,7 @@ const App: React.FC = () => {
           }
 
           if (tokenResponse && tokenResponse.access_token) {
-            alert("Acceso concedido. Iniciando subida...");
+            console.log("Acceso concedido. Iniciando subida...");
             try {
               // 1. Obtener o crear carpeta
               console.log("Checking/Creating folder...");
@@ -559,7 +644,7 @@ const App: React.FC = () => {
               const safeName = (methods.getValues().nombre || 'Paciente').replace(/[^a-zA-Z0-9]/g, '_');
               const fileName = `${dateStr}_${safeName}_VPO.pdf`;
 
-              alert(`Subiendo: ${fileName}`);
+              console.log(`Subiendo: ${fileName}`);
 
               // 3. Subir PDF
               console.log(`Uploading PDF: ${fileName} to folder ${folderId}`);
@@ -638,20 +723,35 @@ const App: React.FC = () => {
     return folder.id;
   };
 
-  const uploadFileToDrive = async (token: string, blob: Blob, name: string, folder: string) => {
-    const metadata = { name, parents: [folder] };
-    const form = new FormData();
-    form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
-    form.append('file', blob);
+  const uploadFileToDrive = async (token: string, blob: Blob, name: string, folderId: string) => {
+    const metadata = { name, parents: [folderId] };
+    const boundary = 'vpo_digital_upload_boundary';
+    const delimiter = `\r\n--${boundary}\r\n`;
+    const closeDelimiter = `\r\n--${boundary}--`;
+
+    const metadataPart = `Content-Type: application/json; charset=UTF-8\r\n\r\n${JSON.stringify(metadata)}`;
+    const mediaPart = `\r\nContent-Type: ${blob.type}\r\n\r\n`;
+
+    const multipartBody = new Blob([
+      delimiter,
+      metadataPart,
+      delimiter,
+      mediaPart,
+      blob,
+      closeDelimiter
+    ], { type: `multipart/related; boundary=${boundary}` });
 
     const res = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id,webViewLink', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${token}` },
-      body: form
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': `multipart/related; boundary=${boundary}`
+      },
+      body: multipartBody
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
+      const errorData = await res.json().catch(() => ({}));
       throw new Error(`Error al subir ${name}: ${errorData.error?.message || res.statusText}`);
     }
 
@@ -660,7 +760,12 @@ const App: React.FC = () => {
     return data;
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsApp = async () => {
+    if (!isUnlocked) {
+      await handleUnlockVPO();
+      return;
+    }
+
     const data = methods.getValues();
     const summary = `VALORACIÓN VPO\nPaciente: ${data.nombre}\nASA: ${data.asa}\nLee: ${data.lee}\nGoldman: ${data.goldman}\nLink: ${data.driveLink || '(Sube a Drive primero)'}`;
     window.open(`https://wa.me/?text=${encodeURIComponent(summary)}`, '_blank');
@@ -746,37 +851,53 @@ const App: React.FC = () => {
                           <span className="text-[9px] text-clinical-navy font-black mt-1 opacity-0 group-hover:opacity-100 transition-opacity">👆 Toca para ver tu cuenta →</span>
                         </button>
 
+                        {!isUnlocked ? (
+                          <button
+                            onClick={handleUnlockVPO}
+                            disabled={isCheckingCredits}
+                            className={`w-full bg-clinical-navy text-white py-5 rounded-2xl font-black text-lg flex flex-col items-center justify-center gap-1 transition-all shadow-xl shadow-clinical-navy/20 ${isCheckingCredits ? 'opacity-70 cursor-wait' : 'hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]'}`}>
+                            <div className="flex items-center gap-2">
+                              <ClipboardCheck size={24} />
+                              <span>DESBLOQUEAR VPO</span>
+                            </div>
+                            <span className="text-[10px] opacity-70 font-bold uppercase tracking-tighter">Usar 1 Crédito / FREE</span>
+                          </button>
+                        ) : (
+                          <div className="w-full bg-green-500 text-white py-4 rounded-2xl font-black text-center shadow-lg border-2 border-green-400">
+                            VPO DESBLOQUEADO ✅
+                          </div>
+                        )}
+
                         <button
                           onClick={handlePrintPDF}
                           disabled={isCheckingCredits}
-                          className={`w-full bg-clinical-navy text-white py-5 rounded-2xl font-black text-lg flex flex-col items-center justify-center gap-1 transition-all shadow-xl shadow-clinical-navy/20 ${isCheckingCredits ? 'opacity-70 cursor-wait' : 'hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]'}`}>
+                          className={`w-full ${isUnlocked ? 'bg-clinical-navy' : 'bg-slate-300'} text-white py-4 rounded-2xl font-black text-lg flex flex-col items-center justify-center gap-1 transition-all ${isUnlocked ? 'hover:scale-[1.02] hover:brightness-110' : 'cursor-not-allowed'} ${isCheckingCredits ? 'opacity-70 cursor-wait' : ''}`}>
                           <div className="flex items-center gap-2">
-                            <Printer size={24} />
+                            <Printer size={20} />
                             <span>IMPRIMIR PDF</span>
                           </div>
-                          <span className="text-[10px] opacity-70 font-bold uppercase tracking-tighter">Generar Reporte Clínico</span>
                         </button>
 
                         <div className="grid grid-cols-2 gap-4">
                           <button
                             onClick={handleDriveUpload}
-                            disabled={isUploading}
-                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 border-slate-100 hover:border-clinical-navy hover:bg-slate-50 transition-all group ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
+                            disabled={isUploading || isCheckingCredits}
+                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all group ${isUnlocked ? 'border-slate-100 hover:border-clinical-navy hover:bg-slate-50' : 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'} ${isUploading ? 'cursor-wait' : ''}`}
                           >
-                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-clinical-navy group-hover:text-white transition-colors">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isUnlocked ? 'bg-slate-100 group-hover:bg-clinical-navy group-hover:text-white text-slate-600' : 'bg-slate-200 text-slate-400'}`}>
                               {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
                             </div>
-                            <span className="text-xs font-black text-slate-600 group-hover:text-clinical-navy uppercase">Drive</span>
+                            <span className={`text-xs font-black uppercase ${isUnlocked ? 'text-slate-600 group-hover:text-clinical-navy' : 'text-slate-400'}`}>Drive</span>
                           </button>
 
                           <button
                             onClick={handleWhatsApp}
-                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 border-slate-100 hover:border-[#25D366] hover:bg-green-50 transition-all group"
+                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 transition-all group ${isUnlocked ? 'border-slate-100 hover:border-[#25D366] hover:bg-green-50' : 'border-slate-200 bg-slate-50 opacity-60 cursor-not-allowed'}`}
                           >
-                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-[#25D366] group-hover:text-white transition-colors">
+                            <div className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isUnlocked ? 'bg-slate-100 group-hover:bg-[#25D366] group-hover:text-white text-slate-600' : 'bg-slate-200 text-slate-400'}`}>
                               <MessageCircle size={20} />
                             </div>
-                            <span className="text-xs font-black text-slate-600 group-hover:text-[#25D366] uppercase">WhatsApp</span>
+                            <span className={`text-xs font-black uppercase ${isUnlocked ? 'text-slate-600 group-hover:text-[#25D366]' : 'text-slate-400'}`}>WhatsApp</span>
                           </button>
                         </div>
                       </div>

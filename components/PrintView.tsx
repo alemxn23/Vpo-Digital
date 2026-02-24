@@ -109,10 +109,10 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                             </td>
                             <td width="324" valign="bottom" style={{ paddingLeft: '24px', borderBottom: '2px solid black', paddingBottom: '12px' }}>
                                 <div style={{ fontSize: '15px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.01em', marginBottom: '2px', lineHeight: '1' }}>
-                                    {(data.unidadMedica || 'CMN SIGLO XXI').toUpperCase()}
+                                    {(data.unidadMedica || '').toUpperCase()}
                                 </div>
                                 <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', letterSpacing: '0.01em', marginBottom: '4px' }}>
-                                    {(data.servicioSolicitante || 'MEDICINA INTERNA').toUpperCase()}
+                                    {(data.servicioSolicitante || '').toUpperCase()}
                                 </div>
                             </td>
                             <td width="300" align="right" valign="top" style={{ borderBottom: '2px solid black', paddingBottom: '12px' }}>
@@ -361,6 +361,7 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                             {(data.authorized_report_scales?.lee !== false) && <th style={{ ...labelStyle, fontSize: '9px' }}>LEE</th>}
                             {(data.authorized_report_scales?.caprini !== false) && <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>CAPRINI</th>}
                             {(data.authorized_report_scales?.gupta !== false) && <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>GUPTA</th>}
+                            {(data.authorized_report_scales?.nsqip !== false) && <th style={{ ...labelStyle, fontSize: '9px', width: '55px', backgroundColor: '#f0fdf4' }}>NSQIP</th>}
                             {(data.authorized_report_scales?.mets !== false) && <th style={{ ...labelStyle, fontSize: '9px', width: '50px' }}>METs</th>}
                             {(data.authorized_report_scales?.cha2ds2vasc !== false) && <th style={{ ...labelStyle, fontSize: '9px' }}>CHADSVASC</th>}
                             {(data.authorized_report_scales?.hasbled !== false) && <th style={{ ...labelStyle, fontSize: '9px' }}>HASBLED</th>}
@@ -377,6 +378,16 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                             {(data.authorized_report_scales?.lee !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.lee}</td>}
                             {(data.authorized_report_scales?.caprini !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.caprini}</td>}
                             {(data.authorized_report_scales?.gupta !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.gupta || 0}%</td>}
+                            {(data.authorized_report_scales?.nsqip !== false) && (
+                                <td style={{
+                                    fontSize: '10px', fontWeight: 'bold',
+                                    backgroundColor: (data.nsqip_total || 0) >= 10 ? '#fecaca' : (data.nsqip_total || 0) >= 3 ? '#fef9c3' : '#dcfce7'
+                                }}>
+                                    {data.nsqip_total || 0}%
+                                    <br />
+                                    <span style={{ fontSize: '8px' }}>{(data.nsqip_riesgo || 'Bajo').toUpperCase()}</span>
+                                </td>
+                            )}
                             {(data.authorized_report_scales?.mets !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.mets_estimated || 4}</td>}
                             {(data.authorized_report_scales?.cha2ds2vasc !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.cha2ds2vasc || 0}</td>}
                             {(data.authorized_report_scales?.hasbled !== false) && <td style={{ fontSize: '10px', fontWeight: 'bold' }}>{data.hasbled || 0}</td>}
@@ -408,13 +419,16 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                 </table>
 
                 {/* DYNAMIC ALERTS */}
-                {(data.stopbang_total >= 5 || (data.fragilidad_score || 1) >= 5 || data.mets_estimated < 4) && (
+                {(data.stopbang_total >= 5 || (data.fragilidad_score || 1) >= 5 || data.mets_estimated < 4 || (data.nsqip_total || 0) >= 10) && (
                     <div style={{ marginTop: '10px', border: '1px solid #b91c1c', borderRadius: '4px', overflow: 'hidden' }}>
                         <div style={{ backgroundColor: '#fee2e2', color: '#7f1d1d', fontSize: '10px', fontWeight: 'bold', padding: '4px 8px', borderBottom: '1px solid #fecaca' }}>
                             ALERTA CLÍNICA: ESTRATIFICACIÓN DE ALTO RIESGO
                         </div>
                         <div style={{ padding: '8px', fontSize: '9px', color: '#7f1d1d', backgroundColor: '#fff5f5' }}>
                             <ul style={{ margin: 0, paddingLeft: '15px' }}>
+                                {(data.nsqip_total || 0) >= 10 && (
+                                    <li><b>NSQIP ALTO ({data.nsqip_total}%):</b> Riesgo elevado de complicación quirúrgica mayor a 30 días. Optimizar comorbilidades. Si cirugía electiva, considerar diferir hasta estabilización.</li>
+                                )}
                                 {data.stopbang_total >= 5 && (
                                     <li><b>STOP-BANG ALTO ({data.stopbang_total} pts):</b> Alta probabilidad de SAOS moderado-severo. Se sugiere <b>extubación paciente despierto</b> y monitoreo continuo de oximetría postoperatoria. Considere CPAP si dispone.</li>
                                 )}

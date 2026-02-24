@@ -261,8 +261,8 @@ const PatientInfo: React.FC = () => {
         fechaNacimiento: "",
         edad: 0,
         cama: "",
-        servicioSolicitante: "Medicina Interna",
-        unidadMedica: "CMN SIGLO XXI",
+        servicioSolicitante: "",
+        unidadMedica: "",
         diagnosticoQuirurgico: "",
         cirugiaProgramada: "",
         fechaQx: "",
@@ -355,13 +355,13 @@ const PatientInfo: React.FC = () => {
             </div>
             <div>
               <label className="text-xs font-bold text-gray-500 uppercase">Servicio</label>
-              <input {...register('servicioSolicitante')} className="w-full mt-1 p-2 border border-gray-200 rounded-lg bg-gray-50 text-sm" placeholder="Medicina Interna" />
+              <input {...register('servicioSolicitante')} className="w-full mt-1 p-2 border border-gray-200 rounded-lg bg-gray-50 text-sm" placeholder="Ej. Medicina Interna" />
             </div>
           </div>
 
           <div>
             <label className="text-xs font-bold text-gray-500 uppercase">Unidad Médica (Hospital)</label>
-            <input {...register('unidadMedica')} className="w-full mt-1 p-2 border border-gray-200 rounded-lg bg-gray-50 text-sm" placeholder="HGZ / CMN S. XXI" />
+            <input {...register('unidadMedica')} className="w-full mt-1 p-2 border border-gray-200 rounded-lg bg-gray-50 text-sm" placeholder="Ej. Hospital General" />
           </div>
         </div>
 
