@@ -485,28 +485,39 @@ const App: React.FC = () => {
 
   const handleDriveUpload = () => {
     setIsUploading(true);
-    console.log("Starting Drive upload process...");
+    const currentOrigin = window.location.origin;
+    alert(`Iniciando Drive en: ${currentOrigin}\nSi no sale ventana de Google, revise bloqueador de popups.`);
+    console.log("Starting Drive upload process at origin:", currentOrigin);
+
     const safetyTimeout = setTimeout(() => {
       setIsUploading(false);
       console.warn("Drive upload timed out after 60s.");
     }, 60000);
 
     if (!window.google || !window.google.accounts) {
-      alert("Servicios de Google no listos. Intente recargar la página.");
+      alert("ERROR: Servicios de Google no listos. Reintente en 5 segundos.");
       setIsUploading(false);
       return;
     }
 
     const clientId = localStorage.getItem('vpo_google_client_id_v2') || DEFAULT_CLIENT_ID;
     try {
+      console.log("Initializing OAuth client with ID:", clientId);
       const client = window.google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: 'https://www.googleapis.com/auth/drive.file',
         callback: async (tokenResponse: any) => {
           clearTimeout(safetyTimeout);
-          console.log("Token received, starting file generation...", tokenResponse);
+          console.log("OAuth Callback Triggered:", tokenResponse);
+
+          if (tokenResponse.error) {
+            alert(`Error de Google: ${tokenResponse.error_description || tokenResponse.error}`);
+            setIsUploading(false);
+            return;
+          }
 
           if (tokenResponse && tokenResponse.access_token) {
+            alert("Acceso concedido. Iniciando subida...");
             try {
               // 1. Obtener o crear carpeta
               console.log("Checking/Creating folder...");
@@ -520,6 +531,8 @@ const App: React.FC = () => {
               const dateStr = new Date().toISOString().split('T')[0];
               const safeName = (methods.getValues().nombre || 'Paciente').replace(/[^a-zA-Z0-9]/g, '_');
               const fileName = `${dateStr}_${safeName}_VPO.pdf`;
+
+              alert(`Subiendo: ${fileName}`);
 
               // 3. Subir PDF
               console.log(`Uploading PDF: ${fileName} to folder ${folderId}`);
@@ -544,26 +557,26 @@ const App: React.FC = () => {
               }
 
               console.log("Upload sequence completed successfully.");
-              alert("✅ Guardado exitoso. Abriendo tu carpeta de Drive...");
+              alert("✅ ¡Éxito! Abriendo tu carpeta de Drive...");
 
               // Abrir la carpeta de Drive directamente
               window.open(`https://drive.google.com/drive/u/0/folders/${folderId}`, '_blank');
 
             } catch (err) {
               console.error("Drive Upload Error:", err);
-              alert("Hubo un error al procesar los archivos. Verifique su conexión y permisos.");
+              alert(`Error al procesar: ${err instanceof Error ? err.message : String(err)}`);
             } finally {
               setIsUploading(false);
             }
           } else {
-            console.error("No access token in response:", tokenResponse);
+            alert("No se recibió token. Reintente el inicio de sesión.");
             setIsUploading(false);
           }
         }
       });
       client.requestAccessToken();
     } catch (e) {
-      console.error("OAuth Client Initialization Error:", e);
+      alert(`Error al iniciar cliente: ${e instanceof Error ? e.message : String(e)}`);
       setIsUploading(false);
     }
   };
