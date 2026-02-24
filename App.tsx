@@ -66,9 +66,9 @@ const StickyHeader = () => {
       <div className="w-full max-w-md md:max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 lg:opacity-0 pointer-events-none">
           <div className="flex items-center justify-center">
-            <img src="/logo.png?v=5" alt="Logo" className="w-auto h-10 object-contain" />
+            <img src="/logo.png?v=7" alt="Logo" className="w-auto h-10 object-contain" />
           </div>
-          <div className="flex flex-col border-l border-gray-300 pl-3 ml-2">
+          <div className="flex flex-col border-l border-gray-300 pl-3 ml-2 space-y-0.5">
             <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5">
               CMN S. XXI
             </p>
@@ -105,11 +105,11 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
       <div className="pt-0 px-2 pb-2 border-b border-gray-100 mb-0">
         <div className="flex flex-col items-center gap-0 w-full mb-1">
           <div className="flex-shrink-0 w-full flex justify-center -mb-2 mt-4">
-            <img src="/logo.png?v=6" alt="Logo" className="w-40 h-auto object-contain transition-transform hover:scale-105 duration-300" />
+            <img src="/logo.png?v=7" alt="Logo" className="w-40 h-auto object-contain transition-transform hover:scale-105 duration-300" />
           </div>
-          <div className="flex flex-col items-center w-full mt-0">
-            <div className="flex flex-col items-center">
-              <p className="text-[10px] text-clinical-navy font-black uppercase tracking-[0.2em] leading-tight mt-1">
+          <div className="flex flex-col items-center w-full mt-2">
+            <div className="flex flex-col items-center space-y-1">
+              <p className="text-[10px] text-clinical-navy font-black uppercase tracking-[0.2em] leading-tight">
                 {servicioSolicitante || 'Medicina Interna'}
               </p>
               <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-0.5 leading-tight">
@@ -163,9 +163,9 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
               </div>
 
               <img
-                src="/medtech_logo.png?v=6"
+                src="/medtech_logo.png?v=7"
                 alt="Med-Tech Labs"
-                className="h-20 w-auto object-contain mb-1"
+                className="h-28 w-auto object-contain mb-1"
               />
               <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
             </a>
