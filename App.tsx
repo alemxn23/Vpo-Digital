@@ -66,7 +66,7 @@ const StickyHeader = () => {
       <div className="w-full max-w-md md:max-w-5xl mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-3 lg:opacity-0 pointer-events-none">
           <div className="flex items-center justify-center">
-            <img src="/logo.png?v=4" alt="Logo" className="w-auto h-10 object-contain" />
+            <img src="/logo.png?v=5" alt="Logo" className="w-auto h-10 object-contain" />
           </div>
           <div className="flex flex-col border-l border-gray-300 pl-3 ml-2">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest leading-none">
@@ -108,7 +108,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
       <div className="pt-0 px-2 pb-2 border-b border-gray-100 mb-0">
         <div className="flex flex-col items-center gap-0 w-full mb-1">
           <div className="flex-shrink-0 w-full flex justify-center -mb-2 mt-4">
-            <img src="/logo.png?v=4" alt="Logo" className="w-40 h-auto object-contain transition-transform hover:scale-105 duration-300" />
+            <img src="/logo.png?v=5" alt="Logo" className="w-40 h-auto object-contain transition-transform hover:scale-105 duration-300" />
           </div>
           <div className="flex flex-col items-center w-full mt-0">
             <div className="flex flex-col items-center">
@@ -166,9 +166,9 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
               </div>
 
               <img
-                src="/medtech_logo.png?v=4"
+                src="/medtech_logo.png?v=5"
                 alt="Med-Tech Labs"
-                className="h-14 w-auto object-contain mb-1"
+                className="h-12 w-auto object-contain mb-1"
               />
               <span className="text-[10px] font-bold text-clinical-navy hover:underline">Contactar Soporte</span>
             </a>
