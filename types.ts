@@ -295,7 +295,7 @@ export interface VPOData {
   vrc_beta_blocker: boolean;
 
   mets_estimated: number; // METs
-  mets_method: "biometric" | "duke_dasi" | "manual";
+  mets_method: "auto" | "biometric" | "duke_dasi" | "manual";
 
   // --- ASA OVERRIDE ---
   asa_manual_class: string; // If user forces class
@@ -362,4 +362,7 @@ export interface VPOData {
 
   // External
   driveLink?: string; // To store the uploaded file URL
+  paid_credits_live?: number;
+  free_vpos_used_today_live?: number;
+  is_vip_live?: boolean;
 }

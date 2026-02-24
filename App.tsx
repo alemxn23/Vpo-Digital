@@ -18,7 +18,8 @@ import {
   Loader2,
   Save,
   MessageCircle,
-  Settings
+  Settings,
+  ClipboardList
 } from 'lucide-react';
 import PatientInfo from './components/PatientInfo';
 import RiskFactors from './components/RiskFactors';
@@ -43,18 +44,18 @@ const ScoreBadge = ({ label, value, colorClass = "bg-clinical-navy", subValue }:
   if (!hasValue) return null;
 
   return (
-    <div className={`flex flex-col items-center justify-center px-2 py-1 rounded-lg ${colorClass} text-white min-w-[64px] shadow-sm transform hover:scale-105 hover:brightness-110 transition-all cursor-default select-none border border-white/20 whitespace-nowrap`}>
-      <span className="text-[7.5px] font-black opacity-80 uppercase tracking-widest leading-none mb-0.5">{label}</span>
+    <div className={`flex flex-col items-center justify-center px-1.5 py-0.5 rounded-md ${colorClass} text-white min-w-[54px] md:min-w-[60px] shadow-sm transform hover:scale-105 hover:brightness-110 transition-all cursor-default select-none border border-white/20 whitespace-nowrap`}>
+      <span className="text-[6.5px] md:text-[7.5px] font-black opacity-80 uppercase tracking-tighter leading-none mb-0.5">{label}</span>
       <div className="flex items-baseline gap-0.5">
-        <span className="text-[13px] font-black leading-none">{value}</span>
-        {subValue && <span className="text-[8px] font-bold opacity-75 leading-none">{subValue}</span>}
+        <span className="text-[11px] md:text-[12px] font-black leading-none">{value}</span>
+        {subValue && <span className="text-[6.5px] md:text-[7.5px] font-bold opacity-75 leading-none">{subValue}</span>}
       </div>
     </div>
   );
 };
 
 // --- Header Component ---
-const StickyHeader = () => {
+const StickyHeader = ({ onOpenAccount }: { onOpenAccount: () => void }) => {
   const { watch } = useFormContext<VPOData>();
 
   // Watch scales
@@ -75,6 +76,7 @@ const StickyHeader = () => {
   const khorana = watch('khorana_total');
   const cancerActivo = watch('cancer_activo');
   const doctorName = watch('elaboro') || "Dr. Fidel Aleman"; // Example name per user request
+  const cedula = "14098958";
 
   const getSeverityColor = (val: string | number | undefined, type: 'asa' | 'lee' | 'caprini' | 'goldman' | 'detsky' | 'gupta' | 'other' = 'other') => {
     if (val === undefined || val === null || val === '') return 'bg-gray-400';
@@ -98,16 +100,20 @@ const StickyHeader = () => {
   };
 
   return (
-    <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-30 shadow-sm no-print">
-      <div className="w-full max-w-[1400px] mx-auto px-4 h-16 flex items-center justify-center relative">
-        {/* Physician Branding - Absolute Left */}
-        <div className="absolute left-6 top-1/2 -translate-y-1/2 hidden lg:flex items-center gap-2 opacity-40 hover:opacity-100 transition-opacity pointer-events-none">
-          <div className="w-8 h-8 bg-clinical-navy/10 rounded-full flex items-center justify-center text-clinical-navy font-black text-[10px] border border-clinical-navy/20">FA</div>
-          <span className="text-[11px] font-black text-slate-700 tracking-tight">{doctorName}</span>
+    <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-30 shadow-sm no-print h-14 md:h-16">
+      <div className="w-full max-w-[1440px] mx-auto px-2 md:px-4 h-full flex items-center justify-between gap-2 md:gap-4 overflow-hidden">
+
+        {/* Physician Branding - Ultra Compact */}
+        <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/50 md:bg-white/50 py-1 px-2 rounded-lg border border-slate-100 max-w-[140px] md:max-w-none">
+          <div className="w-7 h-7 md:w-8 md:h-8 bg-clinical-navy/10 rounded-full flex items-center justify-center text-clinical-navy font-black text-[9px] md:text-[11px] border border-clinical-navy/20 shadow-inner">FA</div>
+          <div className="flex flex-col min-w-0">
+            <span className="text-[10px] md:text-[12px] font-black text-slate-800 tracking-tight truncate leading-none mb-0.5">{doctorName}</span>
+            <span className="text-[8px] md:text-[9px] font-bold text-slate-500 leading-none">Céd. {cedula}</span>
+          </div>
         </div>
 
-        {/* Center Scales Container */}
-        <div className="flex items-center justify-center gap-2 md:gap-2.5 overflow-x-auto no-scrollbar py-2 px-4 max-w-full">
+        {/* Scales Container - Centered on Web, Scrollable always */}
+        <div className="flex-1 flex items-center justify-start md:justify-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-1 scroll-smooth">
           <ScoreBadge label="LEE" value={lee} colorClass={getSeverityColor(lee, 'lee')} />
           <ScoreBadge label="ASA" value={asa} colorClass={getSeverityColor(asa, 'asa')} />
           <ScoreBadge label="CAPRINI" value={caprini} subValue="pts" colorClass={getSeverityColor(caprini, 'caprini')} />
@@ -115,12 +121,12 @@ const StickyHeader = () => {
           <ScoreBadge label="DETSKY" value={detsky} colorClass={getSeverityColor(detsky, 'detsky')} />
           <ScoreBadge label="GUPTA" value={gupta} subValue="%" colorClass={getSeverityColor(gupta, 'gupta')} />
           <ScoreBadge label="ARISCAT" value={ariscat} subValue="pts" colorClass={getSeverityColor(ariscat)} />
-          {/* Oncology Scales - Strictly Conditional */}
+          {/* Oncology Section - Inline with small separator */}
           {cancerActivo && (
-            <>
+            <div className="flex items-center gap-1.5 px-1 border-x border-slate-200">
               <ScoreBadge label="KHORANA" value={khorana} subValue="pts" colorClass={khorana >= 3 ? 'bg-clinical-red' : khorana >= 1 ? 'bg-orange-500' : 'bg-clinical-navy'} />
               <ScoreBadge label="VIENNA" value={vienna} subValue="%" colorClass={vienna >= 8 ? 'bg-clinical-red' : 'bg-clinical-navy'} />
-            </>
+            </div>
           )}
           <ScoreBadge label="CFS" value={fragilidad} subValue="pts" colorClass={getSeverityColor(fragilidad)} />
           <ScoreBadge label="METs" value={mets} subValue="" colorClass={mets !== undefined && mets < 4 ? 'bg-clinical-red' : 'bg-clinical-navy'} />
@@ -128,6 +134,11 @@ const StickyHeader = () => {
           <ScoreBadge label="CHA₂DS₂" value={cha2ds2vasc} colorClass={cha2ds2vasc >= 2 ? 'bg-clinical-red' : 'bg-clinical-navy'} />
           <ScoreBadge label="HAS-BLED" value={hasbled} colorClass={hasbled >= 3 ? 'bg-clinical-red' : 'bg-clinical-navy'} />
           <ScoreBadge label="STOP-BANG" value={stopbang} colorClass={getSeverityColor(stopbang)} />
+
+          {/* Credits Display in Header - Clickable */}
+          <button onClick={onOpenAccount} className="focus:outline-none" title="Ver estado de cuenta">
+            <ScoreBadge label="CRÉDITOS" value={(watch('paid_credits_live') as number) ?? 0} subValue="vpos" colorClass="bg-green-600" />
+          </button>
         </div>
       </div>
     </header>
@@ -145,8 +156,9 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
     { icon: FileImage, label: "Gabinete", step: 2 },
     { icon: Pill, label: "Fármacos", step: 3 },
     { icon: ClipboardCheck, label: "Escalas", step: 4 },
-    { icon: FileText, label: "Nota Médica", step: 5 },
-    { icon: Printer, label: "Reporte", step: 6 },
+    { icon: ClipboardList, label: "Recomendaciones", step: 5 },
+    { icon: FileText, label: "Nota Médica", step: 6 },
+    { icon: Printer, label: "Reporte", step: 7 },
   ];
 
   return (
@@ -215,8 +227,9 @@ const BottomNav = ({ activeStep, setStep }: { activeStep: number, setStep: (s: n
     { icon: FileImage, label: "Gabinete", step: 2 },
     { icon: Pill, label: "Fármacos", step: 3 },
     { icon: ClipboardCheck, label: "Escalas", step: 4 },
-    { icon: FileText, label: "Nota", step: 5 },
-    { icon: Printer, label: "PDF", step: 6 },
+    { icon: ClipboardList, label: "Rec.", step: 5 },
+    { icon: FileText, label: "Nota", step: 6 },
+    { icon: Printer, label: "PDF", step: 7 },
   ];
 
   return (
@@ -288,7 +301,43 @@ const App: React.FC = () => {
   const [showToast, setShowToast] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [showPaywall, setShowPaywall] = useState(false);
+  const [paywallMode, setPaywallMode] = useState<'paywall' | 'account'>('paywall');
   const [isCheckingCredits, setIsCheckingCredits] = useState(false);
+
+  const openAccountModal = () => {
+    setPaywallMode('account');
+    setShowPaywall(true);
+  };
+
+  // Fetch credits from Supabase
+  useEffect(() => {
+    const fetchCredits = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('paid_credits, free_vpos_used_today')
+          .eq('id', user.id)
+          .single();
+
+        if (profile) {
+          // Update form values for header badge visibility/sync
+          methods.setValue('paid_credits_live', profile.paid_credits || 0);
+          methods.setValue('free_vpos_used_today_live', profile.free_vpos_used_today || 0);
+          methods.setValue('is_vip_live', user.email === 'mcfidel98@gmail.com');
+        }
+      }
+    };
+    fetchCredits();
+
+    // Subscribe to changes in profiles
+    const channel = supabase
+      .channel('profile_changes')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, fetchCredits)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
 
   const methods = useForm<VPOData>({
     defaultValues: {
@@ -330,8 +379,8 @@ const App: React.FC = () => {
 
   const generatePDFDoc = async (): Promise<jsPDF> => {
     const page1 = document.getElementById('print-page-1');
-    const page2 = document.getElementById('print-page-2');
-    if (!page1 || !page2) throw new Error("Report pages not found");
+    if (!page1) throw new Error("Página del reporte no encontrada. Intente recargar la página.");
+    const page2 = document.getElementById('print-page-2'); // opcional
 
     const pdf = new jsPDF('p', 'mm', 'letter');
     const pdfWidth = pdf.internal.pageSize.getWidth();
@@ -373,20 +422,27 @@ const App: React.FC = () => {
     const imgHeight1 = (imgProps1.height * pdfWidth) / imgProps1.width;
     pdf.addImage(imgData1, 'PNG', 0, 0, pdfWidth, imgHeight1);
 
-    pdf.addPage();
-    const imgData2 = await capturePage(page2);
-    const imgProps2 = pdf.getImageProperties(imgData2);
-    const imgHeight2 = (imgProps2.height * pdfWidth) / imgProps2.width;
-    pdf.addImage(imgData2, 'PNG', 0, 0, pdfWidth, imgHeight2);
+    // Página 2 es opcional — si existe, la agrega
+    if (page2) {
+      pdf.addPage();
+      const imgData2 = await capturePage(page2);
+      const imgProps2 = pdf.getImageProperties(imgData2);
+      const imgHeight2 = (imgProps2.height * pdfWidth) / imgProps2.width;
+      pdf.addImage(imgData2, 'PNG', 0, 0, pdfWidth, imgHeight2);
+    }
 
     return pdf;
   };
 
   const handlePrintPDF = async () => {
     try {
-      let canPrint = true; // Bypassing all subscription checks for now
+      const paidCredits = methods.getValues('paid_credits_live') || 0;
+      const freeUsed = methods.getValues('free_vpos_used_today_live') || 0;
+      const isVIP = methods.getValues('is_vip_live') || false;
+      let canPrint = isVIP || paidCredits > 0 || freeUsed < 1;
 
       if (!canPrint) {
+        setPaywallMode('paywall');
         setShowPaywall(true);
         setIsCheckingCredits(false);
         return;
@@ -542,7 +598,7 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-clinical-bg font-sans pb-20 lg:pb-0 lg:flex items-start">
           <Sidebar activeStep={activeStep} setStep={setActiveStep} />
           <div className="flex-1 min-w-0 flex flex-col min-h-screen">
-            <StickyHeader />
+            <StickyHeader onOpenAccount={openAccountModal} />
             <main className="pt-4 md:pt-8 pb-8 px-4 w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto flex-1">
               <div className={activeStep === 0 ? 'block' : 'hidden'}><PatientInfo /></div>
               <div className={activeStep === 1 ? 'block' : 'hidden'}>
@@ -551,30 +607,112 @@ const App: React.FC = () => {
               <div className={activeStep === 2 ? 'block' : 'hidden'}><Gabinete /></div>
               <div className={activeStep === 3 ? 'block' : 'hidden'}><MedicationReconciliation /></div>
               <div className={activeStep === 4 ? 'block' : 'hidden'}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><RiskScales /><Recommendations /></div>
+                <RiskScales />
               </div>
-              <div className={activeStep === 5 ? 'block h-full' : 'hidden'}><MedicalNoteGenerator /></div>
-              <div className={activeStep === 6 ? 'block' : 'hidden'}>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-white p-4 rounded-xl shadow-sm border h-[500px] overflow-auto"><PrintView /></div>
-                  <div className="space-y-4 bg-white p-6 rounded-xl shadow-sm border">
-                    <button
-                      onClick={handlePrintPDF}
-                      disabled={isCheckingCredits}
-                      className={`w-full bg-clinical-navy text-white py-4 rounded-xl font-bold flex items-center justify-center gap-2 transition-all ${isCheckingCredits ? 'opacity-70 cursor-wait' : 'hover:scale-[1.02] active:scale-[0.98]'}`}>
-                      <Printer size={20} />
-                      {isCheckingCredits ? 'EVALUANDO ACCESOS...' : 'IMPRIMIR PDF'}
-                    </button>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button onClick={handleDriveUpload} className="bg-white border-2 border-clinical-navy text-clinical-navy py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-xs"><Save size={16} /> DRIVE</button>
-                      <button onClick={handleWhatsApp} className="bg-[#25D366] text-white py-3 rounded-xl font-bold flex items-center justify-center gap-2 text-xs"><MessageCircle size={16} /> WHATSAPP</button>
+              <div className={activeStep === 5 ? 'block' : 'hidden'}>
+                <Recommendations />
+              </div>
+              <div className={activeStep === 6 ? 'block h-full' : 'hidden'}><MedicalNoteGenerator /></div>
+              <div className={activeStep === 7 ? 'block' : 'hidden'}>
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Larger Preview Section with Security Blur */}
+                  <div className="lg:col-span-2 relative bg-white p-4 rounded-xl shadow-sm border w-full h-[600px] sm:h-[850px] overflow-auto scrollbar-thin scrollbar-thumb-slate-200 group">
+                    {/* Security Overlay / Watermark */}
+                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500">
+                      <div className="bg-white/80 backdrop-blur-md px-8 py-4 rounded-2xl border border-white shadow-2xl flex flex-col items-center gap-2">
+                        <Printer size={32} className="text-clinical-navy animate-bounce" />
+                        <span className="text-clinical-navy font-black text-xl tracking-tighter">VISTA PRELIMINAR</span>
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Para obtener el documento final nítido<br />genere el reporte oficial</span>
+                      </div>
+                    </div>
+
+                    <div className="transform scale-[0.4] sm:scale-[0.6] lg:scale-[0.85] xl:scale-[0.95] origin-top blur-[4px] select-none pointer-events-none transition-all duration-700 group-hover:blur-[6px]" style={{ minHeight: '100%' }}>
+                      <PrintView />
+                    </div>
+
+                    {/* Watermark Pattern Layer */}
+                    <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] select-none flex flex-wrap gap-20 justify-center items-center overflow-hidden rotate-[-25deg]">
+                      {Array(15).fill(0).map((_, i) => (
+                        <span key={i} className="text-5xl font-black text-clinical-navy whitespace-nowrap">VPO DIGITAL • VISTA PRELIMINAR • </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Enhanced Actions Section */}
+                  <div className="space-y-6">
+                    <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+                      <div className="flex flex-col gap-4">
+                        {/* Credits Legend - Clickable to open Account Modal */}
+                        <button
+                          onClick={openAccountModal}
+                          className="w-full flex flex-col items-center p-3 bg-slate-50 hover:bg-blue-50 rounded-xl border border-dashed border-slate-200 hover:border-clinical-navy transition-all group cursor-pointer"
+                        >
+                          <span className="text-[10px] font-black text-slate-400 group-hover:text-clinical-navy uppercase tracking-widest mb-1 transition-colors">Estatus de Cuenta</span>
+                          <div className="text-sm font-black text-clinical-navy">
+                            {methods.watch('is_vip_live') ? (
+                              <span className="text-clinical-navy flex items-center gap-1">
+                                <span className="bg-clinical-navy text-white text-[10px] px-2 py-0.5 rounded-full mr-1">VIP</span>
+                                VPOs ILIMITADOS
+                              </span>
+                            ) : (
+                              <>{methods.watch('paid_credits_live') || 0} VPOs + {(methods.watch('free_vpos_used_today_live') || 0) > 0 ? '0' : '1'} FREE</>
+                            )}
+                          </div>
+                          <span className="text-[9px] text-slate-500 mt-1 italic">
+                            {methods.watch('is_vip_live') ? ':// Acceso de Desarrollador Activo' : ((methods.watch('free_vpos_used_today_live') || 0) > 0 ? '🎁 Cortesía diaria ya utilizada' : '🎁 Tienes 1 cortesía disponible')}
+                          </span>
+                          <span className="text-[9px] text-clinical-navy font-black mt-1 opacity-0 group-hover:opacity-100 transition-opacity">👆 Toca para ver tu cuenta →</span>
+                        </button>
+
+                        <button
+                          onClick={handlePrintPDF}
+                          disabled={isCheckingCredits}
+                          className={`w-full bg-clinical-navy text-white py-5 rounded-2xl font-black text-lg flex flex-col items-center justify-center gap-1 transition-all shadow-xl shadow-clinical-navy/20 ${isCheckingCredits ? 'opacity-70 cursor-wait' : 'hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]'}`}>
+                          <div className="flex items-center gap-2">
+                            <Printer size={24} />
+                            <span>IMPRIMIR PDF</span>
+                          </div>
+                          <span className="text-[10px] opacity-70 font-bold uppercase tracking-tighter">Generar Reporte Clínico</span>
+                        </button>
+
+                        <div className="grid grid-cols-2 gap-4">
+                          <button
+                            onClick={handleDriveUpload}
+                            disabled={isUploading}
+                            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 border-slate-100 hover:border-clinical-navy hover:bg-slate-50 transition-all group ${isUploading ? 'opacity-50 cursor-wait' : ''}`}
+                          >
+                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-clinical-navy group-hover:text-white transition-colors">
+                              {isUploading ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                            </div>
+                            <span className="text-xs font-black text-slate-600 group-hover:text-clinical-navy uppercase">Drive</span>
+                          </button>
+
+                          <button
+                            onClick={handleWhatsApp}
+                            className="flex flex-col items-center justify-center gap-2 p-4 rounded-xl border-2 border-slate-100 hover:border-[#25D366] hover:bg-green-50 transition-all group"
+                          >
+                            <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 group-hover:bg-[#25D366] group-hover:text-white transition-colors">
+                              <MessageCircle size={20} />
+                            </div>
+                            <span className="text-xs font-black text-slate-600 group-hover:text-[#25D366] uppercase">WhatsApp</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Quick Tips or Info */}
+                    <div className="bg-blue-50/50 p-4 rounded-xl border border-blue-100">
+                      <h4 className="text-[10px] font-black text-blue-900 uppercase tracking-widest mb-2">Tip de Reporte</h4>
+                      <p className="text-[10px] text-blue-800 leading-relaxed font-medium">
+                        Asegúrate de haber completado la <b>Conciliación Farmacológica</b> en el módulo de Fármacos para que aparezca en el plan post-quirúrgico.
+                      </p>
                     </div>
                   </div>
                 </div>
               </div>
             </main>
           </div>
-          {activeStep === 6 && (
+          {activeStep === 7 && (
             <button onClick={handleCopyNote} className="fixed bottom-24 right-4 bg-green-600 text-white p-4 rounded-full shadow-xl z-40 flex items-center gap-2">
               <Copy size={24} /><span className="hidden md:inline font-bold">Copiar Texto</span>
             </button>
@@ -594,7 +732,7 @@ const App: React.FC = () => {
           <PrintView isPrintMode={true} />
         </div>
 
-        <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} />
+        <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} mode={paywallMode} />
       </FormProvider>
     </AuthGuard>
   );

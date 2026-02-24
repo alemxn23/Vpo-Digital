@@ -59,18 +59,18 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
     const baseTable: React.CSSProperties = {
         borderCollapse: 'collapse',
         tableLayout: 'fixed',
-        width: '774px',
+        width: '700px',
         margin: '0 auto',
         fontFamily: 'Arial, sans-serif',
         color: 'black',
         backgroundColor: 'white',
-        lineHeight: '1.3',
-        fontSize: '11px'
+        lineHeight: '1.1',
+        fontSize: '9px'
     };
 
     const labelStyle: React.CSSProperties = {
         fontWeight: 'bold',
-        fontSize: '10px',
+        fontSize: '9px',
         whiteSpace: 'nowrap',
         lineHeight: '1.1',
         color: '#1a1a1a'
@@ -78,41 +78,46 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
 
     const labelTitleStyle: React.CSSProperties = {
         fontWeight: 'bold',
-        fontSize: '11px',
+        fontSize: '10px',
         backgroundColor: '#f3f4f6',
-        padding: '6px 10px',
+        padding: '5px 8px',
         borderBottom: '1px solid black',
         borderTop: '1px solid black'
     };
 
     const valueStyle: React.CSSProperties = {
-        fontSize: '10px',
+        fontSize: '9px',
         borderBottom: '1px solid #ccc',
-        height: '18px',
+        height: '16px',
         textAlign: 'left',
         paddingLeft: '4px',
         verticalAlign: 'middle',
-        lineHeight: '1.4'
+        lineHeight: '1.2'
     };
 
     return (
-        <div style={{ background: 'white', width: '794px', paddingBottom: '40px' }}>
+        <div style={{ background: 'white', width: '794px', paddingBottom: '20px' }}>
             {/* PAGE 1 */}
-            <div id={page1Id} style={{ width: '794px', minHeight: '1050px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white' }}>
+            <div id={page1Id} style={{ width: '794px', minHeight: '1050px', padding: '20px', boxSizing: 'border-box', backgroundColor: 'white' }}>
 
                 {/* HEADER SECTION */}
                 <table border={0} cellPadding={0} cellSpacing={0} style={baseTable}>
                     <tbody>
                         <tr>
-                            <td width="100" valign="middle" style={{ width: '100px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
-                                <img src="/logo.png" alt="Logo" style={{ width: 'auto', height: '90px' }} />
+                            <td width="90" valign="middle" style={{ width: '90px', borderBottom: '2px solid black', paddingBottom: '12px' }}>
+                                <img src="/logo.png" alt="Logo" style={{ width: 'auto', height: '65px', opacity: 0.7 }} />
                             </td>
-                            <td width="314" valign="bottom" style={{ paddingLeft: '10px', borderBottom: '2px solid black', paddingBottom: '10px' }}>
-                                <div style={{ fontSize: '10px', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.1em', marginBottom: '5px' }}>{data.unidadMedica || 'CMN SIGLO XXI'} • {(data.servicioSolicitante || 'MEDICINA INTERNA').toUpperCase()}</div>
+                            <td width="324" valign="bottom" style={{ paddingLeft: '24px', borderBottom: '2px solid black', paddingBottom: '12px' }}>
+                                <div style={{ fontSize: '15px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.01em', marginBottom: '2px', lineHeight: '1' }}>
+                                    {(data.unidadMedica || 'CMN SIGLO XXI').toUpperCase()}
+                                </div>
+                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', letterSpacing: '0.01em', marginBottom: '4px' }}>
+                                    {(data.servicioSolicitante || 'MEDICINA INTERNA').toUpperCase()}
+                                </div>
                             </td>
-                            <td width="300" align="right" valign="top" style={{ borderBottom: '2px solid black', paddingBottom: '10px' }}>
-                                <div style={{ fontSize: '10px', fontWeight: 'bold' }}>DIRECCIÓN DE PRESTACIONES MÉDICAS</div>
-                                <div style={{ fontSize: '10px', fontWeight: 'bold', textDecoration: 'underline', marginTop: '5px' }}>VALORACIÓN PREOPERATORIA</div>
+                            <td width="300" align="right" valign="top" style={{ borderBottom: '2px solid black', paddingBottom: '12px' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#1e40af', letterSpacing: '0.1em' }}>DIRECCIÓN DE PRESTACIONES MÉDICAS</div>
+                                <div style={{ fontSize: '14px', fontWeight: 900, textDecoration: 'underline', marginTop: '12px', color: 'black', letterSpacing: '0.02em' }}>VALORACIÓN PREOPERATORIA</div>
                             </td>
                         </tr>
                     </tbody>
@@ -423,92 +428,95 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                         </div>
                     </div>
                 )}
+
             </div>
 
-            {/* PAGE BREAK (Visual representation) */}
-            <div style={{ height: '2px', backgroundColor: '#eee', margin: '20px 0', borderStyle: 'dashed', borderWidth: '1px 0' }}></div>
+            {/* PAGE 2 - RECOMMENDATIONS & SIGNATURES */}
+            <div id={page2Id} style={{ width: '794px', minHeight: '1050px', padding: '20px', boxSizing: 'border-box', backgroundColor: 'white' }}>
 
-            {/* PAGE 2 */}
-            <div id={page2Id} style={{ width: '794px', minHeight: '1050px', padding: '40px', boxSizing: 'border-box', backgroundColor: 'white' }}>
-                <table border={1} cellPadding={0} cellSpacing={0} style={{ ...baseTable, border: '2px solid black', minHeight: '850px' }}>
+                {/* PAGE 2 HEADER */}
+                <table border={0} cellPadding={0} cellSpacing={0} style={baseTable}>
                     <tbody>
-                        <tr><td height="40" bgcolor="#1e3a8a" align="center" style={{ color: 'white', fontWeight: 'bold', fontSize: '16px' }}>PLAN DE MANEJO PERIOPERATORIO</td></tr>
                         <tr>
-                            <td valign="top" style={{ padding: '20px' }}>
-                                <table width="100%" border={0} cellPadding={0} cellSpacing={0} style={{ height: '100%' }}>
-                                    <tbody>
-                                        <tr>
-                                            <td width="33%" valign="top" style={{ borderRight: '1px solid #ccc', paddingRight: '15px' }}>
-                                                <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '15px' }}>PRE-QUIRÚRGICO</div>
-                                                <div style={{ fontSize: '10px', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>
-                                                    {data.plan_pre}
-                                                    {data.selectedMeds && data.selectedMeds.length > 0 && (
-                                                        <div style={{ marginTop: '10px', borderTop: '1px dashed #ccc', paddingTop: '5px' }}>
-                                                            <div style={{ fontWeight: 'bold', textDecoration: 'underline', marginBottom: '3px' }}>CONCILIACIÓN FARMACOLÓGICA:</div>
-                                                            {data.selectedMeds.map((med, idx) => (
-                                                                <div key={idx} style={{ marginBottom: '4px' }}>
-                                                                    <span style={{ fontWeight: 'bold' }}>• {med.name}:</span> <span style={{
-                                                                        color: med.action === 'stop' ? '#b91c1c' : med.action === 'adjust' ? '#b45309' : '#15803d',
-                                                                        fontWeight: 'bold'
-                                                                    }}>
-                                                                        {med.action === 'stop' ? 'SUSPENDER' : med.action === 'adjust' ? 'AJUSTAR' : 'CONTINUAR'}
-                                                                    </span>
-                                                                    <div style={{ paddingLeft: '8px', fontStyle: 'italic', color: '#444' }}>{med.instructions}</div>
-                                                                </div>
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            </td>
-                                            <td width="33%" valign="top" style={{ borderRight: '1px solid #ccc', padding: '0 15px' }}>
-                                                <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '15px' }}>TRANS-QUIRÚRGICO</div>
-                                                <div style={{ fontSize: '10px', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{data.plan_trans}</div>
-                                            </td>
-                                            <td width="33%" valign="top" style={{ paddingLeft: '15px' }}>
-                                                <div style={{ ...labelStyle, textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '15px' }}>POST-QUIRÚRGICO</div>
-                                                <div style={{ fontSize: '10px', whiteSpace: 'pre-wrap', lineHeight: '1.6' }}>{data.plan_post}</div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <td width="90" valign="middle" style={{ width: '90px', borderBottom: '2px solid black', paddingBottom: '12px' }}>
+                                <img src="/logo.png" alt="Logo" style={{ width: 'auto', height: '65px', opacity: 0.7 }} />
                             </td>
-                        </tr>
-                        <tr>
-                            <td valign="bottom" style={{ borderTop: '2px solid black', padding: '30px 20px 100px 20px' }}>
-                                {hasOverrides && (
-                                    <div style={{ padding: '10px', backgroundColor: '#fffbeb', fontSize: '10px', fontStyle: 'italic', border: '1px solid #ffeeb3', marginBottom: '60px' }}>
-                                        <b>NOTA DE AUDITORÍA CLÍNICA:</b> Los puntajes de riesgo y escalas presentadas incluyen ajustes manuales realizados por el facultativo basados en la complejidad clínica individual del paciente.
-                                    </div>
-                                )}
-
-                                <table width="100%" border={0} cellPadding={0} cellSpacing={0}>
-                                    <tbody>
-                                        <tr>
-                                            <td width="42%" align="center">
-                                                <div style={{ borderTop: '1px solid black', width: '90%', paddingTop: '15px' }}>
-                                                    <div style={{ fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>{data.residente || 'DR. MÉDICO RESIDENTE'}</div>
-                                                    <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>MÉDICO RESIDENTE</div>
-                                                    <div style={{ fontSize: '9px', color: '#666' }}>MATRÍCULA: {data.residente_matricula || '---'}</div>
-                                                </div>
-                                            </td>
-                                            <td width="16%"></td>
-                                            <td width="42%" align="center">
-                                                <div style={{ borderTop: '1px solid black', width: '90%', paddingTop: '15px' }}>
-                                                    <div style={{ fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>{data.elaboro || 'DR. MÉDICO ADSCRITO'}</div>
-                                                    <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>MÉDICO ADSCRITO</div>
-                                                    <div style={{ fontSize: '9px', color: '#666' }}>MATRÍCULA: {data.matricula || '---'}</div>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
+                            <td width="324" valign="bottom" style={{ paddingLeft: '24px', borderBottom: '2px solid black', paddingBottom: '12px' }}>
+                                <div style={{ fontSize: '15px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.01em', marginBottom: '2px', lineHeight: '1' }}>
+                                    {(data.unidadMedica || 'CMN SIGLO XXI').toUpperCase()}
+                                </div>
+                                <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', letterSpacing: '0.01em', marginBottom: '4px' }}>
+                                    {(data.servicioSolicitante || 'MEDICINA INTERNA').toUpperCase()}
+                                </div>
+                            </td>
+                            <td width="300" align="right" valign="top" style={{ borderBottom: '2px solid black', paddingBottom: '12px' }}>
+                                <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#1e40af', letterSpacing: '0.1em' }}>DIRECCIÓN DE PRESTACIONES MÉDICAS</div>
+                                <div style={{ fontSize: '14px', fontWeight: 900, textDecoration: 'underline', marginTop: '12px', color: 'black', letterSpacing: '0.02em' }}>VALORACIÓN PREOPERATORIA</div>
+                                <div style={{ fontSize: '9px', color: '#334155', marginTop: '4px' }}>Paciente: {data.nombre} | NSS: {data.nss}</div>
                             </td>
                         </tr>
                     </tbody>
                 </table>
+
+                <table width="714" height="10"><tbody><tr><td></td></tr></tbody></table>
+
+                {/* RECOMMENDATIONS SECTION */}
+                <div style={{ marginTop: '10px' }}>
+                    <div style={{ fontWeight: 'bold', fontSize: '10px', textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '12px' }}>PRE-QUIRÚRGICO</div>
+                    <div style={{ fontSize: '9px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{data.plan_pre}</div>
+                    {data.selectedMeds && data.selectedMeds.length > 0 && !(data.plan_pre && data.plan_pre.includes('CONCILIACIÓN FARMACOLÓGICA')) && (
+                        <div style={{ marginTop: '10px', borderTop: '1px dashed #ccc', paddingTop: '5px', fontSize: '9px' }}>
+                            <div style={{ fontWeight: 'bold', textDecoration: 'underline', marginBottom: '3px' }}>CONCILIACIÓN FARMACOLÓGICA:</div>
+                            {data.selectedMeds.map((med, idx) => (
+                                <div key={idx} style={{ marginBottom: '4px' }}>
+                                    <span style={{ fontWeight: 'bold' }}>• {med.name}:</span>{' '}
+                                    <span style={{ color: med.action === 'stop' ? '#b91c1c' : med.action === 'adjust' ? '#b45309' : '#15803d', fontWeight: 'bold' }}>
+                                        {med.action === 'stop' ? 'SUSPENDER' : med.action === 'adjust' ? 'AJUSTAR' : 'CONTINUAR'}
+                                    </span>
+                                    <div style={{ paddingLeft: '8px', fontStyle: 'italic', color: '#444' }}>{med.instructions}</div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                    <div style={{ fontWeight: 'bold', fontSize: '10px', textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '12px', marginTop: '18px' }}>TRANS-QUIRÚRGICO</div>
+                    <div style={{ fontSize: '9px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{data.plan_trans}</div>
+                    <div style={{ fontWeight: 'bold', fontSize: '10px', textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '12px', marginTop: '18px' }}>POST-QUIRÚRGICO</div>
+                    <div style={{ fontSize: '9px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{data.plan_post}</div>
+                </div>
+
+                {/* DOCTORS SECTION */}
+                <div style={{ marginTop: '40px', borderTop: '2px solid black', paddingTop: '20px' }}>
+                    {hasOverrides && (
+                        <div style={{ padding: '8px', backgroundColor: '#fffbeb', fontSize: '9px', fontStyle: 'italic', border: '1px solid #ffeeb3', marginBottom: '30px' }}>
+                            <b>NOTA DE AUDITORÍA CLÍNICA:</b> Los puntajes de riesgo y escalas presentadas incluyen ajustes manuales realizados por el facultativo basados en la complejidad clínica individual del paciente.
+                        </div>
+                    )}
+                    <table width="100%" border={0} cellPadding={0} cellSpacing={0}>
+                        <tbody>
+                            <tr>
+                                <td width="42%" align="center">
+                                    <div style={{ borderTop: '1px solid black', width: '90%', paddingTop: '15px' }}>
+                                        <div style={{ fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>{data.residente || 'DR. MÉDICO RESIDENTE'}</div>
+                                        <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>MÉDICO RESIDENTE</div>
+                                        <div style={{ fontSize: '9px', color: '#666' }}>MATRÍCULA: {data.residente_matricula || '---'}</div>
+                                    </div>
+                                </td>
+                                <td width="16%"></td>
+                                <td width="42%" align="center">
+                                    <div style={{ borderTop: '1px solid black', width: '90%', paddingTop: '15px' }}>
+                                        <div style={{ fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>{data.elaboro || 'DR. MÉDICO ADSCRITO'}</div>
+                                        <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>MÉDICO ADSCRITO</div>
+                                        <div style={{ fontSize: '9px', color: '#666' }}>MATRÍCULA: {data.matricula || '---'}</div>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     );
 };
 
 export default PrintView;
+

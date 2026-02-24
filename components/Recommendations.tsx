@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { VPOData } from '../types';
-import { ClipboardList, CheckCircle2, AlertTriangle, ArrowRight, Syringe, HeartPulse, BedDouble, Stethoscope, Activity, Droplets } from 'lucide-react';
+import { ClipboardList, CheckCircle2, AlertTriangle, ArrowRight, Syringe, HeartPulse, BedDouble, Stethoscope, Activity, Droplets, Info, Check, X } from 'lucide-react';
 
 const Recommendations: React.FC = () => {
     const { register, watch, setValue } = useFormContext<VPOData>();
+    const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
 
     const metasChecked = watch('metasTerapeuticas');
     const selectedMeds = watch('selectedMeds') || [];
@@ -23,6 +24,44 @@ const Recommendations: React.FC = () => {
     };
 
     // --- BUSINESS RULES & LOGIC HELPERS ---
+
+    // --- GLOBAL GOALS & TARGETS ---
+    const getGlobalTargets = () => {
+        const isHighCV = data.icc || data.cardiopatiaIsquemica || (data.edad || 0) > 75 || data.enfRenalCronica;
+        const isStrictBP = (data.diabetes && (data.enfRenalCronica || (data.tfg || 0) < 60)) || data.hta_control === 'descontrolada';
+
+        // Targets
+        const hbTarget = isHighCV ? 10.0 : 8.0;
+        const bpTarget = isStrictBP ? { sys: 130, dia: 80 } : { sys: 140, dia: 90 };
+        const gluTarget = data.diabetes ? { min: 140, max: 180 } : { min: 70, max: 140 };
+
+        // Real Values Check (Validation)
+        const currentHb = data.hb || 0;
+        const currentSys = data.taSistolica || 0;
+        const currentDia = data.taDiastolica || 0;
+        const currentGlu = data.glucosaCentral || data.glucosaCapilar || 0;
+
+        return {
+            hb: {
+                target: hbTarget,
+                current: currentHb,
+                isOk: currentHb >= hbTarget || currentHb === 0,
+                label: `> ${hbTarget.toFixed(1)}`
+            },
+            bp: {
+                target: bpTarget,
+                current: { sys: currentSys, dia: currentDia },
+                isOk: (currentSys > 0 ? (currentSys < bpTarget.sys && currentDia < bpTarget.dia) : true),
+                label: `< ${bpTarget.sys}/${bpTarget.dia}`
+            },
+            glu: {
+                target: gluTarget,
+                current: currentGlu,
+                isOk: (currentGlu > 0 ? (currentGlu >= gluTarget.min && currentGlu <= gluTarget.max) : true),
+                label: `${gluTarget.min}-${gluTarget.max}`
+            }
+        };
+    };
 
     const getInsulinSchema = () => {
         // Logic: Resistant Schema if Basal Insulin used OR BMI > 35
@@ -123,7 +162,7 @@ const Recommendations: React.FC = () => {
             // 3. SURGERY SPECIFIC
             strategy = "• FLUIDO: Solución Salina 0.9% (ÚNICA opción permitida).\n• ALERTA: Prohibido el uso de soluciones hipotónicas o Ringer Lactato en grandes volúmenes (Riesgo de Edema Cerebral).";
         } else if (isThoracic) {
-            strategy = "• ESTRATEGIA: Estrictamente Restrictiva (< 2 ml/kg/h).\n• Meta: Balance acumulado < 1.5L en 24h. Pulmón sensible. Manejar hipotensión con vasopresores.";
+            strategy = "• ESTRATEGIA: Estrictamente Restrictiva (< 2 ml/kg/h).\n• Meta: Balance acumulado < 1.5L in 24h. Pulmón sensible. Manejar hipotensión con vasopresores.";
         } else if (isAbdMajor) {
             strategy = "• ESTRATEGIA: Moderadamente Liberal (Estudio RELIEF).\n• Fluido: Cristaloides Balanceados (Hartmann/Plasma-Lyte). Evitar Salina 0.9% (Acidosis hiperclorémica).\n• Meta: 10-12 ml/kg/h intraop. Balance positivo final 1-2L.";
         } else if (isAmbulatory) {
@@ -177,6 +216,7 @@ const Recommendations: React.FC = () => {
     };
 
     const generatePrePlan = () => {
+        const targets = getGlobalTargets();
         const medsPlan = selectedMeds.length > 0
             ? "\n\n--- CONCILIACIÓN DE FÁRMACOS ---\n" + selectedMeds.map(m => `• ${m.name}: ${m.action === 'stop' ? 'SUSPENDER' : m.action === 'adjust' ? 'AJUSTAR' : 'CONTINUAR'} (${m.instructions})`).join('\n')
             : "";
@@ -243,15 +283,10 @@ const Recommendations: React.FC = () => {
     };
 
     const generateTransPlan = () => {
-        // Hemodynamic & Fluid Logic (Mirrored from Engine)
-        const fluidRec = getFluidRecommendation(); // Use the engine output
+        const targets = getGlobalTargets();
+        const fluidRec = getFluidRecommendation();
 
-        const isHighCVRisk = data.icc || data.cardiopatiaIsquemica || data.edad > 75 || data.enfRenalCronica;
-        const hbTarget = isHighCVRisk ? "10.0 g/dL" : "8.0 g/dL";
-        // Extract just the strategy line if needed, or append to liquids
-        // For Trans plan, we want specific hemodynamic goals too.
-
-        const hemodynamics = "• METAS HEMODINÁMICAS: TA < 140/90 mmHg. Evitar hipotensión. Evitar sobrecarga hídrica.";
+        const hemodynamics = `• METAS HEMODINÁMICAS: TA ${targets.bp.label} mmHg. Evitar hipotensión. Evitar sobrecarga hídrica.`;
 
         // Antibiotic Redosing logic based on site
         const site = data.gupta_surgical_site || 'other';
@@ -262,7 +297,7 @@ const Recommendations: React.FC = () => {
 
         // Insulin Logic
         const insulinInstruction = data.diabetes
-            ? `\n• Mantener Glucemia 140-180 mg/dL.${getInsulinSchema()}`
+            ? `\n• Mantener Glucemia ${targets.glu.label} mg/dL.${getInsulinSchema()}`
             : "";
 
         // Steroid Stress Dose Logic (If any med has stress dose instruction)
@@ -276,18 +311,19 @@ const Recommendations: React.FC = () => {
 
         return `• A cargo de Anestesiología.
 • Monitoreo cardiaco y pulsioximetría continuos.
-• METAS: Hb > ${hbTarget}. Uresis ≥ 0.5ml/kg/h.
-• METAS HEMODINÁMICAS: TA < 140/90 mmHg. Evitar hipotensión.
+• METAS: Hb ${targets.hb.label} g/dL. Uresis ≥ 0.5ml/kg/h.
+• METAS HEMODINÁMICAS: TA ${targets.bp.label} mmHg. Evitar hipotensión.
 • LÍQUIDOS: \n${fluidRec}${antibioticInstructions}${insulinInstruction}${steroidInstruction}${ecoRecs}`;
     };
 
     const generatePostPlan = () => {
+        const targets = getGlobalTargets();
         const trombo = getThromboprophylaxisRec();
         const site = data.gupta_surgical_site || 'other';
         const antibioticDuration = (site === 'cardiac' || site === 'aortic') ? '48h' : '24h';
 
         return `• Al tolerar la VO reiniciar tratamiento habitual.
-• METAS: Glucosa ${data.diabetes ? '140-180' : '70-140'} mg/dL. TA < 140/90 mmHg.
+• METAS: Glucosa ${targets.glu.label} mg/dL. TA ${targets.bp.label} mmHg.
 • TROMBOPROFILAXIS: ${trombo}
 • ANTIBIÓTICO: Suspender en <${antibioticDuration} postoperatorias si no hay evidencia de infección.
 • Vigilar datos de sangrado e infección en sitio quirúrgico.
@@ -307,7 +343,7 @@ const Recommendations: React.FC = () => {
             if (data.plan_trans !== trans) setValue('plan_trans', trans);
             if (data.plan_post !== post) setValue('plan_post', post);
         }
-    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica, data.flag_estenosis_aortica_severa, data.stopbang_risk, data.fragilidad_score]);
+    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica, data.flag_estenosis_aortica_severa, data.stopbang_risk, data.fragilidad_score, data.edad, data.enfRenalCronica, data.hta_control]);
 
     // Determine Meta Labels based on risk
     const isNephroCardio = data.enfRenalCronica || data.icc || data.cardiopatiaIsquemica;
@@ -339,114 +375,232 @@ const Recommendations: React.FC = () => {
                 </label>
             </div>
 
-            {/* 3-COLUMN LAYOUT */}
-            <div className="p-4 grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* PHYSICIAN SECTION - Moved to top */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4 p-5 border-b border-gray-200 bg-slate-50/30">
+                <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-tight">Médico Adscrito</label>
+                    <input {...register('elaboro')} className="w-full bg-white border-gray-200 rounded-lg shadow-sm text-xs p-2 border focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Nombre completo..." />
+                </div>
+                <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-tight">Matrícula (Adscrito)</label>
+                    <input {...register('matricula')} className="w-full bg-white border-gray-200 rounded-lg shadow-sm text-xs p-2 border focus:ring-blue-500 focus:border-blue-500 transition-all" />
+                </div>
+                <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-tight">Médico Residente</label>
+                    <input {...register('residente')} className="w-full bg-white border-gray-200 rounded-lg shadow-sm text-xs p-2 border focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Nombre completo..." />
+                </div>
+                <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-tight">Matrícula (Residente)</label>
+                    <input {...register('residente_matricula')} className="w-full bg-white border-gray-200 rounded-lg shadow-sm text-xs p-2 border focus:ring-blue-500 focus:border-blue-500 transition-all" />
+                </div>
+            </div>
 
-                {/* COL 1: PRE-QX */}
-                <div className="flex flex-col h-full bg-blue-50/30 rounded-xl border border-blue-100 overflow-hidden">
-                    <div className="bg-blue-100/50 p-3 border-b border-blue-200 flex items-center gap-2">
-                        <div className="bg-blue-600 text-white p-1 rounded"><Stethoscope size={14} /></div>
-                        <h3 className="font-bold text-sm text-blue-900">PRE-QUIRÚRGICO</h3>
+            {/* INDICATORS / METAS GLOBALES - Moved to top */}
+            <div className="bg-clinical-navy text-white p-4 flex flex-col lg:flex-row justify-between items-center gap-4 px-8 border-b border-white/10 shadow-[0_4px_30px_rgba(0,0,0,0.1)] relative">
+
+                {/* EXPLANATION OVERLAY / POPOVER */}
+                {selectedGoal && (
+                    <div className="absolute inset-0 bg-clinical-navy/95 backdrop-blur-md z-50 flex items-center justify-between px-8 animate-clinical-enter">
+                        <div className="flex items-center gap-6 max-w-4xl">
+                            <div className="p-3 bg-white/10 rounded-xl border border-white/20">
+                                {selectedGoal === 'bp' && <Activity className="text-green-400" size={24} />}
+                                {selectedGoal === 'glu' && <Syringe className="text-blue-400" size={24} />}
+                                {selectedGoal === 'hb' && <HeartPulse className="text-red-400" size={24} />}
+                                {selectedGoal === 'uresis' && <Droplets className="text-cyan-400" size={24} />}
+                            </div>
+                            <div>
+                                <h4 className="text-sm font-black text-white uppercase tracking-wider mb-1">
+                                    Justificación Clínica: {selectedGoal === 'bp' ? 'Tensión Arterial' : selectedGoal === 'glu' ? 'Glucosa' : selectedGoal === 'hb' ? 'Hemoglobina' : 'Gasto Urinario'}
+                                </h4>
+                                <p className="text-xs text-blue-100/80 leading-relaxed max-w-2xl italic">
+                                    {selectedGoal === 'hb' && "Mantener Hb > 8.0 g/dL en pacientes sanos y > 10.0 g/dL en pacientes con reserva cardiovascular limitada (ICC, Isquemia, Edad > 75) para asegurar el aporte de oxígeno tisular (DO2) y evitar isquemia perioperatoria. (Guía ESAIC/ASA)"}
+                                    {selectedGoal === 'bp' && "Mantener la PAM dentro del 20% de la basal. Objetivos más estrictos (<130/80) en pacientes con ERC o DM descontrolada para protección de órgano blanco y reducción de riesgo de evento cerebral. (Guía ACC/AHA)"}
+                                    {selectedGoal === 'glu' && "En pacientes con diabetes, el rango 140-180 mg/dL equilibra la prevención de hipoglucemia con la reducción del riesgo de infección de sitio quirúrgico. En no diabéticos, mantener < 140 mg/dL. (Guía ADA/NICE)"}
+                                    {selectedGoal === 'uresis' && "El gasto urinario ≥ 0.5 ml/kg/h es un indicador fundamental de la perfusión renal y estado de volumen. La oliguria persistente sugiere hipovolemia o daño renal agudo incipiente. (Guía KDIGO)"}
+                                </p>
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setSelectedGoal(null)}
+                            className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/60 hover:text-white"
+                        >
+                            <X size={20} />
+                        </button>
                     </div>
-                    <div className="p-2 flex-1">
+                )}
+
+                {(() => {
+                    const targets = getGlobalTargets();
+                    return (
+                        <div className="flex flex-wrap items-center justify-center lg:justify-start gap-x-8 gap-y-3">
+                            <div className="flex flex-col">
+                                <span className="text-[8px] font-black text-blue-200 uppercase tracking-[0.2em] mb-1">Indicadores</span>
+                                <h4 className="text-xs font-black text-white">METAS GLOBALES</h4>
+                            </div>
+
+                            <div className="h-8 w-px bg-white/10 hidden lg:block" />
+
+                            {/* BP Indicator */}
+                            <div
+                                onClick={() => setSelectedGoal('bp')}
+                                className="flex items-center gap-3 group transition-all hover:scale-105 cursor-help"
+                            >
+                                <div className={`p-1.5 rounded-lg border transition-colors ${targets.bp.isOk ? 'bg-green-500/20 border-green-500/30 text-green-400' : 'bg-red-500/20 border-red-500/30 text-red-400'}`}>
+                                    <Activity size={16} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase leading-none">Tensión Arterial</span>
+                                        <Info size={8} className="text-white/20 group-hover:text-white/50 transition-colors" />
+                                    </div>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <span className="text-sm font-black text-white leading-none">{targets.bp.label}</span>
+                                        {targets.bp.current.sys > 0 && (
+                                            <span className={`text-[10px] font-bold ${targets.bp.isOk ? 'text-green-400' : 'text-red-400'}`}>
+                                                (Real: {targets.bp.current.sys}/{targets.bp.current.dia})
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Glucose Indicator */}
+                            <div
+                                onClick={() => setSelectedGoal('glu')}
+                                className="flex items-center gap-3 group transition-all hover:scale-105 cursor-help"
+                            >
+                                <div className={`p-1.5 rounded-lg border transition-colors ${targets.glu.isOk ? 'bg-blue-500/20 border-blue-500/30 text-blue-400' : 'bg-red-500/20 border-red-500/30 text-red-400'}`}>
+                                    <Syringe size={16} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase leading-none">Glucosa Central</span>
+                                        <Info size={8} className="text-white/20 group-hover:text-white/50 transition-colors" />
+                                    </div>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <span className="text-sm font-black text-white leading-none">{targets.glu.label}</span>
+                                        {targets.glu.current > 0 && (
+                                            <span className={`text-[10px] font-bold ${targets.glu.isOk ? 'text-blue-400' : 'text-red-400'}`}>
+                                                (Real: {targets.glu.current})
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Hemoglobin Indicator */}
+                            <div
+                                onClick={() => setSelectedGoal('hb')}
+                                className="flex items-center gap-3 group transition-all hover:scale-105 cursor-help"
+                            >
+                                <div className={`p-1.5 rounded-lg border transition-colors ${targets.hb.isOk ? 'bg-red-500/20 border-red-500/30 text-red-400' : 'bg-orange-500/20 border-orange-500/30 text-orange-400'}`}>
+                                    <HeartPulse size={16} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase leading-none">Hemoglobina (Target)</span>
+                                        <Info size={8} className="text-white/20 group-hover:text-white/50 transition-colors" />
+                                    </div>
+                                    <div className="flex items-baseline gap-1.5">
+                                        <span className="text-sm font-black text-white leading-none">{targets.hb.label}</span>
+                                        {targets.hb.current > 0 && (
+                                            <span className={`text-[10px] font-bold ${targets.hb.isOk ? 'text-white' : 'text-red-400 animate-pulse'}`}>
+                                                (Real: {targets.hb.current})
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Uresis Indicator */}
+                            <div
+                                onClick={() => setSelectedGoal('uresis')}
+                                className="flex items-center gap-3 group transition-all hover:scale-105 cursor-help"
+                            >
+                                <div className="bg-cyan-500/20 p-1.5 rounded-lg border border-cyan-500/30 text-cyan-400">
+                                    <Droplets size={16} />
+                                </div>
+                                <div className="flex flex-col">
+                                    <div className="flex items-center gap-1.5 mb-1">
+                                        <span className="text-[9px] font-bold text-gray-400 uppercase leading-none">Uresis (Gasto)</span>
+                                        <Info size={8} className="text-white/20 group-hover:text-white/50 transition-colors" />
+                                    </div>
+                                    <span className="text-sm font-black text-white leading-none">≥ 0.5 <span className="text-[10px] text-gray-400 font-medium ml-1">ml/kg/h</span></span>
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })()}
+            </div>
+
+            {/* VERTICAL STACKED LAYOUT */}
+            <div className="p-4 flex flex-col gap-4">
+
+                {/* SECTION 1: PRE-QX */}
+                <div className="flex flex-col bg-slate-50/50 rounded-2xl border border-slate-100 overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-blue-200 group">
+                    <div className="bg-blue-600/10 p-3 border-b border-blue-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                            <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm"><Stethoscope size={16} /></div>
+                            <h3 className="font-black text-xs text-blue-900 uppercase tracking-wider">Pre-Quirúrgico</h3>
+                        </div>
+                        <ArrowRight size={14} className="text-blue-300 group-hover:translate-x-1 transition-transform" />
+                    </div>
+                    <div className="p-3 flex flex-col">
                         <textarea
                             {...register('plan_pre')}
-                            className="w-full h-full min-h-[250px] bg-transparent border-none resize-none text-xs leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium"
+                            className="w-full min-h-[160px] bg-transparent border-none resize-none text-[13px] leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium placeholder:text-slate-400 placeholder:italic"
                             placeholder="Ayuno, Soluciones, Antibióticos..."
                         />
+                        <div className="mt-2 p-2 bg-blue-50/50 rounded-lg border border-blue-100/50">
+                            <p className="text-[10px] text-blue-600 font-bold flex items-center gap-1"><Info size={12} /> Sugerencia: ASHP/IDSA 2024</p>
+                        </div>
                     </div>
                 </div>
 
-                {/* COL 2: TRANS-QX */}
-                <div className="flex flex-col h-full bg-amber-50/30 rounded-xl border border-amber-100 overflow-hidden">
-                    <div className="bg-amber-100/50 p-3 border-b border-amber-200 flex items-center gap-2">
-                        <div className="bg-amber-600 text-white p-1 rounded"><HeartPulse size={14} /></div>
-                        <h3 className="font-bold text-sm text-amber-900">TRANS-QUIRÚRGICO</h3>
+                {/* SECTION 2: TRANS-QX */}
+                <div className="flex flex-col bg-slate-50/50 rounded-2xl border border-slate-100 overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-amber-200 group">
+                    <div className="bg-amber-600/10 p-3 border-b border-amber-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                            <div className="bg-amber-600 text-white p-1.5 rounded-lg shadow-sm"><HeartPulse size={16} /></div>
+                            <h3 className="font-black text-xs text-amber-900 uppercase tracking-wider">Trans-Quirúrgico</h3>
+                        </div>
+                        <ArrowRight size={14} className="text-amber-300 group-hover:translate-x-1 transition-transform" />
                     </div>
-                    <div className="p-2 flex-1">
+                    <div className="p-3 flex flex-col">
                         <textarea
                             {...register('plan_trans')}
-                            className="w-full h-full min-h-[250px] bg-transparent border-none resize-none text-xs leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium"
+                            className="w-full min-h-[160px] bg-transparent border-none resize-none text-[13px] leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium placeholder:text-slate-400 placeholder:italic"
                             placeholder="Metas hemodinámicas, Esquema Insulina..."
                         />
+                        <div className="mt-2 p-2 bg-amber-50/50 rounded-lg border border-amber-100/50">
+                            <p className="text-[10px] text-amber-600 font-bold flex items-center gap-1"><Activity size={12} /> Meta: GDFT (Goal Directed)</p>
+                        </div>
                     </div>
                 </div>
 
-                {/* COL 3: POST-QX */}
-                <div className="flex flex-col h-full bg-green-50/30 rounded-xl border border-green-100 overflow-hidden">
-                    <div className="bg-green-100/50 p-3 border-b border-green-200 flex items-center gap-2">
-                        <div className="bg-green-600 text-white p-1 rounded"><BedDouble size={14} /></div>
-                        <h3 className="font-bold text-sm text-green-900">POST-QUIRÚRGICO</h3>
+                {/* SECTION 3: POST-QX */}
+                <div className="flex flex-col bg-slate-50/50 rounded-2xl border border-slate-100 overflow-hidden shadow-sm transition-all hover:shadow-md hover:border-green-200 group">
+                    <div className="bg-green-600/10 p-3 border-b border-green-100 flex items-center justify-between">
+                        <div className="flex items-center gap-2.5">
+                            <div className="bg-green-600 text-white p-1.5 rounded-lg shadow-sm"><BedDouble size={16} /></div>
+                            <h3 className="font-black text-xs text-green-900 uppercase tracking-wider">Post-Quirúrgico</h3>
+                        </div>
+                        <ArrowRight size={14} className="text-green-300 group-hover:translate-x-1 transition-transform" />
                     </div>
-                    <div className="p-2 flex-1">
+                    <div className="p-3 flex flex-col">
                         <textarea
                             {...register('plan_post')}
-                            className="w-full h-full min-h-[250px] bg-transparent border-none resize-none text-xs leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium"
+                            className="w-full min-h-[160px] bg-transparent border-none resize-none text-[13px] leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium placeholder:text-slate-400 placeholder:italic"
                             placeholder="Reinicio V.O., Tromboprofilaxis, Alta..."
                         />
+                        <div className="mt-2 p-2 bg-green-50/50 rounded-lg border border-green-100/50">
+                            <p className="text-[10px] text-green-600 font-bold flex items-center gap-1"><Check size={12} /> Alta sugerida: Protocolo ERAS</p>
+                        </div>
                     </div>
                 </div>
 
             </div>
 
-            {/* FOOTER METAS */}
-            <div className="bg-gray-800 text-white p-3 flex justify-between items-center text-[10px] md:text-xs px-6">
-                <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                    <span className="font-bold text-gray-400 uppercase tracking-wider">Metas Globales:</span>
-
-                    <div className="flex items-center gap-2">
-                        <Activity size={14} className="text-green-400" />
-                        <span className="font-medium text-gray-200">TA:</span>
-                        <span className="font-bold">
-                            {data.cardiopatiaIsquemica || data.icc || (data.lee && (data.lee === 'III' || data.lee === 'IV')) || data.edad > 75
-                                ? '< 140/90 mmHg'
-                                : '< 140/90 mmHg'}
-                        </span>
-                        {/* Note: Standard medical target is 140/90, 180/110 is cancelation limit. User might prefer 140/90 as 'meta' */}
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <Syringe size={14} className="text-blue-400" />
-                        <span className="font-medium text-gray-200">Glucosa:</span>
-                        <span className="font-bold">
-                            {data.diabetes ? '140-180 mg/dL' : '70-140 mg/dL'}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-2 border-l border-gray-600 pl-6 ml-2">
-                        <HeartPulse size={14} className="text-red-400" />
-                        <span className="font-medium text-gray-200">Meta Hb:</span>
-                        <span className="font-bold">
-                            {isNephroCardio || data.edad > 75 ? '> 10.0 g/dL' : '> 8.0 g/dL'}
-                        </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                        <Droplets size={14} className="text-cyan-400" />
-                        <span className="font-medium text-gray-200">Uresis:</span>
-                        <span className="font-bold">≥ 0.5 ml/kg/h</span>
-                    </div>
-                </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 border-t border-gray-200">
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Médico Adscrito (Elaboró)</label>
-                    <input {...register('elaboro')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" placeholder="Dr..." />
-                </div>
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Matrícula (Adscrito)</label>
-                    <input {...register('matricula')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" />
-                </div>
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Médico Residente</label>
-                    <input {...register('residente')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" placeholder="Dr..." />
-                </div>
-                <div>
-                    <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">Matrícula (Residente)</label>
-                    <input {...register('residente_matricula')} className="w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 border" />
-                </div>
-            </div>
         </div>
     );
 };
