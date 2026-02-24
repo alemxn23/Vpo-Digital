@@ -109,10 +109,10 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                             </td>
                             <td width="324" valign="bottom" style={{ paddingLeft: '24px', borderBottom: '2px solid black', paddingBottom: '12px' }}>
                                 <div style={{ fontSize: '15px', fontWeight: 900, color: '#0f172a', letterSpacing: '-0.01em', marginBottom: '2px', lineHeight: '1' }}>
-                                    {(data.unidadMedica || 'CMN SIGLO XXI').toUpperCase()}
+                                    {(data.unidadMedica || '').toUpperCase()}
                                 </div>
                                 <div style={{ fontSize: '13px', fontWeight: 700, color: '#334155', letterSpacing: '0.01em', marginBottom: '4px' }}>
-                                    {(data.servicioSolicitante || 'MEDICINA INTERNA').toUpperCase()}
+                                    {(data.servicioSolicitante || '').toUpperCase()}
                                 </div>
                             </td>
                             <td width="300" align="right" valign="top" style={{ borderBottom: '2px solid black', paddingBottom: '12px' }}>
