@@ -216,10 +216,7 @@ const Recommendations: React.FC = () => {
     };
 
     const generatePrePlan = () => {
-        const targets = getGlobalTargets();
-        const medsPlan = selectedMeds.length > 0
-            ? "\n\n--- CONCILIACIÓN DE FÁRMACOS ---\n" + selectedMeds.map(m => `• ${m.name}: ${m.action === 'stop' ? 'SUSPENDER' : m.action === 'adjust' ? 'AJUSTAR' : 'CONTINUAR'} (${m.instructions})`).join('\n')
-            : "";
+        const medsPlan = ""; // Removed redundant text summary to avoid duplication in report
 
         // DUKE ALERT IN PLAN
         const dukeAlert = (data.duke_resultado === 'Definitivo' || data.duke_resultado === 'Posible')
@@ -234,7 +231,6 @@ const Recommendations: React.FC = () => {
 
         const antibioticRegimen = getAntibioticRegimen();
         const fluidRec = getFluidRecommendation();
-        const tromboRec = getThromboprophylaxisRec();
 
         // Frailty Alert
         const frailtyScore = data.fragilidad_score || 1;
@@ -257,7 +253,7 @@ const Recommendations: React.FC = () => {
 • ${aineInstruction}
 • Profilaxis antibiótica: ${antibioticRegimen} (Ref: ASHP Guidelines / Sanford 2024)
 • Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas según esquema (Ver Post)' : 'Deambulación temprana / Medias TEDs'}. (Ref: ACCP / PAUSE)
-• Soluciones: \n${fluidRec}${medsPlan}${dukeAlert}${frailtyRec}${stopBangRec}`;
+• Soluciones: \n${fluidRec}${dukeAlert}${frailtyRec}${stopBangRec}`;
     };
 
     const getEcoRecommendations = () => {

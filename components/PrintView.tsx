@@ -463,14 +463,19 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                 {/* RECOMMENDATIONS SECTION */}
                 <div style={{ marginTop: '10px' }}>
                     <div style={{ fontWeight: 'bold', fontSize: '10px', textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '12px' }}>PRE-QUIRÚRGICO</div>
-                    <div style={{ fontSize: '9px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{data.plan_pre}</div>
-                    {data.selectedMeds && data.selectedMeds.length > 0 && !(data.plan_pre && data.plan_pre.includes('CONCILIACIÓN FARMACOLÓGICA')) && (
+                    <div style={{ fontSize: '9px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                        {data.plan_pre?.split('--- CONCILIACIÓN DE FÁRMACOS ---')[0].trim()}
+                    </div>
+                    {data.selectedMeds && data.selectedMeds.length > 0 && (
                         <div style={{ marginTop: '10px', borderTop: '1px dashed #ccc', paddingTop: '5px', fontSize: '9px' }}>
                             <div style={{ fontWeight: 'bold', textDecoration: 'underline', marginBottom: '3px' }}>CONCILIACIÓN FARMACOLÓGICA:</div>
                             {data.selectedMeds.map((med, idx) => (
                                 <div key={idx} style={{ marginBottom: '4px' }}>
                                     <span style={{ fontWeight: 'bold' }}>• {med.name}:</span>{' '}
-                                    <span style={{ color: med.action === 'stop' ? '#b91c1c' : med.action === 'adjust' ? '#b45309' : '#15803d', fontWeight: 'bold' }}>
+                                    <span style={{
+                                        color: med.action === 'stop' ? '#b91c1c' : med.action === 'adjust' ? '#ca8a04' : '#15803d',
+                                        fontWeight: 'bold'
+                                    }}>
                                         {med.action === 'stop' ? 'SUSPENDER' : med.action === 'adjust' ? 'AJUSTAR' : 'CONTINUAR'}
                                     </span>
                                     <div style={{ paddingLeft: '8px', fontStyle: 'italic', color: '#444' }}>{med.instructions}</div>
