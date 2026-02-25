@@ -352,6 +352,7 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
                                             className={`w-full h-full object-cover ${cameraOn ? 'block' : 'hidden'}`}
                                             muted
                                             playsInline
+                                            autoPlay
                                         />
                                         {!cameraOn && (
                                             <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-500 bg-slate-800 z-10">

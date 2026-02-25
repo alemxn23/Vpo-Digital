@@ -403,16 +403,44 @@ const App: React.FC = () => {
         const { data: authData } = await supabase.auth.getUser();
         const user = authData?.user;
         if (user) {
-          const { data: profile } = await supabase
+          const { data: profile, error: profileFetchErr } = await supabase
             .from('profiles')
             .select('paid_credits, free_vpos_used_today, plan_type, full_name, cedula_profesional, verification_status, verified')
             .eq('id', user.id)
-            .single();
+            .maybeSingle();
 
           let finalFullName = profile?.full_name || '';
 
-          if (profile) {
-            // Auto-sync Google name if empty
+          // If no profile exists (e.g., new Google login without trigger), create it!
+          if (!profile && !profileFetchErr) {
+            finalFullName = user.user_metadata?.full_name || '';
+            const { data: newProfile, error: insertErr } = await supabase.from('profiles').insert({
+              id: user.id,
+              full_name: finalFullName,
+              plan_type: 'free',
+              paid_credits: 0,
+              free_vpos_used_today: 0,
+              verification_status: 'unverified',
+              verified: false
+            }).select().single();
+
+            if (!insertErr && newProfile) {
+              // We successfully created the profile.
+              setValue('paid_credits_live', 0);
+              setValue('free_vpos_used_today_live', 0);
+              setValue('is_vip_live', false);
+              setDoctorProfile({
+                full_name: finalFullName,
+                cedula_profesional: '',
+                verification_status: 'unverified',
+                verified: false,
+              });
+              if (finalFullName && !methods.getValues('elaboro')) {
+                setValue('elaboro', finalFullName);
+              }
+            }
+          } else if (profile) {
+            // Auto-sync Google name if empty on existing but unnamed profile
             if (!finalFullName && user.user_metadata?.full_name) {
               finalFullName = user.user_metadata.full_name;
               await supabase.from('profiles').update({ full_name: finalFullName }).eq('id', user.id);
