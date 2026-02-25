@@ -6,8 +6,6 @@ interface AuthModalProps {
     onClose?: () => void;
 }
 
-type Tab = 'login' | 'register';
-
 const GoogleIcon = () => (
     <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
@@ -18,6 +16,7 @@ const GoogleIcon = () => (
 );
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
+    type Tab = 'login' | 'register' | 'forgot_password';
     const [tab, setTab] = useState<Tab>('login');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
@@ -66,6 +65,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
             // Auth state change will be handled by AuthGuard
         } catch (err: any) {
             setError(err.message || 'Error al iniciar sesión');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleForgotPassword = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!supabase) return setError('Servicio no disponible.');
+        if (!email) return setError('Ingresa tu correo electrónico.');
+        setLoading(true);
+        clearMessages();
+        try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+                redirectTo: `${window.location.origin}/reset-password`,
+            });
+            if (error) throw error;
+            setSuccess('Si el correo existe, recibirás un enlace para restablecer tu contraseña.');
+        } catch (err: any) {
+            setError(err.message || 'Error al solicitar cambio de contraseña');
         } finally {
             setLoading(false);
         }
@@ -200,7 +218,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                     </div>
 
                     {/* Form */}
-                    <form onSubmit={tab === 'login' ? handleLogin : handleRegister} className="space-y-3">
+                    <form
+                        onSubmit={
+                            tab === 'login' ? handleLogin :
+                                tab === 'register' ? handleRegister :
+                                    handleForgotPassword
+                        }
+                        className="space-y-3"
+                    >
                         {/* Full name (register only) */}
                         {tab === 'register' && (
                             <div className="relative">
@@ -216,7 +241,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                             </div>
                         )}
 
-                        {/* Email */}
+                        {/* Email (Always visible) */}
                         <div className="relative">
                             <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
                             <input
@@ -244,30 +269,65 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                             </div>
                         )}
 
-                        {/* Password */}
-                        <div className="relative">
-                            <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
-                            <input
-                                type={showPassword ? 'text' : 'password'}
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                                placeholder={tab === 'register' ? 'Contraseña (mín. 6 caracteres)' : 'Contraseña'}
-                                required
-                                className={`${inputClass} pl-11 pr-11`}
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
-                            >
-                                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-                            </button>
-                        </div>
+                        {/* Password (Login & Register only) */}
+                        {tab !== 'forgot_password' && (
+                            <div className="relative">
+                                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" />
+                                <input
+                                    type={showPassword ? 'text' : 'password'}
+                                    value={password}
+                                    onChange={e => setPassword(e.target.value)}
+                                    placeholder={tab === 'register' ? 'Contraseña (mín. 6 caracteres)' : 'Contraseña'}
+                                    required
+                                    className={`${inputClass} pl-11 pr-11`}
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-200 transition-colors"
+                                >
+                                    {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Forgot password link (Login only) */}
+                        {tab === 'login' && (
+                            <div className="flex justify-end pt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => { setTab('forgot_password'); clearMessages(); }}
+                                    className="text-xs font-semibold text-teal-400 hover:text-teal-300 transition-colors"
+                                >
+                                    ¿Olvidaste tu contraseña?
+                                </button>
+                            </div>
+                        )}
+
+                        {/* Back to login (Forgot password only) */}
+                        {tab === 'forgot_password' && (
+                            <div className="flex justify-start pb-2">
+                                <button
+                                    type="button"
+                                    onClick={() => { setTab('login'); clearMessages(); }}
+                                    className="text-xs font-semibold text-slate-400 hover:text-slate-200 transition-colors flex items-center gap-1"
+                                >
+                                    ← Volver a iniciar sesión
+                                </button>
+                            </div>
+                        )}
 
                         {/* Register note */}
                         {tab === 'register' && (
                             <p className="text-[11px] text-slate-500 leading-relaxed px-1">
                                 🔐 Tu Cédula Profesional es única a tu cuenta y previene registros duplicados.
+                            </p>
+                        )}
+
+                        {/* Forgot password note */}
+                        {tab === 'forgot_password' && (
+                            <p className="text-[11px] text-slate-400 leading-relaxed px-1">
+                                Ingresa tu correo y te enviaremos un enlace para que puedas crear una nueva contraseña.
                             </p>
                         )}
 
@@ -297,10 +357,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose }) => {
                             {loading ? (
                                 <span className="flex items-center justify-center gap-2">
                                     <Loader2 size={16} className="animate-spin" />
-                                    {tab === 'login' ? 'Iniciando...' : 'Registrando...'}
+                                    {tab === 'login' ? 'Iniciando...' : tab === 'register' ? 'Registrando...' : 'Enviando...'}
                                 </span>
                             ) : (
-                                tab === 'login' ? 'Iniciar Sesión' : 'Crear Cuenta'
+                                tab === 'login' ? 'Iniciar Sesión' : tab === 'register' ? 'Crear Cuenta' : 'Recuperar Contraseña'
                             )}
                         </button>
                     </form>

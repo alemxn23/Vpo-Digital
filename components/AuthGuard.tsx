@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../utils/supabase';
 import { LandingPage } from './LandingPage';
 import { AuthModal } from './AuthModal';
+import { UpdatePasswordModal } from './UpdatePasswordModal';
 import { Loader2 } from 'lucide-react';
 
 type AuthTab = 'login' | 'register';
@@ -11,8 +12,14 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     const [loading, setLoading] = useState(true);
     const [showAuth, setShowAuth] = useState(false);
     const [authTab, setAuthTab] = useState<AuthTab>('login');
+    const [recoveryMode, setRecoveryMode] = useState(false);
 
     useEffect(() => {
+        // Quick check for path
+        if (window.location.pathname === '/reset-password' && window.location.hash.includes('type=recovery')) {
+            setRecoveryMode(true);
+        }
+
         if (!supabase) {
             // No Supabase config — allow access (dev mode)
             setSession({ dev: true });
@@ -27,9 +34,13 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
         });
 
         // 2. Listen for auth changes
-        const { data: listener } = supabase.auth.onAuthStateChange((_event: any, newSession: any) => {
+        const { data: listener } = supabase.auth.onAuthStateChange((event: any, newSession: any) => {
             setSession(newSession);
             if (newSession) setShowAuth(false); // close modal on successful login
+
+            if (event === 'PASSWORD_RECOVERY') {
+                setRecoveryMode(true);
+            }
         });
 
         return () => {
@@ -41,6 +52,11 @@ export const AuthGuard = ({ children }: { children: React.ReactNode }) => {
         setAuthTab(tab);
         setShowAuth(true);
     };
+
+    // ── Recovery Mode ──
+    if (recoveryMode) {
+        return <UpdatePasswordModal />;
+    }
 
     // ── Loading state ──
     if (loading) {
