@@ -432,6 +432,10 @@ const App: React.FC = () => {
             if (finalFullName && !methods.getValues('elaboro')) {
               setValue('elaboro', finalFullName);
             }
+            // Pre-populate matricula with cedula if empty
+            if (profile.cedula_profesional && !methods.getValues('matricula')) {
+              setValue('matricula', profile.cedula_profesional);
+            }
           } else {
             setValue('paid_credits_live', 0);
             setValue('free_vpos_used_today_live', 0);
