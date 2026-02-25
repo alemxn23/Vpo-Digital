@@ -35,6 +35,7 @@ import { supabase } from './utils/supabase';
 import PaywallModal from './components/PaywallModal';
 import { AuthGuard } from './components/AuthGuard';
 import { DoctorProfileModal } from './components/DoctorProfileModal';
+import { CompleteProfileModal } from './components/CompleteProfileModal';
 
 // --- Configuration ---
 // Google Drive Client ID. Sigue los pasos en GOOGLE_DRIVE_SETUP.md para configurar el tuyo.
@@ -877,6 +878,9 @@ const App: React.FC = () => {
     });
   };
 
+  const [showCompleteProfile, setShowCompleteProfile] = useState(false);
+  const [sessionData, setSessionData] = useState<any>(null);
+
   return (
     <AuthGuard>
       <FormProvider {...methods}>
@@ -1097,6 +1101,24 @@ const App: React.FC = () => {
             onVerificationSubmitted={() => {
               // Refresh profile after submission
               setDoctorProfile(prev => prev ? { ...prev, verification_status: 'pending' } : prev);
+            }}
+          />
+        )}
+
+        {showCompleteProfile && sessionData?.user && (
+          <CompleteProfileModal
+            session={sessionData}
+            defaultName={doctorProfile?.full_name || sessionData.user.user_metadata?.full_name}
+            onComplete={(newName, newCedula) => {
+              setDoctorProfile(prev => prev ? { ...prev, full_name: newName, cedula_profesional: newCedula } : {
+                full_name: newName,
+                cedula_profesional: newCedula,
+                verification_status: 'unverified',
+                verified: false
+              });
+              setValue('elaboro', newName);
+              setValue('matricula', newCedula);
+              setShowCompleteProfile(false);
             }}
           />
         )}
