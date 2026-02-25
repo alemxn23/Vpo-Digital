@@ -40,12 +40,32 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
     const streamRef = useRef<MediaStream | null>(null);
     const ineInputRef = useRef<HTMLInputElement>(null);
 
+    const [editMode, setEditMode] = useState(!profile?.cedula_profesional || !profile?.full_name);
+    const [cedulaInput, setCedulaInput] = useState(profile?.cedula_profesional || '');
+    const [nameInput, setNameInput] = useState(profile?.full_name || '');
+
     // Stop camera on unmount or when navigating away
     useEffect(() => {
         return () => stopCamera();
     }, []);
 
+    // Sync state if profile loads slightly after modal opens
+    useEffect(() => {
+        if (profile) {
+            if (!cedulaInput && profile.cedula_profesional) setCedulaInput(profile.cedula_profesional);
+            if (!nameInput && profile.full_name) setNameInput(profile.full_name);
+            setEditMode(!profile.cedula_profesional || !profile.full_name);
+        }
+    }, [profile]);
+
     const startCamera = async () => {
+        if (editMode) {
+            if (!nameInput.trim()) return setError('El nombre completo es requerido.');
+            if (nameInput.trim().length < 3) return setError('El nombre debe tener al menos 3 caracteres.');
+            if (!cedulaInput.trim()) return setError('La Cédula Profesional es requerida.');
+            if (cedulaInput.trim().length < 4) return setError('La Cédula no es válida.');
+        }
+
         setError('');
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' }, audio: false });
@@ -55,6 +75,7 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
                 await videoRef.current.play();
             }
             setCameraOn(true);
+            setStep('selfie');
         } catch {
             setError('No se pudo acceder a la cámara. Verifica los permisos del navegador.');
         }
@@ -133,11 +154,19 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
             const { data: ineData } = supabase.storage.from('ine-comprobantes').getPublicUrl(`${userId}/ine_${ts}.${ineExt}`);
 
             // 3. Update profile
-            const { error: profileErr } = await supabase.from('profiles').update({
+            // Use up-to-date inputs inside the modal if editMode was true
+            const profileUpdates: any = {
                 verification_status: 'pending',
                 ine_url: ineData?.publicUrl || null,
                 selfie_url: selfieData?.publicUrl || null,
-            }).eq('id', userId);
+            };
+            if (nameInput) profileUpdates.full_name = nameInput.trim();
+            if (cedulaInput) profileUpdates.cedula_profesional = cedulaInput.trim();
+
+            const { error: profileErr } = await supabase.from('profiles').upsert({
+                id: userId,
+                ...profileUpdates
+            });
             if (profileErr) throw profileErr;
 
             setStep('done');
@@ -151,7 +180,7 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
 
     // --- Status badge helper ---
     const StatusBadge = () => {
-        const s = profile?.verification_status;
+        const s = profile?.verification_status || 'unverified';
         if (s === 'approved' || profile?.verified) return (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 rounded-full">
                 <CheckCircle2 size={14} className="text-emerald-400" />
@@ -167,7 +196,7 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
         if (s === 'rejected') return (
             <div className="flex items-center gap-2 px-3 py-1.5 bg-red-500/10 border border-red-500/30 rounded-full">
                 <XCircle size={14} className="text-red-400" />
-                <span className="text-xs font-bold text-red-400">Rechazado — reenvía tu documentación</span>
+                <span className="text-xs font-bold text-red-400">Rechazado — reenvía documentación</span>
             </div>
         );
         return (
@@ -178,7 +207,8 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
         );
     };
 
-    const canStartVerification = profile?.verification_status === 'unverified' || profile?.verification_status === 'rejected';
+    const currentStatus = profile?.verification_status || 'unverified';
+    const canStartVerification = currentStatus === 'unverified' || currentStatus === 'rejected';
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
@@ -207,8 +237,8 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
                     <div className="bg-slate-800/40 rounded-xl p-4 mb-4 border border-slate-700/30">
                         <div className="flex items-start justify-between gap-3">
                             <div className="min-w-0">
-                                <p className="text-white font-bold text-sm truncate">{profile?.full_name || '—'}</p>
-                                <p className="text-slate-400 text-xs mt-0.5">Cédula Profesional: <span className="text-teal-400 font-mono font-bold">{profile?.cedula_profesional || '—'}</span></p>
+                                <p className="text-white font-bold text-sm truncate">{nameInput || profile?.full_name || '—'}</p>
+                                <p className="text-slate-400 text-xs mt-0.5">Cédula Profesional: <span className="text-teal-400 font-mono font-bold">{cedulaInput || profile?.cedula_profesional || '—'}</span></p>
                             </div>
                             <StatusBadge />
                         </div>
@@ -251,19 +281,53 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
                         <div className="space-y-4">
                             <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
                                 <p className="text-xs text-blue-300 leading-relaxed">
-                                    <strong>Paso 1 de 3: Confirma tu cédula</strong><br />
-                                    Verificaremos tu cédula <span className="font-mono font-bold text-white">{profile?.cedula_profesional}</span> en el Registro Nacional de Profesionistas de la SEP. Si es incorrecta, contacta a soporte para corregirla.
+                                    <strong>Paso 1 de 3: Confirma tu identidad</strong><br />
+                                    Ingresa los datos exactos que aparecen en tu cédula. Los verificaremos en el Registro Nacional de Profesionistas (SEP).
                                 </p>
                             </div>
-                            <div className="flex items-center gap-3 bg-slate-800/60 rounded-xl p-3 border border-slate-600/40">
-                                <IdCard size={20} className="text-teal-400 shrink-0" />
-                                <div>
-                                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Cédula Profesional</p>
-                                    <p className="text-white font-mono font-bold">{profile?.cedula_profesional || '—'}</p>
+
+                            {editMode ? (
+                                <div className="space-y-3">
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 mb-1">Nombre Completo</label>
+                                        <input
+                                            type="text"
+                                            value={nameInput}
+                                            onChange={e => setNameInput(e.target.value)}
+                                            placeholder="Ej. Dr. Juan Pérez García"
+                                            className="w-full bg-slate-800 border border-slate-700 text-white rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="block text-xs font-bold text-slate-400 mb-1">Cédula Profesional</label>
+                                        <input
+                                            type="text"
+                                            value={cedulaInput}
+                                            onChange={e => setCedulaInput(e.target.value)}
+                                            placeholder="Ej. 12345678"
+                                            className="w-full bg-slate-800 border border-slate-700 text-white font-mono rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500 focus:ring-1 focus:ring-teal-500"
+                                        />
+                                    </div>
                                 </div>
-                            </div>
+                            ) : (
+                                <div className="flex items-center gap-3 bg-slate-800/60 rounded-xl p-3 border border-slate-600/40">
+                                    <IdCard size={20} className="text-teal-400 shrink-0" />
+                                    <div>
+                                        <p className="text-[10px] text-slate-400 uppercase font-bold tracking-wider">Cédula Profesional</p>
+                                        <p className="text-white font-mono font-bold">{cedulaInput}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {error && (
+                                <div className="flex items-start gap-2 bg-red-500/10 border border-red-500/30 rounded-xl px-3 py-2">
+                                    <AlertCircle size={14} className="text-red-400 shrink-0 mt-0.5" />
+                                    <p className="text-red-300 text-xs">{error}</p>
+                                </div>
+                            )}
+
                             <button
-                                onClick={() => { setStep('selfie'); startCamera(); }}
+                                onClick={startCamera}
                                 className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-400 hover:to-cyan-400 text-white font-bold py-3 rounded-xl transition-all text-sm"
                             >
                                 Confirmar — Tomar Selfie <ChevronRight size={16} />
