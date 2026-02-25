@@ -409,20 +409,28 @@ const App: React.FC = () => {
             .eq('id', user.id)
             .single();
 
+          let finalFullName = profile?.full_name || '';
+
           if (profile) {
+            // Auto-sync Google name if empty
+            if (!finalFullName && user.user_metadata?.full_name) {
+              finalFullName = user.user_metadata.full_name;
+              await supabase.from('profiles').update({ full_name: finalFullName }).eq('id', user.id);
+            }
+
             setValue('paid_credits_live', profile.paid_credits || 0);
             setValue('free_vpos_used_today_live', profile.free_vpos_used_today || 0);
             setValue('is_vip_live', profile.plan_type === 'unlimited');
             // Set doctor profile state
             setDoctorProfile({
-              full_name: profile.full_name || '',
+              full_name: finalFullName,
               cedula_profesional: profile.cedula_profesional || '',
               verification_status: profile.verification_status || 'unverified',
               verified: profile.verified || false,
             });
             // Pre-populate elaboro with full_name if empty
-            if (profile.full_name && !methods.getValues('elaboro')) {
-              setValue('elaboro', profile.full_name);
+            if (finalFullName && !methods.getValues('elaboro')) {
+              setValue('elaboro', finalFullName);
             }
           } else {
             setValue('paid_credits_live', 0);

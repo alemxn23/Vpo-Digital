@@ -163,10 +163,7 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
             if (nameInput) profileUpdates.full_name = nameInput.trim();
             if (cedulaInput) profileUpdates.cedula_profesional = cedulaInput.trim();
 
-            const { error: profileErr } = await supabase.from('profiles').upsert({
-                id: userId,
-                ...profileUpdates
-            });
+            const { error: profileErr } = await supabase.from('profiles').update(profileUpdates).eq('id', userId);
             if (profileErr) throw profileErr;
 
             setStep('done');
@@ -348,17 +345,25 @@ export const DoctorProfileModal: React.FC<DoctorProfileModalProps> = ({
                             <div className="relative rounded-xl bg-slate-800 overflow-hidden aspect-square flex items-center justify-center border border-slate-600/30">
                                 {selfieDataUrl ? (
                                     <img src={selfieDataUrl} alt="Selfie" className="w-full h-full object-cover" />
-                                ) : cameraOn ? (
-                                    <video ref={videoRef} className="w-full h-full object-cover" muted playsInline />
                                 ) : (
-                                    <div className="flex flex-col items-center gap-2 text-slate-500">
-                                        <Camera size={32} />
-                                        <p className="text-xs">Cámara no activa</p>
-                                    </div>
+                                    <>
+                                        <video
+                                            ref={videoRef}
+                                            className={`w-full h-full object-cover ${cameraOn ? 'block' : 'hidden'}`}
+                                            muted
+                                            playsInline
+                                        />
+                                        {!cameraOn && (
+                                            <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-500 bg-slate-800 z-10">
+                                                <Camera size={32} />
+                                                <p className="text-xs">Cámara no activa</p>
+                                            </div>
+                                        )}
+                                    </>
                                 )}
                                 {/* Face guide overlay */}
                                 {cameraOn && !selfieDataUrl && (
-                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                                         <div className="w-40 h-40 rounded-full border-4 border-teal-400/60 border-dashed" />
                                     </div>
                                 )}
