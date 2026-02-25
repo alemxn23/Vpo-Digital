@@ -1,9 +1,14 @@
 import React, { useEffect } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { VPOData, Gender } from '../types';
-import { User, Calendar, Siren, RotateCcw } from 'lucide-react';
+import { User, Calendar, Siren, RotateCcw, Lock } from 'lucide-react';
 
-const PatientInfo: React.FC = () => {
+interface PatientInfoProps {
+  isLocked?: boolean;
+  onNewPatient?: () => void;
+}
+
+const PatientInfo: React.FC<PatientInfoProps> = ({ isLocked = false, onNewPatient }) => {
   const { register, watch, setValue, reset } = useFormContext<VPOData>();
 
   const peso = watch('peso');
@@ -44,246 +49,18 @@ const PatientInfo: React.FC = () => {
   }, [isUrgencia, setValue]);
 
   const handleReset = () => {
-    if (confirm("⚠️ ¿Desea borrar todos los datos e iniciar un nuevo paciente?\n\nEsta acción no se puede deshacer.")) {
-      // Clear persistence
-      localStorage.removeItem('vpo_current_data');
-
-      // Construct a clean initial state
-      const resetValues: VPOData = {
-        fecha: new Date().toISOString().split('T')[0],
-        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        genero: Gender.FEMALE,
-        tipoCirugia: "Electiva",
-        ayuno: "Ayuno de 6-8 horas para sólidos y 2 horas para líquidos claros.",
-        soluciones: "Solución Hartmann 1000cc para 8 horas.",
-        tabaquismo: false,
-        cigarrosDia: 0,
-        aniosFumando: 0,
-        indiceTabaquico: 0,
-        riesgoEPOC: "",
-        alergicos: false,
-        alergicosDetalle: "",
-        hta: false,
-        hta_control: "controlada",
-        hta_tiempo: "",
-        diabetes: false,
-        diabetesTipo: "",
-        diabetesTiempo: "",
-        usaInsulina: false,
-        cardiopatiaIsquemica: false,
-        cardio_tipo_evento: "angina_estable",
-        cardio_fecha_evento: "",
-        cardio_stent: false,
-        stent_fecha_colocacion: "",
-        stent_tipo: "BMS",
-        icc: false,
-        icc_nyha: "I",
-        icc_evolucion: "cronica_comp",
-        icc_historia_eap: false,
-        icc_fecha_eap: "",
-        arritmias: false,
-        arritmia_tipo: "otra",
-        marcapasos: false,
-        valvulopatia: false,
-        valvula_afectada: "aortica",
-        valvula_patologia: "estenosis",
-        valvula_severidad: "leve",
-        valvula_protesis: false,
-        evc: false,
-        evc_fecha: "",
-        evc_tipo: "isquemico",
-        evc_secuelas: false,
-        neumopatia: false,
-        neumo_tipo: "epoc",
-        neumo_o2: false,
-        enfRenalCronica: false,
-        erc_estadio: "G1",
-        erc_dialisis: false,
-        hepatopatia: false,
-        hepato_tipo: "higado_graso",
-        hepato_child: "A",
-        hepato_coagulopatia: false,
-        coagulopatia: false,
-        coag_tipo: "",
-        cancer_activo: false,
-        cancer_tipo_sitio: "",
-        flag_iam_reciente: false,
-        flag_iam_antiguo: false,
-        flag_angina_inestable: false,
-        flag_estenosis_aortica_severa: false,
-        flag_eap_agudo: false,
-        flag_evc_agudo: false,
-
-        functional_status: "independent",
-        active_smoking: false,
-        diagnosed_osa: false,
-        gupta_surgical_site: "other",
-        cirugiasPrevias: "",
-        otrasEnfermedades: "",
-        tratamientoActual: "",
-        selectedMeds: [],
-        taSistolica: 0,
-        taDiastolica: 0,
-        fc: 0,
-        fr: 0,
-        temp: 0,
-        sato2: 0,
-        glucosaCapilar: 0,
-        exploracion_ingurgitacion: false,
-        exploracion_s3: false,
-        exploracion_estertores: false,
-        exploracion_estenosis_aortica: false,
-        exploracion_edema: false,
-        exploracion_soplo_carotideo: false,
-        hb: 0,
-        ht: 0,
-        leucocitos: 0,
-        plaquetas: 0,
-        tp: 0,
-        ttp: 0,
-        inr: 0,
-        ddimer: 0,
-        glucosaCentral: 0,
-        urea: 0,
-        creatinina: 0,
-        na: 0,
-        k: 0,
-        cl: 0,
-        tfg: 0,
-        rx_fecha: "",
-        rx_imagen: "",
-        ekg_imagen: "",
-        rx_descripcion: "",
-        ariscat_infeccion: false,
-        ariscat_incision: "periferica",
-        ariscat_duracion: "menos_2",
-        ariscat_total: 0,
-        ariscat_categoria: "",
-        ecg_fecha: "",
-        ecg_frecuencia: 0,
-        ecg_ritmo_especifico: "Sinusal",
-        ecg_bloqueo: "Ninguno",
-        ecg_hvi: false,
-        ecg_brihh_incompleto: false,
-        ecg_brihh_completo: false,
-        ecg_isquemia: false,
-        ecg_extrasistoles: false,
-        ecg_otras_alteraciones: "",
-        duke_mayor_hemocultivo: false,
-        duke_mayor_eco: false,
-        duke_mayor_regurgitacion: false,
-        duke_menor_predisposicion: false,
-        duke_menor_fiebre: false,
-        duke_menor_vascular: false,
-        duke_menor_inmuno: false,
-        duke_menor_micro: false,
-        duke_resultado: "Rechazado",
-        duke_manual_add: false,
-        ritmo: "",
-        frecuenciaEcg: 0,
-        asa: "I",
-        goldman: "I",
-        detsky: "I",
-        caprini: 0,
-        lee: "I",
-        gupta: 0,
-        cha2ds2vasc: 0,
-        hasbled: 0,
-        hasbled_inr_labil: false,
-        hasbled_alcohol: false,
-        khorana_total: 0,
-        khorana_riesgo: "",
-        asa_manual_class: "",
-        asa_justification: "",
-        risk_overrides: {},
-        capA_cxMenor: false,
-        capA_cxMayorAnt: false,
-        capA_varices: false,
-        capA_eii: false,
-        capA_iam: false,
-        capA_epoc: false,
-        capA_reposo: false,
-
-        // Datos Eco
-        eco_fevi: 60,
-        eco_disfuncion_diastolica: false,
-        eco_psap_elevada: false,
-        eco_valvulopatia: "ninguna",
-
-        capB_cxMayor: false,
-        capB_laparoscopia: false,
-        capB_confinado: false,
-        capB_ferula: false,
-        capB_cancer: false,
-        capB_cateter: false,
-        capC_historiaTVP: false,
-        capC_historiaFam: false,
-        capC_leiden: false,
-        capC_lupico: false,
-        capC_hit: false,
-        capD_evc: false,
-        capD_artroplastia: false,
-        capD_fxCadera: false,
-        capD_trauma: false,
-        plan_pre: "",
-        plan_trans: "",
-        plan_post: "",
-        antibioticos: "",
-        tromboprofilaxis: "",
-        recomendacionesGenerales: "",
-        metasTerapeuticas: false,
-        insulinaEsquema: false,
-
-        // STOP-BANG & Geriatrics
-        stopBang_snoring: false,
-        stopBang_tired: false,
-        stopBang_observed: false,
-        stopBang_neck: false,
-        neck_circumference: 0,
-        stopbang_total: 0,
-        stopbang_risk: "Bajo",
-        fragilidad_score: 1,
-        vrc_total: 0,
-        vrc_riesgo: "",
-        riesgo_vrc_renal: false,
-        vrc_epoc: false,
-        vrc_beta_blocker: false,
-        mets_estimated: 4,
-        mets_method: "manual",
-
-        elaboro: "",
-        matricula: "",
-        residente: "",
-        residente_matricula: "",
-        driveLink: "",
-        nombre: "",
-        nss: "",
-        fechaNacimiento: "",
-        edad: 0,
-        cama: "",
-        servicioSolicitante: "",
-        unidadMedica: "",
-        diagnosticoQuirurgico: "",
-        cirugiaProgramada: "",
-        fechaQx: "",
-        fechaCirugiaPendiente: false,
-        esUrgencia: false,
-        peso: 0,
-        talla: 0,
-        imc: 0,
-        // Vienna CATS
-        vienna_cats_total: 0,
-        vienna_cats_risk: "",
-        // NSQIP
-        nsqip_total: 0,
-        nsqip_riesgo: "Bajo",
-        authorized_report_scales: {}
-      };
-
-      reset(resetValues);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (onNewPatient) {
+      onNewPatient();
+    } else {
+      // Fallback if no callback provided
+      if (confirm("⚠️ ¿Borrar todos los datos e iniciar nuevo paciente?")) {
+        localStorage.removeItem('vpo_current_data');
+        reset({ fecha: new Date().toISOString().split('T')[0], hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), genero: Gender.FEMALE } as unknown as VPOData);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
     }
   };
+
 
   return (
     <div className="space-y-4">
@@ -291,6 +68,11 @@ const PatientInfo: React.FC = () => {
         <div className="flex items-center gap-2">
           <User className="text-clinical-navy" size={20} />
           <h2 className="text-lg font-bold text-slate-800">Ficha Paciente</h2>
+          {isLocked && (
+            <span className="flex items-center gap-1 text-[10px] font-black text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+              <Lock size={10} /> SOLO LECTURA
+            </span>
+          )}
         </div>
 
         <button
@@ -303,7 +85,14 @@ const PatientInfo: React.FC = () => {
         </button>
       </div>
 
-      <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+      {isLocked && (
+        <div className="flex items-center gap-3 px-4 py-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-800 text-xs font-bold">
+          <Lock size={16} className="shrink-0 text-amber-500" />
+          <span>VPO bloqueado para edición. Usa <b className="underline">+ Nuevo Paciente</b> para iniciar una nueva valoración.</span>
+        </div>
+      )}
+
+      <div className={`bg-white p-4 rounded-xl shadow-sm border border-gray-200 grid grid-cols-1 md:grid-cols-2 gap-6 items-start relative ${isLocked ? 'opacity-60 pointer-events-none select-none' : ''}`}>
 
         {/* --- LEFT COLUMN --- */}
         <div className="space-y-4">

@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { VPOData } from '../types';
-import { ClipboardList, CheckCircle2, AlertTriangle, ArrowRight, Syringe, HeartPulse, BedDouble, Stethoscope, Activity, Droplets, Info, Check, X } from 'lucide-react';
+import { ClipboardList, CheckCircle2, AlertTriangle, ArrowRight, Syringe, HeartPulse, BedDouble, Stethoscope, Activity, Droplets, Info, Check, X, Lock } from 'lucide-react';
 
-const Recommendations: React.FC = () => {
+interface RecommendationsProps {
+    isUnlocked?: boolean;
+    onRequestUnlock?: () => void;
+}
+
+const Recommendations: React.FC<RecommendationsProps> = ({ isUnlocked = false, onRequestUnlock }) => {
     const { register, watch, setValue } = useFormContext<VPOData>();
     const [selectedGoal, setSelectedGoal] = useState<string | null>(null);
 
@@ -256,11 +261,21 @@ const Recommendations: React.FC = () => {
                 ? `\n• NSQIP Moderado (${data.nsqip_total}%): Riesgo de complicación mayor. Estratificar y documentar consentimiento informado ampliado.`
                 : "";
 
+        // Urgency Alert
+        const urgencyAlert = data.esUrgencia
+            ? `\n\n⚠️ CIRUGÍA DE URGENCIA / EMERGENCIA:
+• Tipo de procedimiento: URGENCIA (Impacto en escalas: +4 Goldman, +10 Detsky, +8 ARISCAT, ASA-E).
+• Ayuno no garantizado: Considerar técnica de secuencia rápida (IRS) si estómago lleno.
+• Optimización preoperatoria limitada: Priorizar estabilidad hemodinámica sobre metas absolutas.
+• Evaluar corrección URGENTE de electrolitos críticos, coagulopatía o anemia grave antes de inducción si el tiempo lo permite.
+• Documentar riesgo anestésico-quirúrgico aumentado en consentimiento informado.`
+            : "";
+
         return `${fastingRule}
 • ${aineInstruction}
 • Profilaxis antibiótica: ${antibioticRegimen} (Ref: ASHP Guidelines / Sanford 2024)
 • Tromboprofilaxis: ${capriniScore >= 5 ? 'Iniciar 12h previas según esquema (Ver Post)' : 'Deambulación temprana / Medias TEDs'}. (Ref: ACCP / PAUSE)
-• Soluciones: \n${fluidRec}${dukeAlert}${frailtyRec}${stopBangRec}${nsqipAlert}`;
+• Soluciones: \n${fluidRec}${dukeAlert}${frailtyRec}${stopBangRec}${nsqipAlert}${urgencyAlert}`;
     };
 
     const getEcoRecommendations = () => {
@@ -348,18 +363,143 @@ const Recommendations: React.FC = () => {
 • Seguimiento por UMF/HGZ al alta.${bariatricEras}`;
     };
 
+    // --- ECG, VITALS & PHYSICAL FINDINGS RECOMMENDATIONS ---
+    const getECGAndFindingsRecs = () => {
+        const alerts: string[] = [];
+
+        // ---- ECG FINDINGS ----
+        if (data.ecg_isquemia) {
+            alerts.push("⚡ ECG: Isquemia/Necrosis activa detectada. Considerar interconsulta a Cardiología y optimizar tratamiento antiisquémico previo a procedimiento electivo.");
+        }
+        if (data.ecg_brihh_completo) {
+            alerts.push("⚡ ECG: BRIHH Completo. Sugiere cardiopatía estructural subyacente. Vigilar intraoperatoriamente. Alto riesgo de bloqueo completo con manejo de catéter.");
+        }
+        if (data.ecg_extrasistoles) {
+            alerts.push("⚡ ECG: >5 Extrasístoles Ventriculares/min (+7 Goldman). Optimizar manejo electrolítico (K+, Mg²⁺) perioperatorio.");
+        }
+        if (data.ecg_ritmo_especifico === 'FA') {
+            alerts.push("⚡ ECG: Fibrilación Auricular. Verificar anticoagulación. Control de FC meta <100 lpm. Valorar CHA₂DS₂-VASc para riesgo embólico.");
+        } else if (data.ecg_ritmo_especifico === 'Flutter') {
+            alerts.push("⚡ ECG: Flutter Auricular. Riesgo de conversión 1:1 y deterioro hemodinámico en estrés perioperatorio. Control de FC estricto.");
+        } else if (data.ecg_ritmo_especifico === 'Marcapasos') {
+            alerts.push("⚡ ECG: Ritmo de Marcapasos. Verificar tipo (DDD/VVI) y programación. Usar bisturí bipolar o evitar electrocauterio monopolar. Tener imán disponible.");
+        }
+        if (data.ecg_bloqueo === 'Mobitz_II') {
+            alerts.push("⚡ ECG: Bloqueo AV Mobitz II (+5 Detsky). Alto riesgo de progresión a bloqueo completo. Valorar marcapasos temporal de precaución con Cardiología.");
+        }
+        if (data.ecg_bloqueo === '3er_Grado') {
+            alerts.push("⚡ ECG: Bloqueo AV Completo (3er Grado). Requiere marcapasos temporal definitivo antes de proceder a cirugía electiva.");
+        }
+        if (data.ecg_hvi) {
+            alerts.push("⚡ ECG: HVI (Hipertrofia Ventricular Izquierda). Marcador de HTA crónica severa. Se apoya ASA III. Metas de TA estrictas.");
+        }
+
+        // ---- SIGNOS VITALES CRÍTICOS ----
+        const sys = data.taSistolica || 0;
+        const fc = data.fc || 0;
+        const sato2 = data.sato2 || 0;
+        const fr = data.fr || 0;
+        if (sys > 180) {
+            alerts.push(`⚠️ HTA Severa (${sys} mmHg): Se recomienda optimización del control tensional antes del procedimiento electivo. Meta: <160 mmHg para reducir riesgo cardiovascular perioperatorio.`);
+        } else if (sys > 160) {
+            alerts.push(`⚠️ HTA Grado II (${sys} mmHg): Control presión arterial preoperatorio recomendado. Meta perioperatoria: <140 mmHg.`);
+        }
+        if (fc > 100) {
+            alerts.push(`⚠️ Taquicardia (${fc} lpm): Investigar causa (fiebre, dolor, hipovolemia, anemia, FA). Control de FC perioperatorio. Meta: <100 lpm en reposo.`);
+        } else if (fc < 50) {
+            alerts.push(`⚠️ Bradicardia (${fc} lpm): Vigilar en contexto de medicamentos (betabloqueadores). Tener atropina disponible.`);
+        }
+        if (sato2 > 0 && sato2 < 90) {
+            alerts.push(`⚠️ Hipoxemia Severa (SpO2 ${sato2}%): Optimizar función respiratoria antes del procedimiento. Considerar O2 suplementario, espirometría incentiva, fisioterapia pulmonar.`);
+        } else if (sato2 > 0 && sato2 < 94) {
+            alerts.push(`⚠️ SpO2 Limítrofe (${sato2}%): Vigilar oxigenación perioperatoria. Monitoreo continuo de pulsioximetría recomendado.`);
+        }
+        if (fr > 20) {
+            alerts.push(`⚠️ Taquipnea (${fr} rpm): Considerar causa subyacente (descompensación cardiaca, neumónica, ansiedad). Valorar si es seguro proceder.`);
+        }
+
+        // ---- LABORATORIOS CRÍTICOS ----
+        const k = data.k || 0;
+        const na = data.na || 0;
+        const cr = parseFloat(data.creatinina as any) || 0;
+        const hb = data.hb || 0;
+        const plaq = data.plaquetas || 0;
+        if (k > 0 && k < 3.0) {
+            alerts.push(`⚠️ Hipocalemia (K⁺ ${k} mEq/L): Corregir electrolitos previo a cirugía. Riesgo de arritmias perioperatorias. Meta: K⁺ > 3.5 mEq/L.`);
+        } else if (k > 0 && k > 5.5) {
+            alerts.push(`⚠️ Hipercalemia (K⁺ ${k} mEq/L): Riesgo de bloqueo AV y fibrilación ventricular. Corregir antes del procedimiento electivo.`);
+        }
+        if (na > 0 && na < 130) {
+            alerts.push(`⚠️ Hiponatremia (Na⁺ ${na} mEq/L): Riesgo de edema cerebral y convulsiones perioperatorias. Corregir lentamente (<8 mEq/L/24h). Sodio Isotónico.`);
+        } else if (na > 0 && na > 150) {
+            alerts.push(`⚠️ Hipernatremia (Na⁺ ${na} mEq/L): Corrección con agua libre calculada. Retrasar cirugía electiva hasta Na⁺ < 145 mEq/L.`);
+        }
+        if (cr > 3.0) {
+            alerts.push(`⚠️ Daño Renal (Cr ${cr} mg/dL): Alto riesgo de LRA perioperatoria. Optimizar hidratación. Ajustar dosis de medicamentos nefrotóxicos. Evitar contraste IV y AINEs.`);
+        }
+        if (hb > 0 && hb < 8.0) {
+            alerts.push(`⚠️ Anemia Severa (Hb ${hb} g/dL): Optimizar reservas. Considerar hierro IV, EPO si hay tiempo. En cirugía urgente: transfundir previo si Hb < 7.0 g/dL (o <8 en cardiopatía).`);
+        }
+        if (plaq > 0 && plaq < 100) {
+            alerts.push(`⚠️ Trombocitopenia (Plaq ${plaq} k/μL): Riesgo hemorrágico elevado. Transfundir plaquetas si <50k (cirugía mayor) o <20k (profiláctico). Valorar riesgo/beneficio.`);
+        }
+
+        // ---- HALLAZGOS FÍSICOS ----
+        if (data.exploracion_estenosis_aortica || data.flag_estenosis_aortica_severa) {
+            alerts.push("🩺 ESTENOSIS AÓRTICA SEVERA: Mantener precarga y RVS. Evitar hipotensión brusca y taquicardia. La anestesia neuroaxial puede precipitar colapso hemodinámico.");
+        }
+        if (data.exploracion_soplo_carotideo) {
+            alerts.push("🩺 Soplo Carotídeo: Riesgo de EVC perioperatorio aumentado. Mantener PAM dentro del 20% de la basal. Evitar hipotensión. Considerar dúplex carotídeo si no se ha realizado.");
+        }
+        if (data.exploracion_s3 || (data.icc && data.icc_evolucion === 'aguda')) {
+            alerts.push("🩺 Signos de ICC Aguda (S3/Estertores/Ingurgitación): Optimizar hemodinámicamente antes del procedimiento. Balance hídrico negativo guiado por metas. Considerar diferir cirugía electiva.");
+        }
+        if (data.exploracion_edema) {
+            alerts.push("🩺 Edema de Miembros Inferiores: Vigilar trombosis venosa profunda. Verificar tromboprofilaxis. Elevación de extremidades. Caprini +1.");
+        }
+
+        if (alerts.length === 0) return "";
+        return "\n\n--- ALERTAS CLÍNICAS (ECG/Vitales/Labs/Física) ---\n" + alerts.map(a => `• ${a}`).join("\n");
+    };
+
     // --- EFFECT: APPLY STANDARD GOALS ---
     useEffect(() => {
         if (metasChecked) {
-            const pre = generatePrePlan();
-            const trans = generateTransPlan();
+            const ecgRecs = getECGAndFindingsRecs();
+            const pre = generatePrePlan() + ecgRecs;
+            const trans = generateTransPlan() + (ecgRecs ? `\n\n--- ALERTAS ACTIVAS ---\n${ecgRecs.split('---\n')[1] || ''}` : '');
             const post = generatePostPlan();
 
             if (data.plan_pre !== pre) setValue('plan_pre', pre);
             if (data.plan_trans !== trans) setValue('plan_trans', trans);
             if (data.plan_post !== post) setValue('plan_post', post);
         }
-    }, [metasChecked, setValue, data.diabetes, data.icc, data.cardiopatiaIsquemica, capriniScore, data.duke_resultado, selectedMeds, data.tfg, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica, data.flag_estenosis_aortica_severa, data.stopbang_risk, data.fragilidad_score, data.edad, data.enfRenalCronica, data.hta_control, data.nsqip_total, data.gupta_surgical_site]);
+    }, [
+        metasChecked, setValue,
+        // Comorbidities
+        data.diabetes, data.icc, data.icc_evolucion, data.cardiopatiaIsquemica, data.enfRenalCronica,
+        data.hepatopatia, data.neumopatia, data.evc, data.hta_control,
+        // Scales
+        capriniScore, data.nsqip_total, data.gupta_surgical_site, data.gupta,
+        // Gabinete
+        data.duke_resultado, data.eco_fevi, data.eco_valvulopatia, data.eco_psap_elevada, data.eco_disfuncion_diastolica,
+        data.flag_estenosis_aortica_severa,
+        // ECG Findings
+        data.ecg_isquemia, data.ecg_brihh_completo, data.ecg_extrasistoles,
+        data.ecg_ritmo_especifico, data.ecg_bloqueo, data.ecg_hvi,
+        // Vitals
+        data.taSistolica, data.taDiastolica, data.fc, data.sato2, data.fr, data.temp,
+        // Labs
+        data.hb, data.plaquetas, data.creatinina, data.tfg, data.k, data.na,
+        // Physical Findings
+        data.exploracion_s3, data.exploracion_estenosis_aortica, data.exploracion_soplo_carotideo, data.exploracion_edema,
+        // Meds & Urgency
+        selectedMeds, data.esUrgencia,
+        // Other
+        data.stopbang_risk, data.fragilidad_score, data.edad, data.imc, data.peso,
+        data.alergicos, data.alergicosDetalle, data.capB_cxMayor, data.capB_laparoscopia, data.capA_cxMenor,
+        data.valvula_protesis, data.arritmia_tipo,
+    ]);
 
     // Determine Meta Labels based on risk
     const isNephroCardio = data.enfRenalCronica || data.icc || data.cardiopatiaIsquemica;
@@ -394,11 +534,11 @@ const Recommendations: React.FC = () => {
             {/* PHYSICIAN SECTION - Moved to top */}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-4 p-5 border-b border-gray-200 bg-slate-50/30">
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-tight">Médico Adscrito</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-tight">Médico que realizó</label>
                     <input {...register('elaboro')} className="w-full bg-white border-gray-200 rounded-lg shadow-sm text-xs p-2 border focus:ring-blue-500 focus:border-blue-500 transition-all" placeholder="Nombre completo..." />
                 </div>
                 <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-tight">Matrícula (Adscrito)</label>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase mb-1 tracking-tight">Matrícula / Cédula</label>
                     <input {...register('matricula')} className="w-full bg-white border-gray-200 rounded-lg shadow-sm text-xs p-2 border focus:ring-blue-500 focus:border-blue-500 transition-all" />
                 </div>
                 <div>
@@ -559,13 +699,25 @@ const Recommendations: React.FC = () => {
                             <div className="bg-blue-600 text-white p-1.5 rounded-lg shadow-sm"><Stethoscope size={16} /></div>
                             <h3 className="font-black text-xs text-blue-900 uppercase tracking-wider">Pre-Quirúrgico</h3>
                         </div>
-                        <ArrowRight size={14} className="text-blue-300 group-hover:translate-x-1 transition-transform" />
+                        {!isUnlocked && <Lock size={14} className="text-amber-500" />}
+                        {isUnlocked && <ArrowRight size={14} className="text-blue-300 group-hover:translate-x-1 transition-transform" />}
                     </div>
-                    <div className="p-3 flex flex-col">
+                    <div className="p-3 flex flex-col relative">
+                        {!isUnlocked && (
+                            <div
+                                onClick={onRequestUnlock}
+                                className="absolute inset-0 z-10 bg-amber-50/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 cursor-pointer rounded-b-2xl"
+                            >
+                                <Lock size={22} className="text-amber-500" />
+                                <span className="text-xs font-bold text-amber-700">Desbloquear VPO para editar</span>
+                            </div>
+                        )}
                         <textarea
                             {...register('plan_pre')}
-                            className="w-full min-h-[160px] bg-transparent border-none resize-none text-[13px] leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium placeholder:text-slate-400 placeholder:italic"
-                            placeholder="Ayuno, Soluciones, Antibióticos..."
+                            readOnly={!isUnlocked}
+                            className={`w-full min-h-[160px] bg-transparent border-none resize-none text-[13px] leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium placeholder:text-slate-400 placeholder:italic ${!isUnlocked ? 'cursor-not-allowed select-none' : ''
+                                }`}
+                            placeholder="Ayuno, Soluciones, Antibóticos..."
                         />
                         <div className="mt-2 p-2 bg-blue-50/50 rounded-lg border border-blue-100/50">
                             <p className="text-[10px] text-blue-600 font-bold flex items-center gap-1"><Info size={12} /> Sugerencia: ASHP/IDSA 2024</p>
@@ -580,12 +732,24 @@ const Recommendations: React.FC = () => {
                             <div className="bg-amber-600 text-white p-1.5 rounded-lg shadow-sm"><HeartPulse size={16} /></div>
                             <h3 className="font-black text-xs text-amber-900 uppercase tracking-wider">Trans-Quirúrgico</h3>
                         </div>
-                        <ArrowRight size={14} className="text-amber-300 group-hover:translate-x-1 transition-transform" />
+                        {!isUnlocked && <Lock size={14} className="text-amber-500" />}
+                        {isUnlocked && <ArrowRight size={14} className="text-amber-300 group-hover:translate-x-1 transition-transform" />}
                     </div>
-                    <div className="p-3 flex flex-col">
+                    <div className="p-3 flex flex-col relative">
+                        {!isUnlocked && (
+                            <div
+                                onClick={onRequestUnlock}
+                                className="absolute inset-0 z-10 bg-amber-50/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 cursor-pointer rounded-b-2xl"
+                            >
+                                <Lock size={22} className="text-amber-500" />
+                                <span className="text-xs font-bold text-amber-700">Desbloquear VPO para editar</span>
+                            </div>
+                        )}
                         <textarea
                             {...register('plan_trans')}
-                            className="w-full min-h-[160px] bg-transparent border-none resize-none text-[13px] leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium placeholder:text-slate-400 placeholder:italic"
+                            readOnly={!isUnlocked}
+                            className={`w-full min-h-[160px] bg-transparent border-none resize-none text-[13px] leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium placeholder:text-slate-400 placeholder:italic ${!isUnlocked ? 'cursor-not-allowed select-none' : ''
+                                }`}
                             placeholder="Metas hemodinámicas, Esquema Insulina..."
                         />
                         <div className="mt-2 p-2 bg-amber-50/50 rounded-lg border border-amber-100/50">
@@ -601,12 +765,24 @@ const Recommendations: React.FC = () => {
                             <div className="bg-green-600 text-white p-1.5 rounded-lg shadow-sm"><BedDouble size={16} /></div>
                             <h3 className="font-black text-xs text-green-900 uppercase tracking-wider">Post-Quirúrgico</h3>
                         </div>
-                        <ArrowRight size={14} className="text-green-300 group-hover:translate-x-1 transition-transform" />
+                        {!isUnlocked && <Lock size={14} className="text-amber-500" />}
+                        {isUnlocked && <ArrowRight size={14} className="text-green-300 group-hover:translate-x-1 transition-transform" />}
                     </div>
-                    <div className="p-3 flex flex-col">
+                    <div className="p-3 flex flex-col relative">
+                        {!isUnlocked && (
+                            <div
+                                onClick={onRequestUnlock}
+                                className="absolute inset-0 z-10 bg-amber-50/80 backdrop-blur-[2px] flex flex-col items-center justify-center gap-2 cursor-pointer rounded-b-2xl"
+                            >
+                                <Lock size={22} className="text-amber-500" />
+                                <span className="text-xs font-bold text-amber-700">Desbloquear VPO para editar</span>
+                            </div>
+                        )}
                         <textarea
                             {...register('plan_post')}
-                            className="w-full min-h-[160px] bg-transparent border-none resize-none text-[13px] leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium placeholder:text-slate-400 placeholder:italic"
+                            readOnly={!isUnlocked}
+                            className={`w-full min-h-[160px] bg-transparent border-none resize-none text-[13px] leading-relaxed focus:ring-0 p-2 text-slate-700 font-medium placeholder:text-slate-400 placeholder:italic ${!isUnlocked ? 'cursor-not-allowed select-none' : ''
+                                }`}
                             placeholder="Reinicio V.O., Tromboprofilaxis, Alta..."
                         />
                         <div className="mt-2 p-2 bg-green-50/50 rounded-lg border border-green-100/50">

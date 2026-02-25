@@ -33,6 +33,7 @@ import MedicalNoteGenerator from './components/MedicalNoteGenerator';
 import { supabase } from './utils/supabase';
 import PaywallModal from './components/PaywallModal';
 import { AuthGuard } from './components/AuthGuard';
+import { DoctorProfileModal } from './components/DoctorProfileModal';
 
 // --- Configuration ---
 // Google Drive Client ID. Sigue los pasos en GOOGLE_DRIVE_SETUP.md para configurar el tuyo.
@@ -54,8 +55,21 @@ const ScoreBadge = ({ label, value, colorClass = "bg-clinical-navy", subValue }:
   );
 };
 
+interface DoctorProfile {
+  full_name: string;
+  cedula_profesional: string;
+  verification_status: 'unverified' | 'pending' | 'approved' | 'rejected';
+  verified: boolean;
+  ine_url?: string;
+  selfie_url?: string;
+}
+
 // --- Header Component ---
-const StickyHeader = ({ onOpenAccount }: { onOpenAccount: () => void }) => {
+const StickyHeader = ({ onOpenAccount, onOpenProfile, doctorProfile }: {
+  onOpenAccount: () => void;
+  onOpenProfile: () => void;
+  doctorProfile: DoctorProfile | null;
+}) => {
   const { watch } = useFormContext<VPOData>();
 
   // Watch scales
@@ -75,8 +89,13 @@ const StickyHeader = ({ onOpenAccount }: { onOpenAccount: () => void }) => {
   const vienna = watch('vienna_cats_total');
   const khorana = watch('khorana_total');
   const cancerActivo = watch('cancer_activo');
-  const doctorName = watch('elaboro') || "Dr. Fidel Aleman"; // Example name per user request
-  const cedula = "14098958";
+
+  // Use profile data if available, fall back to form value
+  const doctorName = doctorProfile?.full_name || watch('elaboro') || 'Dr. Médico';
+  const cedulaDisplay = doctorProfile?.cedula_profesional || '—';
+  const isVerified = doctorProfile?.verified || doctorProfile?.verification_status === 'approved';
+  // Initials for avatar
+  const initials = doctorName.split(' ').filter(Boolean).slice(0, 2).map((w: string) => w[0]).join('').toUpperCase() || 'DR';
 
   const getSeverityColor = (val: string | number | undefined, type: 'asa' | 'lee' | 'caprini' | 'goldman' | 'detsky' | 'gupta' | 'other' = 'other') => {
     if (val === undefined || val === null || val === '') return 'bg-gray-400';
@@ -103,14 +122,22 @@ const StickyHeader = ({ onOpenAccount }: { onOpenAccount: () => void }) => {
     <header className="sticky top-0 bg-white/95 backdrop-blur-md border-b border-gray-200 z-30 shadow-sm no-print h-14 md:h-16">
       <div className="w-full max-w-[1440px] mx-auto px-2 md:px-4 h-full flex items-center justify-between gap-2 md:gap-4 overflow-hidden">
 
-        {/* Physician Branding - Ultra Compact */}
-        <div className="flex items-center gap-1.5 shrink-0 bg-slate-50/50 md:bg-white/50 py-1 px-2 rounded-lg border border-slate-100 max-w-[140px] md:max-w-none">
-          <div className="w-7 h-7 md:w-8 md:h-8 bg-clinical-navy/10 rounded-full flex items-center justify-center text-clinical-navy font-black text-[9px] md:text-[11px] border border-clinical-navy/20 shadow-inner">FA</div>
+        {/* Physician Branding - Clickable */}
+        <button
+          onClick={onOpenProfile}
+          className="flex items-center gap-1.5 shrink-0 bg-slate-50/50 md:bg-white/50 py-1 px-2 rounded-lg border border-slate-100 max-w-[140px] md:max-w-none hover:border-teal-300 hover:bg-teal-50/30 transition-all group"
+          title="Ver perfil médico"
+        >
+          <div className="w-7 h-7 md:w-8 md:h-8 bg-clinical-navy/10 rounded-full flex items-center justify-center text-clinical-navy font-black text-[9px] md:text-[11px] border border-clinical-navy/20 shadow-inner">{initials}</div>
           <div className="flex flex-col min-w-0">
-            <span className="text-[10px] md:text-[12px] font-black text-slate-800 tracking-tight truncate leading-none mb-0.5">{doctorName}</span>
-            <span className="text-[8px] md:text-[9px] font-bold text-slate-500 leading-none">Céd. {cedula}</span>
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] md:text-[12px] font-black text-slate-800 tracking-tight truncate leading-none mb-0.5 group-hover:text-teal-700 transition-colors">{doctorName}</span>
+              {isVerified && <span className="text-emerald-500 text-[10px] leading-none" title="Médico Verificado">✅</span>}
+              {!isVerified && doctorProfile?.verification_status === 'pending' && <span className="text-amber-400 text-[10px] leading-none" title="Verificación pendiente">🕐</span>}
+            </div>
+            <span className="text-[8px] md:text-[9px] font-bold text-slate-500 leading-none">Céd. {cedulaDisplay}</span>
           </div>
-        </div>
+        </button>
 
         {/* Scales Container - Centered on Web, Scrollable always */}
         <div className="flex-1 flex items-center justify-start md:justify-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-1 scroll-smooth">
@@ -304,6 +331,8 @@ const App: React.FC = () => {
   const [paywallMode, setPaywallMode] = useState<'paywall' | 'account'>('paywall');
   const [isCheckingCredits, setIsCheckingCredits] = useState(false);
   const [isUnlocked, setIsUnlocked] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [doctorProfile, setDoctorProfile] = useState<DoctorProfile | null>(null);
 
   const methods = useForm<VPOData>({
     defaultValues: {
@@ -361,24 +390,33 @@ const App: React.FC = () => {
         if (user) {
           const { data: profile } = await supabase
             .from('profiles')
-            .select('paid_credits, free_vpos_used_today')
+            .select('paid_credits, free_vpos_used_today, plan_type, full_name, cedula_profesional, verification_status, verified')
             .eq('id', user.id)
             .single();
 
           if (profile) {
             setValue('paid_credits_live', profile.paid_credits || 0);
             setValue('free_vpos_used_today_live', profile.free_vpos_used_today || 0);
-            setValue('is_vip_live', user.email === 'mcfidel98@gmail.com');
+            setValue('is_vip_live', profile.plan_type === 'unlimited');
+            // Set doctor profile state
+            setDoctorProfile({
+              full_name: profile.full_name || '',
+              cedula_profesional: profile.cedula_profesional || '',
+              verification_status: profile.verification_status || 'unverified',
+              verified: profile.verified || false,
+            });
+            // Pre-populate elaboro with full_name if empty
+            if (profile.full_name && !methods.getValues('elaboro')) {
+              setValue('elaboro', profile.full_name);
+            }
           } else {
-            // Profile not found yet, set free defaults
             setValue('paid_credits_live', 0);
             setValue('free_vpos_used_today_live', 0);
-            setValue('is_vip_live', user.email === 'mcfidel98@gmail.com');
+            setValue('is_vip_live', false);
           }
         }
       } catch (err) {
         console.error("Error fetching credits:", err);
-        // On error, grant 1 free VPO so clinical work is never blocked
         setValue('free_vpos_used_today_live', 0);
       }
     };
@@ -790,9 +828,49 @@ const App: React.FC = () => {
         <div className="min-h-screen bg-clinical-bg font-sans pb-20 lg:pb-0 lg:flex items-start">
           <Sidebar activeStep={activeStep} setStep={setActiveStep} />
           <div className="flex-1 min-w-0 flex flex-col min-h-screen">
-            <StickyHeader onOpenAccount={openAccountModal} />
+            <StickyHeader
+              onOpenAccount={openAccountModal}
+              onOpenProfile={() => setShowProfileModal(true)}
+              doctorProfile={doctorProfile}
+            />
             <main className="pt-4 md:pt-8 pb-8 px-4 w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto flex-1">
-              <div className={activeStep === 0 ? 'block' : 'hidden'}><PatientInfo /></div>
+              <div className={activeStep === 0 ? 'block' : 'hidden'}>
+                <PatientInfo isLocked={isUnlocked} onNewPatient={() => {
+                  const paidCredits = methods.getValues('paid_credits_live') ?? 0;
+                  const freeUsed = methods.getValues('free_vpos_used_today_live') ?? 0;
+                  const remaining = paidCredits + (freeUsed < 1 ? 1 : 0);
+                  const msg = `⚠️ ¿Registrar nuevo paciente?\n\nEsta acción borrará todos los datos del paciente actual.\nCréditos disponibles: ${remaining} VPO${remaining !== 1 ? 's' : ''}`;
+                  if (confirm(msg)) {
+                    localStorage.removeItem('vpo_current_data');
+                    methods.reset({
+                      fecha: new Date().toISOString().split('T')[0],
+                      hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                      unidadMedica: methods.getValues('unidadMedica'),
+                      servicioSolicitante: methods.getValues('servicioSolicitante'),
+                      elaboro: methods.getValues('elaboro'),
+                      matricula: methods.getValues('matricula'),
+                      paid_credits_live: paidCredits,
+                      free_vpos_used_today_live: freeUsed,
+                      is_vip_live: methods.getValues('is_vip_live'),
+                      tipoCirugia: 'Electiva',
+                      esUrgencia: false,
+                      genero: Gender.MALE,
+                      ritmo: 'SINSUSAL',
+                      asa: 'II', lee: 'I',
+                      mets_estimated: 4, mets_method: 'auto',
+                      khorana_total: 0, vienna_cats_total: 0,
+                      ariscat_total: 0, caprini: 3,
+                      goldman: 'I', detsky: 'I',
+                      gupta: 0.1, cha2ds2vasc: 0,
+                      hasbled: 0, fragilidad_score: 1,
+                      stopbang_total: 0, cancer_activo: false
+                    });
+                    setIsUnlocked(false);
+                    setActiveStep(0);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }
+                }} />
+              </div>
               <div className={activeStep === 1 ? 'block' : 'hidden'}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6"><RiskFactors /><LabsAndVitals /></div>
               </div>
@@ -802,31 +880,34 @@ const App: React.FC = () => {
                 <RiskScales />
               </div>
               <div className={activeStep === 5 ? 'block' : 'hidden'}>
-                <Recommendations />
+                <Recommendations isUnlocked={isUnlocked} onRequestUnlock={handleUnlockVPO} />
               </div>
-              <div className={activeStep === 6 ? 'block h-full' : 'hidden'}><MedicalNoteGenerator /></div>
+              <div className={activeStep === 6 ? 'block h-full' : 'hidden'}><MedicalNoteGenerator isUnlocked={isUnlocked} onRequestUnlock={handleUnlockVPO} /></div>
               <div className={activeStep === 7 ? 'block' : 'hidden'}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                  {/* Larger Preview Section with Security Blur */}
+                  {/* Preview Section: blurred until unlocked */}
                   <div className="lg:col-span-2 relative bg-white p-4 rounded-xl shadow-sm border w-full h-[600px] sm:h-[850px] overflow-auto scrollbar-thin scrollbar-thumb-slate-200 group">
-                    {/* Security Overlay / Watermark */}
-                    <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-500">
-                      <div className="bg-white/80 backdrop-blur-md px-8 py-4 rounded-2xl border border-white shadow-2xl flex flex-col items-center gap-2">
-                        <Printer size={32} className="text-clinical-navy animate-bounce" />
-                        <span className="text-clinical-navy font-black text-xl tracking-tighter">VISTA PRELIMINAR</span>
-                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Para obtener el documento final nítido<br />genere el reporte oficial</span>
-                      </div>
-                    </div>
+                    {/* Lock overlay - only shown when NOT unlocked */}
+                    {!isUnlocked && (
+                      <>
+                        <div className="absolute inset-0 z-10 flex flex-col items-center justify-center pointer-events-none">
+                          <div className="bg-white/90 backdrop-blur-sm px-8 py-5 rounded-2xl border border-slate-100 shadow-2xl flex flex-col items-center gap-2">
+                            <ClipboardCheck size={32} className="text-clinical-navy" />
+                            <span className="text-clinical-navy font-black text-lg tracking-tighter">DESBLOQUEA PARA PREVISUALIZAR</span>
+                            <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest text-center">Presiona "Desbloquear VPO" para ver<br />y exportar el reporte</span>
+                          </div>
+                        </div>
+                        {/* Watermark Pattern Layer */}
+                        <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] select-none flex flex-wrap gap-20 justify-center items-center overflow-hidden rotate-[-25deg]">
+                          {Array(15).fill(0).map((_, i) => (
+                            <span key={i} className="text-5xl font-black text-clinical-navy whitespace-nowrap">VPO DIGITAL • VISTA PRELIMINAR • </span>
+                          ))}
+                        </div>
+                      </>
+                    )}
 
-                    <div className="transform scale-[0.4] sm:scale-[0.6] lg:scale-[0.85] xl:scale-[0.95] origin-top blur-[4px] select-none pointer-events-none transition-all duration-700 group-hover:blur-[6px]" style={{ minHeight: '100%' }}>
+                    <div className={`transform scale-[0.4] sm:scale-[0.6] lg:scale-[0.85] xl:scale-[0.95] origin-top transition-all duration-700 ${!isUnlocked ? 'blur-[5px] select-none pointer-events-none' : 'blur-0'}`} style={{ minHeight: '100%' }}>
                       <PrintView />
-                    </div>
-
-                    {/* Watermark Pattern Layer */}
-                    <div className="absolute inset-0 z-0 pointer-events-none opacity-[0.03] select-none flex flex-wrap gap-20 justify-center items-center overflow-hidden rotate-[-25deg]">
-                      {Array(15).fill(0).map((_, i) => (
-                        <span key={i} className="text-5xl font-black text-clinical-navy whitespace-nowrap">VPO DIGITAL • VISTA PRELIMINAR • </span>
-                      ))}
                     </div>
                   </div>
 
@@ -834,43 +915,55 @@ const App: React.FC = () => {
                   <div className="space-y-6">
                     <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
                       <div className="flex flex-col gap-4">
-                        {/* Credits Legend - Clickable to open Account Modal */}
-                        <button
-                          onClick={openAccountModal}
-                          className="w-full flex flex-col items-center p-3 bg-slate-50 hover:bg-blue-50 rounded-xl border border-dashed border-slate-200 hover:border-clinical-navy transition-all group cursor-pointer"
-                        >
-                          <span className="text-[10px] font-black text-slate-400 group-hover:text-clinical-navy uppercase tracking-widest mb-1 transition-colors">Estatus de Cuenta</span>
-                          <div className="text-sm font-black text-clinical-navy">
-                            {methods.watch('is_vip_live') ? (
-                              <span className="text-clinical-navy flex items-center gap-1">
-                                <span className="bg-clinical-navy text-white text-[10px] px-2 py-0.5 rounded-full mr-1">VIP</span>
-                                VPOs ILIMITADOS
-                              </span>
-                            ) : (
-                              <>{methods.watch('paid_credits_live') || 0} VPOs + {(methods.watch('free_vpos_used_today_live') || 0) > 0 ? '0' : '1'} FREE</>
-                            )}
-                          </div>
-                          <span className="text-[9px] text-slate-500 mt-1 italic">
-                            {methods.watch('is_vip_live') ? ':// Acceso de Desarrollador Activo' : ((methods.watch('free_vpos_used_today_live') || 0) > 0 ? '🎁 Cortesía diaria ya utilizada' : '🎁 Tienes 1 cortesía disponible')}
-                          </span>
-                          <span className="text-[9px] text-clinical-navy font-black mt-1 opacity-0 group-hover:opacity-100 transition-opacity">👆 Toca para ver tu cuenta →</span>
-                        </button>
-
-                        {!isUnlocked ? (
-                          <button
-                            onClick={handleUnlockVPO}
-                            disabled={isCheckingCredits}
-                            className={`w-full bg-clinical-navy text-white py-5 rounded-2xl font-black text-lg flex flex-col items-center justify-center gap-1 transition-all shadow-xl shadow-clinical-navy/20 ${isCheckingCredits ? 'opacity-70 cursor-wait' : 'hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]'}`}>
-                            <div className="flex items-center gap-2">
-                              <ClipboardCheck size={24} />
-                              <span>DESBLOQUEAR VPO</span>
+                        {/* Unified Account Status + Unlock Panel */}
+                        {isUnlocked ? (
+                          /* ----- UNLOCKED STATE ----- */
+                          <div className="w-full bg-gradient-to-r from-green-500 to-emerald-600 text-white p-4 rounded-2xl shadow-lg border border-green-400 flex items-center justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-9 h-9 bg-white/20 rounded-full flex items-center justify-center text-lg">✅</div>
+                              <div>
+                                <p className="font-black text-sm leading-none">VPO DESBLOQUEADO</p>
+                                <p className="text-[10px] opacity-80 font-bold mt-0.5">
+                                  {methods.watch('is_vip_live') ? 'Acceso VIP • Ilimitado' : `${methods.watch('paid_credits_live') ?? 0} crédito${(methods.watch('paid_credits_live') ?? 0) !== 1 ? 's' : ''} restante${(methods.watch('paid_credits_live') ?? 0) !== 1 ? 's' : ''}`}
+                                </p>
+                              </div>
                             </div>
-                            <span className="text-[10px] opacity-70 font-bold uppercase tracking-tighter">Usar 1 Crédito / FREE</span>
-                          </button>
-                        ) : (
-                          <div className="w-full bg-green-500 text-white py-4 rounded-2xl font-black text-center shadow-lg border-2 border-green-400">
-                            VPO DESBLOQUEADO ✅
+                            <button onClick={openAccountModal} className="text-[10px] font-black bg-white/20 hover:bg-white/30 px-3 py-1.5 rounded-lg transition-colors">
+                              Mi Cuenta
+                            </button>
                           </div>
+                        ) : (
+                          /* ----- LOCKED STATE ----- */
+                          <>
+                            {/* Compact credits info row */}
+                            <button
+                              onClick={openAccountModal}
+                              className="w-full flex items-center justify-between px-4 py-2.5 bg-slate-50 hover:bg-blue-50 rounded-xl border border-slate-200 hover:border-clinical-navy transition-all group text-left"
+                            >
+                              <span className="text-xs font-black text-slate-500 group-hover:text-clinical-navy transition-colors">
+                                {methods.watch('is_vip_live') ? (
+                                  <span className="flex items-center gap-1.5"><span className="bg-clinical-navy text-white text-[9px] px-1.5 py-0.5 rounded-full">VIP</span> Acceso Ilimitado</span>
+                                ) : (
+                                  <>💳 {methods.watch('paid_credits_live') ?? 0} VPOs pagados · {(methods.watch('free_vpos_used_today_live') ?? 0) < 1 ? '1 FREE' : 'sin cortesía'}</>
+                                )}
+                              </span>
+                              <span className="text-[9px] text-clinical-navy font-black opacity-0 group-hover:opacity-100 transition-opacity">Ver cuenta →</span>
+                            </button>
+
+                            {/* Main unlock button */}
+                            <button
+                              onClick={handleUnlockVPO}
+                              disabled={isCheckingCredits}
+                              className={`w-full bg-clinical-navy text-white py-5 rounded-2xl font-black text-lg flex flex-col items-center justify-center gap-1 transition-all shadow-xl shadow-clinical-navy/20 ${isCheckingCredits ? 'opacity-70 cursor-wait' : 'hover:scale-[1.02] hover:brightness-110 active:scale-[0.98]'}`}>
+                              <div className="flex items-center gap-2">
+                                <ClipboardCheck size={24} />
+                                <span>DESBLOQUEAR VPO</span>
+                              </div>
+                              <span className="text-[10px] opacity-70 font-bold uppercase tracking-tighter">
+                                {(methods.watch('free_vpos_used_today_live') ?? 0) < 1 ? 'Usar cortesía gratuita del día' : `Usar 1 crédito (${methods.watch('paid_credits_live') ?? 0} disponibles)`}
+                              </span>
+                            </button>
+                          </>
                         )}
 
                         <button
@@ -941,6 +1034,17 @@ const App: React.FC = () => {
         </div>
 
         <PaywallModal isOpen={showPaywall} onClose={() => setShowPaywall(false)} mode={paywallMode} />
+
+        {showProfileModal && (
+          <DoctorProfileModal
+            profile={doctorProfile}
+            onClose={() => setShowProfileModal(false)}
+            onVerificationSubmitted={() => {
+              // Refresh profile after submission
+              setDoctorProfile(prev => prev ? { ...prev, verification_status: 'pending' } : prev);
+            }}
+          />
+        )}
       </FormProvider>
     </AuthGuard>
   );

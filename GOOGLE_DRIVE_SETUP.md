@@ -50,7 +50,7 @@ Esta guía paso a paso te permitirá resolver los problemas de conexión con Goo
     *   Haz clic en **"AGREGAR URI"**.
     *   Debes poner **EXACTAMENTE** la dirección donde corre tu app.
     *   Si es local: `http://localhost:5173`
-    *   Si es producción: `https://www.vpo.mx` (o `https://torres-vpo-digital.vercel.app`)
+    *   Si es producción: `https://vpo.mx`
     *   *Nota: No pongas barra `/` al final.*
 6.  Haz clic en **"CREAR"**.
 7.  Aparecerá una ventana con tu **ID de cliente**. Copia la cadena larga que termina en `.apps.googleusercontent.com`.

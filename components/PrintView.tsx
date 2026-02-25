@@ -10,6 +10,37 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
     const overrides = data.risk_overrides || {};
     const hasOverrides = Object.keys(overrides).length > 0;
 
+    // Compute clinical alerts for printed report
+    const getPrintedAlerts = () => {
+        const alerts: string[] = [];
+        if (data.esUrgencia) {
+            alerts.push('⚠️ CIRUGÍA DE URGENCIA: Ayuno no garantizado. Considerar IRS. +4 Goldman / +10 Detsky / +8 ARISCAT / ASA-E.');
+        }
+        if (data.ecg_isquemia) alerts.push('⚡ ECG: Isquemia/Necrosis activa. Optimizar tratamiento antiisquémico previo.');
+        if (data.ecg_brihh_completo) alerts.push('⚡ ECG: BRIHH Completo. Vigilar intraoperatorio. Riesgo de bloqueo con catéter.');
+        if (data.ecg_extrasistoles) alerts.push('⚡ ECG: >5 Extrasístoles Ventriculares/min. Corregir electrolitos (K+, Mg²⁺).');
+        if (data.ecg_ritmo_especifico === 'FA') alerts.push('⚡ FA: Verificar anticoagulación. Control FC <100 lpm.');
+        if (data.ecg_ritmo_especifico === 'Marcapasos') alerts.push('⚡ Marcapasos: Usar bisturí bipolar. Tener imán disponible.');
+        if (data.ecg_bloqueo === 'Mobitz_II') alerts.push('⚡ Bloqueo Mobitz II: Valorar MP temporal con Cardiología.');
+        if (data.ecg_bloqueo === '3er_Grado') alerts.push('⚡ BLOQUEO COMPLETO: Requiere MP temporal definitivo antes de CX electiva.');
+        const sys = data.taSistolica || 0;
+        const fc = data.fc || 0;
+        const sato2 = data.sato2 || 0;
+        const k = data.k || 0;
+        const hb = data.hb || 0;
+        const plaq = data.plaquetas || 0;
+        if (sys > 180) alerts.push(`⚠️ HTA Severa (${sys} mmHg): Optimizar control tensional. Meta <160 mmHg.`);
+        if (fc > 100) alerts.push(`⚠️ Taquicardia (${fc} lpm): Investigar causa. Meta <100 lpm.`);
+        if (sato2 > 0 && sato2 < 90) alerts.push(`⚠️ Hipoxemia Severa (SpO2 ${sato2}%): Optimizar función respiratoria previo a CX.`);
+        if (k > 0 && k < 3.0) alerts.push(`⚠️ Hipocalemia (K⁺ ${k} mEq/L): Corregir previo a CX. Riesgo de arritmias.`);
+        if (k > 0 && k > 5.5) alerts.push(`⚠️ Hipercalemia (K⁺ ${k} mEq/L): Corregir antes del procedimiento.`);
+        if (hb > 0 && hb < 8.0) alerts.push(`⚠️ Anemia Severa (Hb ${hb} g/dL). Considerar transfusión si Hb <7.0 g/dL.`);
+        if (plaq > 0 && plaq < 100) alerts.push(`⚠️ Trombocitopenia (${plaq}k): Riesgo hemorrágico elevado.`);
+        if (data.exploracion_estenosis_aortica || data.flag_estenosis_aortica_severa) alerts.push('🩺 Estenosis Aórtica Severa: Mantener precarga/RVS. Evitar hipotensión.');
+        if (data.exploracion_soplo_carotideo) alerts.push('🩺 Soplo Carotídeo: Mantener PAM estable. Considerar dúplex.');
+        return alerts;
+    };
+    const printedAlerts = getPrintedAlerts();
     // IDs should only be present in Print Mode to avoid html2canvas capturing the truncated preview
     const page1Id = isPrintMode ? "print-page-1" : undefined;
     const page2Id = isPrintMode ? "print-page-2" : undefined;
@@ -474,6 +505,17 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
 
                 <table width="714" height="10"><tbody><tr><td></td></tr></tbody></table>
 
+                {/* URGENCIA BANNER - Page 2 */}
+                {data.esUrgencia && (
+                    <div style={{ marginBottom: '12px', background: '#b91c1c', color: 'white', borderRadius: '6px', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span style={{ fontSize: '16px' }}>⚠️</span>
+                        <div>
+                            <div style={{ fontWeight: 900, fontSize: '11px', letterSpacing: '0.05em' }}>CIRUGÍA DE URGENCIA / EMERGENCIA</div>
+                            <div style={{ fontSize: '9px', opacity: 0.9 }}>Escalas impactadas: ASA-E +4 Goldman +10 Detsky +8 ARISCAT &bull; Valorar IRS (Inducción Secuencia Rápida)</div>
+                        </div>
+                    </div>
+                )}
+
                 {/* RECOMMENDATIONS SECTION */}
                 <div style={{ marginTop: '10px' }}>
                     <div style={{ fontWeight: 'bold', fontSize: '10px', textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '12px' }}>PRE-QUIRÚRGICO</div>
@@ -501,6 +543,22 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                     <div style={{ fontSize: '9px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{data.plan_trans}</div>
                     <div style={{ fontWeight: 'bold', fontSize: '10px', textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '12px', marginTop: '18px' }}>POST-QUIRÚRGICO</div>
                     <div style={{ fontSize: '9px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{data.plan_post}</div>
+
+                    {/* CLINICAL ALERTS SECTION - always shown if any alerts exist */}
+                    {printedAlerts.length > 0 && (
+                        <div style={{ marginTop: '14px', border: '1.5px solid #b91c1c', borderRadius: '4px', overflow: 'hidden', pageBreakInside: 'avoid' }}>
+                            <div style={{ backgroundColor: '#b91c1c', color: 'white', fontSize: '9px', fontWeight: 'bold', padding: '4px 10px', letterSpacing: '0.08em' }}>
+                                ⚠️ ALERTAS CLÍNICAS ACTIVAS (ECG / VITALES / LABORATORIOS / EXPLORACIÓN FÍSICA)
+                            </div>
+                            <div style={{ padding: '8px 10px', backgroundColor: '#fff5f5' }}>
+                                <ul style={{ margin: 0, paddingLeft: '14px', fontSize: '8.5px', color: '#7f1d1d', lineHeight: '1.5' }}>
+                                    {printedAlerts.map((alert, i) => (
+                                        <li key={i} style={{ marginBottom: '3px' }}>{alert}</li>
+                                    ))}
+                                </ul>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 {/* DOCTORS SECTION */}
@@ -523,8 +581,8 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                                 <td width="16%"></td>
                                 <td width="42%" align="center">
                                     <div style={{ borderTop: '1px solid black', width: '90%', paddingTop: '15px' }}>
-                                        <div style={{ fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>{data.elaboro || 'DR. MÉDICO ADSCRITO'}</div>
-                                        <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>MÉDICO ADSCRITO</div>
+                                        <div style={{ fontWeight: 'bold', fontSize: '11px', textTransform: 'uppercase' }}>{data.elaboro || 'DR. MÉDICO QUE REALIZÓ'}</div>
+                                        <div style={{ fontSize: '9px', color: '#666', marginTop: '4px' }}>MÉDICO QUE REALIZÓ</div>
                                         <div style={{ fontSize: '9px', color: '#666' }}>MATRÍCULA: {data.matricula || '---'}</div>
                                     </div>
                                 </td>
