@@ -19,7 +19,8 @@ import {
   Save,
   MessageCircle,
   Settings,
-  ClipboardList
+  ClipboardList,
+  LogOut
 } from 'lucide-react';
 import PatientInfo from './components/PatientInfo';
 import RiskFactors from './components/RiskFactors';
@@ -177,6 +178,13 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
   const unidadMedica = watch('unidadMedica');
   const servicioSolicitante = watch('servicioSolicitante');
 
+  const handleLogout = async () => {
+    if (supabase) {
+      await supabase.auth.signOut();
+      window.location.reload();
+    }
+  };
+
   const navItems = [
     { icon: User, label: "Paciente", step: 0 },
     { icon: Activity, label: "Clínica", step: 1 },
@@ -221,6 +229,13 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
       </nav>
 
       <div className="p-6 mt-auto">
+        <button
+          onClick={handleLogout}
+          className="w-full mb-4 flex items-center justify-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-red-500 rounded-xl transition-colors text-xs font-bold"
+        >
+          <LogOut size={14} />
+          Cerrar sesión
+        </button>
         <div className="bg-slate-50 rounded-xl p-4 border border-slate-100 flex flex-col items-center">
           <a
             href="mailto:mcfidel98@gmail.com"
