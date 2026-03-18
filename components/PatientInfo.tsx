@@ -49,16 +49,7 @@ const PatientInfo: React.FC<PatientInfoProps> = ({ isLocked = false, onNewPatien
   }, [isUrgencia, setValue]);
 
   const handleReset = () => {
-    if (onNewPatient) {
-      onNewPatient();
-    } else {
-      // Fallback if no callback provided
-      if (confirm("⚠️ ¿Borrar todos los datos e iniciar nuevo paciente?")) {
-        localStorage.removeItem('vpo_current_data');
-        reset({ fecha: new Date().toISOString().split('T')[0], hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), genero: Gender.FEMALE } as unknown as VPOData);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
-    }
+    onNewPatient?.();
   };
 
 
