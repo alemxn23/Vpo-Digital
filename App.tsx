@@ -935,26 +935,15 @@ const App: React.FC = () => {
 
                     if (confirm(msg)) {
                       localStorage.removeItem('vpo_current_data');
-                      setIsUnlocked(false);
-                      methods.reset({
-                        ...RESET_VALUES,
-                        fecha: new Date().toISOString().split('T')[0],
-                        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                        unidadMedica: methods.getValues('unidadMedica'),
-                        servicioSolicitante: methods.getValues('servicioSolicitante'),
-                        elaboro: methods.getValues('elaboro'),
-                        matricula: methods.getValues('matricula'),
-                        paid_credits_live: pCredits,
-                        free_vpos_used_today_live: fUsedUsed,
-                        is_vip_live: methods.getValues('is_vip_live'),
-                        tipoCirugia: 'Electiva',
-                        esUrgencia: false,
-                        genero: Gender.MALE,
-                        ritmo: 'SINSUSAL',
-                        asa: 'II', lee: 'I',
-                      } as unknown as VPOData);
-                      setActiveStep(0);
-                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      
+                      // Save sticky fields temporarily
+                      localStorage.setItem('vpo_doctor_name', methods.getValues('elaboro') || '');
+                      localStorage.setItem('vpo_doctor_cedula', methods.getValues('matricula') || '');
+                      localStorage.setItem('vpo_unidad_medica', methods.getValues('unidadMedica') || '');
+                      localStorage.setItem('vpo_servicio', methods.getValues('servicioSolicitante') || '');
+                      
+                      // Force a hard page reload to completely wipe React state and memory
+                      window.location.reload();
                     }
                   }, 50);
                 }} />
