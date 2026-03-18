@@ -922,30 +922,28 @@ const App: React.FC = () => {
             <main className="pt-4 md:pt-8 pb-8 px-4 w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto flex-1">
               <div className={activeStep === 0 ? 'block' : 'hidden'}>
                 <PatientInfo isLocked={isUnlocked} onNewPatient={() => {
-                  setTimeout(() => {
-                    const pCredits = methods.getValues('paid_credits_live') ?? 0;
-                    const fUsedUsed = methods.getValues('free_vpos_used_today_live') ?? 0;
-                    const fRem = Math.max(0, 2 - fUsedUsed);
-                    
-                    let msg = `⚠️ ¿Borrar todos los datos e iniciar nuevo paciente?\n\n`;
-                    msg += `Créditos restantes:\n`;
-                    msg += `• Gratis Hoy: ${fRem} VPO${fRem !== 1 ? 's' : ''}\n`;
-                    msg += `• De Pago: ${pCredits} VPO${pCredits !== 1 ? 's' : ''}\n\n`;
-                    msg += `Nota: Se mantendrá tu nombre, matrícula y unidad médica.`;
+                  const pCredits = methods.getValues('paid_credits_live') ?? 0;
+                  const fUsedUsed = methods.getValues('free_vpos_used_today_live') ?? 0;
+                  const fRem = Math.max(0, 2 - fUsedUsed);
+                  
+                  let msg = `⚠️ ¿Borrar todos los datos e iniciar nuevo paciente?\n\n`;
+                  msg += `Créditos restantes:\n`;
+                  msg += `• Gratis Hoy: ${fRem} VPO${fRem !== 1 ? 's' : ''}\n`;
+                  msg += `• De Pago: ${pCredits} VPO${pCredits !== 1 ? 's' : ''}\n\n`;
+                  msg += `Nota: Se mantendrá tu nombre, matrícula y unidad médica.`;
 
-                    if (confirm(msg)) {
-                      localStorage.removeItem('vpo_current_data');
-                      
-                      // Save sticky fields temporarily
-                      localStorage.setItem('vpo_doctor_name', methods.getValues('elaboro') || '');
-                      localStorage.setItem('vpo_doctor_cedula', methods.getValues('matricula') || '');
-                      localStorage.setItem('vpo_unidad_medica', methods.getValues('unidadMedica') || '');
-                      localStorage.setItem('vpo_servicio', methods.getValues('servicioSolicitante') || '');
-                      
-                      // Force a hard page reload to completely wipe React state and memory
-                      window.location.reload();
-                    }
-                  }, 50);
+                  if (window.confirm(msg)) {
+                    localStorage.removeItem('vpo_current_data');
+                    
+                    // Save sticky fields temporarily
+                    localStorage.setItem('vpo_doctor_name', methods.getValues('elaboro') || '');
+                    localStorage.setItem('vpo_doctor_cedula', methods.getValues('matricula') || '');
+                    localStorage.setItem('vpo_unidad_medica', methods.getValues('unidadMedica') || '');
+                    localStorage.setItem('vpo_servicio', methods.getValues('servicioSolicitante') || '');
+                    
+                    // Force a hard page reload to completely wipe React state and memory
+                    window.location.reload();
+                  }
                 }} />
               </div>
               <div className={activeStep === 1 ? 'block' : 'hidden'}>
