@@ -16,6 +16,7 @@ interface PaywallModalProps {
 }
 
 interface Profile {
+    id?: string;
     paid_credits: number;
     free_vpos_used_today: number;
     plan_type: string;
@@ -131,12 +132,12 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
 
             const { data } = await supabase
                 .from('profiles')
-                .select('paid_credits, free_vpos_used_today, plan_type, last_vpo_date')
+                .select('id, paid_credits, free_vpos_used_today, plan_type, last_vpo_date')
                 .eq('id', user.id)
                 .single();
 
             if (data) setProfile(data);
-            setIsVIP(user.email === 'mcfidel98@gmail.com');
+            setIsVIP(data?.plan_type === 'unlimited');
         } catch (err) {
             console.error('Error fetching profile:', err);
         }
@@ -170,15 +171,19 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
                 }
             }
 
-            // Fallback: abrir Payment Link directo de Stripe
-            const link = paymentLinks[priceId];
-            if (link) window.open(link, '_blank');
-        } catch (error) {
-            console.error('Error creating checkout session:', error);
-            // Fallback garantizado: abrir Payment Link de Stripe directamente
+            // Fallback: abrir Payment Link directo de Stripe con identity
             const link = paymentLinks[priceId];
             if (link) {
-                window.open(link, '_blank');
+                const clientRef = profile?.id ? `?client_reference_id=${profile.id}` : '';
+                window.open(`${link}${clientRef}`, '_blank');
+            }
+        } catch (error) {
+            console.error('Error creating checkout session:', error);
+            // Fallback garantizado: abrir Payment Link de Stripe directamente con identity
+            const link = paymentLinks[priceId];
+            if (link) {
+                const clientRef = profile?.id ? `?client_reference_id=${profile.id}` : '';
+                window.open(`${link}${clientRef}`, '_blank');
             } else {
                 alert('Ocurrió un error. Contacta soporte: mcfidel98@gmail.com');
             }
@@ -191,7 +196,8 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
 
     const freeUsed = profile?.free_vpos_used_today ?? 0;
     const paidCredits = profile?.paid_credits ?? 0;
-    const hasFreeToday = freeUsed < 1;
+    const hasFreeToday = freeUsed < 2;
+    const freeRemaining = Math.max(0, 2 - freeUsed);
 
     return (
         <div
@@ -235,7 +241,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
                                 : 'bg-white/5 border-white/10 text-white/50'}`}
                         >
                             <Gift size={12} />
-                            <span>{hasFreeToday ? '1 VPO gratis disponible hoy' : 'Cortesía diaria usada'}</span>
+                            <span>{hasFreeToday ? `${freeRemaining} VPO gratis disponible(s) hoy` : 'Cortesía diaria usada'}</span>
                         </div>
                     </div>
 
@@ -308,7 +314,7 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
                                         : 'bg-slate-50 border-slate-100'}`}
                                 >
                                     <p className={`text-3xl font-black ${hasFreeToday ? 'text-emerald-600' : 'text-slate-400'}`}>
-                                        {hasFreeToday ? '1' : '0'}
+                                        {hasFreeToday ? freeRemaining : '0'}
                                     </p>
                                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
                                         VPO Gratis Hoy
@@ -323,9 +329,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
                                         <Gift size={18} className="text-white" />
                                     </div>
                                     <div>
-                                        <p className="text-sm font-black text-emerald-800">1 VPO gratuito cada día</p>
+                                        <p className="text-sm font-black text-emerald-800">2 VPOs gratuitos cada día</p>
                                         <p className="text-[11px] text-emerald-700 mt-0.5 leading-relaxed">
-                                            Cada día recibes <strong>1 VPO de cortesía</strong> para generar un reporte clínico sin costo.
+                                            Cada día recibes <strong>2 VPOs de cortesía</strong> para generar un reporte clínico sin costo.
                                             Esta cortesía <strong>no es acumulable</strong> — se reinicia diariamente y no se guarda si no se usa.
                                         </p>
                                     </div>
@@ -363,9 +369,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
                             <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-2xl p-4">
                                 <span className="text-2xl shrink-0">🎁</span>
                                 <div>
-                                    <p className="text-[12px] font-black text-amber-800">1 VPO gratis al día — sin acumular</p>
+                                    <p className="text-[12px] font-black text-amber-800">2 VPOs gratis al día — sin acumular</p>
                                     <p className="text-[11px] text-amber-700 leading-relaxed">
-                                        Cada día tienes <strong>1 cortesía</strong> para generar un reporte sin costo.
+                                        Cada día tienes <strong>2 cortesías</strong> para generar un reporte sin costo.
                                         Adquiere créditos para generar múltiples VPOs sin restricciones.
                                     </p>
                                 </div>

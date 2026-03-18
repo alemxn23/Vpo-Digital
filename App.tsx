@@ -36,6 +36,7 @@ import PaywallModal from './components/PaywallModal';
 import { AuthGuard } from './components/AuthGuard';
 import { DoctorProfileModal } from './components/DoctorProfileModal';
 import { CompleteProfileModal } from './components/CompleteProfileModal';
+import AdminPanel from './components/AdminPanel';
 
 // --- Configuration ---
 // Google Drive Client ID. Sigue los pasos en GOOGLE_DRIVE_SETUP.md para configurar el tuyo.
@@ -174,13 +175,23 @@ const StickyHeader = ({ onOpenAccount, onOpenProfile, doctorProfile }: {
   );
 };
 
-const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: number) => void }) => {
+const Sidebar = ({ activeStep, setStep, isAdmin }: { activeStep: number, setStep: (s: number) => void, isAdmin: boolean }) => {
   const { watch } = useFormContext<VPOData>();
   const unidadMedica = watch('unidadMedica');
   const servicioSolicitante = watch('servicioSolicitante');
 
   const handleLogout = async () => {
     if (supabase) {
+      // CLEAR ALL CACHED DATA TO PREVENT IDENTITY LEAKS
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('vpo_')) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+
       await supabase.auth.signOut();
       window.location.reload();
     }
@@ -196,6 +207,10 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
     { icon: FileText, label: "Nota Médica", step: 6 },
     { icon: Printer, label: "Reporte", step: 7 },
   ];
+
+  if (isAdmin) {
+    navItems.push({ icon: Settings, label: "Admin", step: 8 });
+  }
 
   return (
     <aside className="hidden lg:flex flex-col w-64 bg-white border-r border-gray-200 h-screen sticky top-0 left-0 z-40 overflow-y-auto no-print shadow-[4px_0_24px_rgba(0,0,0,0.02)]">
@@ -263,7 +278,7 @@ const Sidebar = ({ activeStep, setStep }: { activeStep: number, setStep: (s: num
   );
 };
 
-const BottomNav = ({ activeStep, setStep }: { activeStep: number, setStep: (s: number) => void }) => {
+const BottomNav = ({ activeStep, setStep, isAdmin }: { activeStep: number, setStep: (s: number) => void, isAdmin: boolean }) => {
   const navItems = [
     { icon: User, label: "Paciente", step: 0 },
     { icon: Activity, label: "Clínica", step: 1 },
@@ -274,6 +289,10 @@ const BottomNav = ({ activeStep, setStep }: { activeStep: number, setStep: (s: n
     { icon: FileText, label: "Nota", step: 6 },
     { icon: Printer, label: "PDF", step: 7 },
   ];
+
+  if (isAdmin) {
+    navItems.push({ icon: Settings, label: "Admin", step: 8 });
+  }
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-safe no-print lg:hidden shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
@@ -349,6 +368,8 @@ const App: React.FC = () => {
   const [isUnlocked, setIsUnlocked] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [doctorProfile, setDoctorProfile] = useState<DoctorProfile | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showNewPatientConfirm, setShowNewPatientConfirm] = useState(false);
 
   const methods = useForm<VPOData>({
     defaultValues: {
@@ -356,8 +377,8 @@ const App: React.FC = () => {
       hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       unidadMedica: localStorage.getItem('vpo_unidad_medica') || '',
       servicioSolicitante: localStorage.getItem('vpo_servicio') || '',
-      elaboro: localStorage.getItem('vpo_doctor_name') || '',
-      matricula: localStorage.getItem('vpo_doctor_cedula') || '',
+      elaboro: '',
+      matricula: '',
       tipoCirugia: 'Electiva',
       esUrgencia: false,
       genero: Gender.MALE,
@@ -404,9 +425,11 @@ const App: React.FC = () => {
         const { data: authData } = await supabase.auth.getUser();
         const user = authData?.user;
         if (user) {
+          setIsAdmin(user.email === 'mcfidel98@gmail.com');
+
           const { data: profile, error: profileFetchErr } = await supabase
             .from('profiles')
-            .select('paid_credits, free_vpos_used_today, plan_type, full_name, cedula_profesional, verification_status, verified')
+            .select('paid_credits, free_vpos_used_today, plan_type, full_name, cedula_profesional, verification_status, verified, last_vpo_date')
             .eq('id', user.id)
             .maybeSingle();
 
@@ -447,8 +470,12 @@ const App: React.FC = () => {
               await supabase.from('profiles').update({ full_name: finalFullName }).eq('id', user.id);
             }
 
+            const today = new Date().toISOString().split('T')[0];
+            const isNewDay = profile.last_vpo_date && profile.last_vpo_date !== today;
+            const freeUsed = isNewDay ? 0 : (profile.free_vpos_used_today || 0);
+
             setValue('paid_credits_live', profile.paid_credits || 0);
-            setValue('free_vpos_used_today_live', profile.free_vpos_used_today || 0);
+            setValue('free_vpos_used_today_live', freeUsed);
             setValue('is_vip_live', profile.plan_type === 'unlimited');
             // Set doctor profile state
             setDoctorProfile({
@@ -457,14 +484,9 @@ const App: React.FC = () => {
               verification_status: profile.verification_status || 'unverified',
               verified: profile.verified || false,
             });
-            // Pre-populate elaboro with full_name if empty
-            if (finalFullName && !methods.getValues('elaboro')) {
-              setValue('elaboro', finalFullName);
-            }
-            // Pre-populate matricula with cedula if empty
-            if (profile.cedula_profesional && !methods.getValues('matricula')) {
-              setValue('matricula', profile.cedula_profesional);
-            }
+            // FORCE LOCAL FORM TO USE ACTUAL IDENTITY FROM DB, NOT PREVIOUS CACHED
+            setValue('elaboro', finalFullName || '');
+            setValue('matricula', profile.cedula_profesional || '');
           } else {
             setValue('paid_credits_live', 0);
             setValue('free_vpos_used_today_live', 0);
@@ -492,6 +514,12 @@ const App: React.FC = () => {
     if (savedData) {
       try {
         const parsed = JSON.parse(savedData);
+        // DONT INHERIT IDENTITIES FROM LOCALSTORAGE. THIS PREVENTS VIP/ADMIN BYPASS LEAKS
+        delete parsed.is_vip_live;
+        delete parsed.paid_credits_live;
+        delete parsed.free_vpos_used_today_live;
+        delete parsed.elaboro;
+        delete parsed.matricula;
         methods.reset(parsed);
       } catch (e) {
         console.error("Failed to load saved data", e);
@@ -589,59 +617,36 @@ const App: React.FC = () => {
     if (isUnlocked) return;
     setIsCheckingCredits(true);
     try {
-      // Use live values already synced from Supabase into the form
-      const paidCredits = methods.getValues('paid_credits_live') ?? 0;
-      const freeUsed = methods.getValues('free_vpos_used_today_live') ?? 0;
-      const isVIP = methods.getValues('is_vip_live') ?? false;
+      if (!supabase) throw new Error("Supabase is not initialized.");
 
-      // --- VIP / Developer bypass ---
-      if (isVIP) {
-        setIsUnlocked(true);
-        return;
+      // Validamos mediante nuestra RPC en base de datos para priorizar seguridad
+      const { data: allowed, error } = await supabase.rpc('consume_vpo_credit');
+
+      if (error) {
+        throw error;
       }
 
-      // --- Use free daily VPO ---
-      if (freeUsed < 1) {
-        if (supabase) {
-          const { data: authData } = await supabase.auth.getUser();
-          const user = authData?.user;
-          if (user) {
-            await supabase.from('profiles').update({
-              free_vpos_used_today: 1,
-              last_vpo_date: new Date().toISOString().split('T')[0]
-            }).eq('id', user.id);
+      if (allowed) {
+        // Obtenemos los últimos valores reales refrendados
+        const { data: authData } = await supabase.auth.getUser();
+        if (authData?.user) {
+          const { data: p } = await supabase.from('profiles').select('paid_credits, free_vpos_used_today').eq('id', authData.user.id).single();
+          if (p) {
+             methods.setValue('paid_credits_live', p.paid_credits || 0);
+             methods.setValue('free_vpos_used_today_live', p.free_vpos_used_today || 0);
           }
         }
-        // Optimistically update local form state
-        methods.setValue('free_vpos_used_today_live', 1);
         setIsUnlocked(true);
-        return;
+      } else {
+        // Sin créditos disponibles, bloquear y mostrar Paywall (Regla 5)
+        setPaywallMode('paywall');
+        setShowPaywall(true);
       }
-
-      // --- Use paid credit ---
-      if (paidCredits > 0) {
-        if (supabase) {
-          const { data: authData } = await supabase.auth.getUser();
-          const user = authData?.user;
-          if (user) {
-            await supabase.from('profiles').update({
-              paid_credits: paidCredits - 1
-            }).eq('id', user.id);
-          }
-        }
-        // Optimistically update local form state
-        methods.setValue('paid_credits_live', paidCredits - 1);
-        setIsUnlocked(true);
-        return;
-      }
-
-      // --- No credits left → Show paywall ---
-      setPaywallMode('paywall');
-      setShowPaywall(true);
     } catch (err) {
       console.error("Unlock Error:", err);
-      // On any error, still let the user through to avoid blocking clinical work
-      setIsUnlocked(true);
+      // Evitamos by-pass en caso de error para priorizar la veracidad transaccional
+      setPaywallMode('paywall');
+      setShowPaywall(true);
     } finally {
       setIsCheckingCredits(false);
     }
@@ -885,7 +890,7 @@ const App: React.FC = () => {
     <AuthGuard>
       <FormProvider {...methods}>
         <div className="min-h-screen bg-clinical-bg font-sans pb-20 lg:pb-0 lg:flex items-start">
-          <Sidebar activeStep={activeStep} setStep={setActiveStep} />
+          <Sidebar activeStep={activeStep} setStep={setActiveStep} isAdmin={isAdmin} />
           <div className="flex-1 min-w-0 flex flex-col min-h-screen">
             <StickyHeader
               onOpenAccount={openAccountModal}
@@ -895,39 +900,40 @@ const App: React.FC = () => {
             <main className="pt-4 md:pt-8 pb-8 px-4 w-full max-w-md md:max-w-3xl lg:max-w-6xl mx-auto flex-1">
               <div className={activeStep === 0 ? 'block' : 'hidden'}>
                 <PatientInfo isLocked={isUnlocked} onNewPatient={() => {
-                  const paidCredits = methods.getValues('paid_credits_live') ?? 0;
-                  const freeUsed = methods.getValues('free_vpos_used_today_live') ?? 0;
-                  const remaining = paidCredits + (freeUsed < 1 ? 1 : 0);
-                  const msg = `⚠️ ¿Registrar nuevo paciente?\n\nEsta acción borrará todos los datos del paciente actual.\nCréditos disponibles: ${remaining} VPO${remaining !== 1 ? 's' : ''}`;
-                  if (confirm(msg)) {
-                    localStorage.removeItem('vpo_current_data');
-                    methods.reset({
-                      fecha: new Date().toISOString().split('T')[0],
-                      hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                      unidadMedica: methods.getValues('unidadMedica'),
-                      servicioSolicitante: methods.getValues('servicioSolicitante'),
-                      elaboro: methods.getValues('elaboro'),
-                      matricula: methods.getValues('matricula'),
-                      paid_credits_live: paidCredits,
-                      free_vpos_used_today_live: freeUsed,
-                      is_vip_live: methods.getValues('is_vip_live'),
-                      tipoCirugia: 'Electiva',
-                      esUrgencia: false,
-                      genero: Gender.MALE,
-                      ritmo: 'SINSUSAL',
-                      asa: 'II', lee: 'I',
-                      mets_estimated: 4, mets_method: 'auto',
-                      khorana_total: 0, vienna_cats_total: 0,
-                      ariscat_total: 0, caprini: 3,
-                      goldman: 'I', detsky: 'I',
-                      gupta: 0.1, cha2ds2vasc: 0,
-                      hasbled: 0, fragilidad_score: 1,
-                      stopbang_total: 0, cancer_activo: false
-                    });
-                    setIsUnlocked(false);
-                    setActiveStep(0);
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }
+                  setTimeout(() => {
+                    const paidCredits = methods.getValues('paid_credits_live') ?? 0;
+                    const freeUsed = methods.getValues('free_vpos_used_today_live') ?? 0;
+                    const msg = `⚠️ ¿Borrar todos los datos e iniciar nuevo paciente?`;
+                    if (confirm(msg)) {
+                      localStorage.removeItem('vpo_current_data');
+                      setIsUnlocked(false);
+                      methods.reset({
+                        fecha: new Date().toISOString().split('T')[0],
+                        hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                        unidadMedica: methods.getValues('unidadMedica'),
+                        servicioSolicitante: methods.getValues('servicioSolicitante'),
+                        elaboro: methods.getValues('elaboro'),
+                        matricula: methods.getValues('matricula'),
+                        paid_credits_live: paidCredits,
+                        free_vpos_used_today_live: freeUsed,
+                        is_vip_live: methods.getValues('is_vip_live'),
+                        tipoCirugia: 'Electiva',
+                        esUrgencia: false,
+                        genero: Gender.MALE,
+                        ritmo: 'SINSUSAL',
+                        asa: 'II', lee: 'I',
+                        mets_estimated: 4, mets_method: 'auto',
+                        khorana_total: 0, vienna_cats_total: 0,
+                        ariscat_total: 0, caprini: 3,
+                        goldman: 'I', detsky: 'I',
+                        gupta: 0.1, cha2ds2vasc: 0,
+                        hasbled: 0, fragilidad_score: 1,
+                        stopbang_total: 0, cancer_activo: false
+                      });
+                      setActiveStep(0);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                  }, 50);
                 }} />
               </div>
               <div className={activeStep === 1 ? 'block' : 'hidden'}>
@@ -942,6 +948,7 @@ const App: React.FC = () => {
                 <Recommendations isUnlocked={isUnlocked} onRequestUnlock={handleUnlockVPO} />
               </div>
               <div className={activeStep === 6 ? 'block h-full' : 'hidden'}><MedicalNoteGenerator isUnlocked={isUnlocked} onRequestUnlock={handleUnlockVPO} /></div>
+              <div className={activeStep === 8 ? 'block h-full' : 'hidden'}><AdminPanel /></div>
               <div className={activeStep === 7 ? 'block' : 'hidden'}>
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Preview Section: blurred until unlocked */}
@@ -1003,7 +1010,7 @@ const App: React.FC = () => {
                                 {methods.watch('is_vip_live') ? (
                                   <span className="flex items-center gap-1.5"><span className="bg-clinical-navy text-white text-[9px] px-1.5 py-0.5 rounded-full">VIP</span> Acceso Ilimitado</span>
                                 ) : (
-                                  <>💳 {methods.watch('paid_credits_live') ?? 0} VPOs pagados · {(methods.watch('free_vpos_used_today_live') ?? 0) < 1 ? '1 FREE' : 'sin cortesía'}</>
+                                  <>💳 {methods.watch('paid_credits_live') ?? 0} VPOs pagados · {(methods.watch('free_vpos_used_today_live') ?? 0) < 2 ? `${2 - (methods.watch('free_vpos_used_today_live') ?? 0)} FREE` : 'sin cortesía'}</>
                                 )}
                               </span>
                               <span className="text-[9px] text-clinical-navy font-black opacity-0 group-hover:opacity-100 transition-opacity">Ver cuenta →</span>
@@ -1019,7 +1026,7 @@ const App: React.FC = () => {
                                 <span>DESBLOQUEAR VPO</span>
                               </div>
                               <span className="text-[10px] opacity-70 font-bold uppercase tracking-tighter">
-                                {(methods.watch('free_vpos_used_today_live') ?? 0) < 1 ? 'Usar cortesía gratuita del día' : `Usar 1 crédito (${methods.watch('paid_credits_live') ?? 0} disponibles)`}
+                                {(methods.watch('free_vpos_used_today_live') ?? 0) < 2 ? 'Usar cortesía gratuita del día' : `Usar 1 crédito (${methods.watch('paid_credits_live') ?? 0} disponibles)`}
                               </span>
                             </button>
                           </>
@@ -1079,7 +1086,7 @@ const App: React.FC = () => {
           )}
         </div>
         {showToast && <div className="fixed bottom-24 left-1/2 -translate-x-1/2 bg-gray-900 text-white px-6 py-3 rounded-full z-50 animate-bounce">Nota copiada</div>}
-        <BottomNav activeStep={activeStep} setStep={setActiveStep} />
+        <BottomNav activeStep={activeStep} setStep={setActiveStep} isAdmin={isAdmin} />
 
         {/* Hidden Container for high-res PDF generation - THIS IS THE ONLY ONE WITH IDs print-page-1/2 */}
         <div id="print-content" style={{
