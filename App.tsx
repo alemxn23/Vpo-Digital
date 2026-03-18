@@ -351,6 +351,28 @@ ${data.ayuno ? `Ayuno: ${data.ayuno}` : ''}
 `.trim();
 };
 
+const RESET_VALUES: Partial<VPOData> = {
+  nombre: '', nss: '', cama: '',
+  fechaNacimiento: '', edad: 0,
+  diagnosticoQuirurgico: '', cirugiaProgramada: '',
+  fechaQx: '', fechaCirugiaPendiente: false,
+  peso: 0, talla: 0, imc: 0,
+  tabaquismo: false, indiceTabaquico: 0, active_smoking: false,
+  alergicos: false, alergicosDetalle: '',
+  hta: false, diabetes: false, usaInsulina: false,
+  cardiopatiaIsquemica: false, cardio_stent: false,
+  icc: false, arritmias: false, valvulopatia: false, valvula_protesis: false,
+  evc: false, neumopatia: false, enfRenalCronica: false,
+  hepatopatia: false, coagulopatia: false,
+  taSistolica: 0, taDiastolica: 0, fc: 0, fr: 0, temp: 0, sato2: 0,
+  hb: 0, ht: 0, leucocitos: 0, plaquetas: 0, tp: 0, ttp: 0, inr: 0,
+  glucosaCentral: 0, urea: 0, creatinina: 0, na: 0, k: 0, cl: 0, tfg: 0,
+  selectedMeds: [], ariscat_total: 0, caprini: 3, goldman: 'I', detsky: 'I',
+  lee: 'I', gupta: 0.1, cha2ds2vasc: 0, hasbled: 0, stopbang_total: 0,
+  fragilidad_score: 1, cancer_activo: false, ariscat_infeccion: false,
+  riesgo_vrc_renal: false, eco_fevi: 50, plan_pre: '', plan_trans: '', plan_post: ''
+};
+
 declare global {
   interface Window {
     google: any;
@@ -901,35 +923,36 @@ const App: React.FC = () => {
               <div className={activeStep === 0 ? 'block' : 'hidden'}>
                 <PatientInfo isLocked={isUnlocked} onNewPatient={() => {
                   setTimeout(() => {
-                    const paidCredits = methods.getValues('paid_credits_live') ?? 0;
-                    const freeUsed = methods.getValues('free_vpos_used_today_live') ?? 0;
-                    const msg = `⚠️ ¿Borrar todos los datos e iniciar nuevo paciente?`;
+                    const pCredits = methods.getValues('paid_credits_live') ?? 0;
+                    const fUsedUsed = methods.getValues('free_vpos_used_today_live') ?? 0;
+                    const fRem = Math.max(0, 2 - fUsedUsed);
+                    
+                    let msg = `⚠️ ¿Borrar todos los datos e iniciar nuevo paciente?\n\n`;
+                    msg += `Créditos restantes:\n`;
+                    msg += `• Gratis Hoy: ${fRem} VPO${fRem !== 1 ? 's' : ''}\n`;
+                    msg += `• De Pago: ${pCredits} VPO${pCredits !== 1 ? 's' : ''}\n\n`;
+                    msg += `Nota: Se mantendrá tu nombre, matrícula y unidad médica.`;
+
                     if (confirm(msg)) {
                       localStorage.removeItem('vpo_current_data');
                       setIsUnlocked(false);
                       methods.reset({
+                        ...RESET_VALUES,
                         fecha: new Date().toISOString().split('T')[0],
                         hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                         unidadMedica: methods.getValues('unidadMedica'),
                         servicioSolicitante: methods.getValues('servicioSolicitante'),
                         elaboro: methods.getValues('elaboro'),
                         matricula: methods.getValues('matricula'),
-                        paid_credits_live: paidCredits,
-                        free_vpos_used_today_live: freeUsed,
+                        paid_credits_live: pCredits,
+                        free_vpos_used_today_live: fUsedUsed,
                         is_vip_live: methods.getValues('is_vip_live'),
                         tipoCirugia: 'Electiva',
                         esUrgencia: false,
                         genero: Gender.MALE,
                         ritmo: 'SINSUSAL',
                         asa: 'II', lee: 'I',
-                        mets_estimated: 4, mets_method: 'auto',
-                        khorana_total: 0, vienna_cats_total: 0,
-                        ariscat_total: 0, caprini: 3,
-                        goldman: 'I', detsky: 'I',
-                        gupta: 0.1, cha2ds2vasc: 0,
-                        hasbled: 0, fragilidad_score: 1,
-                        stopbang_total: 0, cancer_activo: false
-                      });
+                      } as unknown as VPOData);
                       setActiveStep(0);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }
