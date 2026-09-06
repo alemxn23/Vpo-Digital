@@ -490,7 +490,9 @@ export const MEDICATIONS_DB: SelectedMed[] = [
         alertLevel: 'yellow',
         instructions: 'Suspender 24h antes de la cirugía (Dosis Terapéutica) o 12h antes (Profiláctica). Evaluar función renal.',
         atcCode: 'B01AB05',
-        keywords: ['clexane', 'heparina', 'bajo peso molecular']
+        keywords: ['clexane', 'heparina', 'bajo peso molecular'],
+        isAnticoagulant: true,
+        anticoagType: 'HBPM'
     },
     {
         id: 'clopi',

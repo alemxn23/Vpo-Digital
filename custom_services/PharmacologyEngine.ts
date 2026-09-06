@@ -103,6 +103,20 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
                 recommendation.rationale = "Bajo riesgo trombótico. Puenteo aumenta sangrado sin beneficio.";
             }
         }
+
+        if (med.anticoagType === 'HBPM') { // Enoxaparina y otras heparinas de bajo peso molecular
+            // Dosis terapéutica: suspender ~24h antes (36h si hay deterioro renal, por vida media prolongada).
+            // Dosis profiláctica solo requiere ~12h, pero sin un campo que distinga la intención de dosis
+            // se usa el criterio más conservador (terapéutica) para no subestimar el riesgo de sangrado.
+            const renalImpaired = crcl < 30;
+            const hoursToStop = renalImpaired ? 36 : 24;
+
+            recommendation.action = 'stop';
+            recommendation.daysPrior = hoursToStop / 24;
+            recommendation.hoursPrior = hoursToStop;
+            recommendation.instructions = `SUSPENDER dosis terapéutica ${hoursToStop}h antes (12h antes si es dosis profiláctica). TFG: ${crcl.toFixed(0)} ml/min${renalImpaired ? ' — vida media prolongada por deterioro renal' : ''}.`;
+            recommendation.rationale = `Riesgo de Sangrado Quirúrgico: ${bleedingRisk.toUpperCase()}.`;
+        }
     }
 
     if (med.category === 'Antiagregante') {

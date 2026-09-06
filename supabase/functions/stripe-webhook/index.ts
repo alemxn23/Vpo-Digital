@@ -13,6 +13,21 @@ const PRICE_CREDITS_MAP: Record<string, number> = {
     'price_1T4HX1Ktp6JiUcWzb6Jm2Utk': 10,  // Pro: 10 VPOs $400 MXN
 };
 
+// Resuelve el user_id de Supabase asociado a una sesión de checkout:
+// 1) client_reference_id / metadata (viene de create-checkout-session)
+// 2) email del cliente (fallback para Payment Links directos de Stripe)
+async function resolveUserId(supabase: any, session: any): Promise<string | null> {
+    let userId: string | null = session.client_reference_id || session.metadata?.supabase_user_id || null;
+    if (userId) return userId;
+
+    const email = session.customer_email || session.customer_details?.email;
+    if (!email) return null;
+
+    const { data: userList } = await supabase.auth.admin.listUsers();
+    const matchedUser = userList?.users?.find((u: any) => u.email === email);
+    return matchedUser?.id ?? null;
+}
+
 serve(async (req) => {
     const signature = req.headers.get('stripe-signature')
 
@@ -37,6 +52,61 @@ serve(async (req) => {
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
+
+        // ── SUSCRIPCIÓN MENSUAL ILIMITADA: alta ─────────────────────────────────
+        if (event.type === 'checkout.session.completed' && (event.data.object as any).mode === 'subscription') {
+            const session = event.data.object as any;
+            const userId = await resolveUserId(supabase, session);
+
+            if (!userId) {
+                console.error('Could not resolve user for subscription checkout:', session.id);
+                return new Response(
+                    JSON.stringify({ received: true, warning: 'user not found, subscription not activated' }),
+                    { status: 200 }
+                );
+            }
+
+            const { error: subError } = await supabase.from('profiles').update({
+                plan_type: 'unlimited',
+                stripe_customer_id: session.customer,
+                stripe_subscription_id: session.subscription,
+                subscription_status: 'active',
+            }).eq('id', userId);
+
+            if (subError) {
+                console.error('Error activating subscription:', subError);
+                throw subError;
+            }
+
+            console.log(`✅ User ${userId} activated monthly unlimited subscription ${session.subscription}.`);
+            return new Response(JSON.stringify({ received: true }), { status: 200 })
+        }
+
+        // ── SUSCRIPCIÓN MENSUAL ILIMITADA: renovación / cancelación / pago fallido ──
+        if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.deleted') {
+            const subscription = event.data.object as any;
+            const status = subscription.status as string; // active, trialing, past_due, unpaid, canceled, incomplete_expired...
+            const isActive = event.type === 'customer.subscription.updated' && (status === 'active' || status === 'trialing');
+
+            // Filtrado por stripe_subscription_id: SOLO afecta al perfil dueño de esta suscripción exacta.
+            // Un VIP otorgado manualmente por un admin tiene stripe_subscription_id = NULL y nunca es tocado aquí.
+            const { data: updated, error: lifecycleError } = await supabase
+                .from('profiles')
+                .update({
+                    plan_type: isActive ? 'unlimited' : 'free',
+                    subscription_status: event.type === 'customer.subscription.deleted' ? 'canceled' : status,
+                })
+                .eq('stripe_subscription_id', subscription.id)
+                .select('id');
+
+            if (lifecycleError) {
+                console.error('Error updating subscription lifecycle:', lifecycleError);
+                throw lifecycleError;
+            }
+
+            console.log(`Subscription ${subscription.id} (${event.type}, status=${status}) → plan_type=${isActive ? 'unlimited' : 'free'} for ${updated?.length ?? 0} profile(s).`);
+            return new Response(JSON.stringify({ received: true }), { status: 200 })
+        }
 
         if (event.type === 'checkout.session.completed') {
             const session = event.data.object as any;
@@ -76,32 +146,7 @@ serve(async (req) => {
             }
 
             // ── PASO 2: Determinar a qué usuario acreditar ─────────────────────
-            let userId: string | null = session.client_reference_id || null;
-
-            // Método B: buscar por email del cliente (Payment Links)
-            if (!userId && session.customer_email) {
-                const { data: userList } = await supabase.auth.admin.listUsers();
-                const matchedUser = userList?.users?.find(
-                    (u: any) => u.email === session.customer_email
-                );
-                if (matchedUser) {
-                    userId = matchedUser.id;
-                    console.log(`Resolved user by email: ${session.customer_email} → ${userId}`);
-                }
-            }
-
-            // Método C: buscar por customer email en tabla profiles
-            if (!userId && session.customer_details?.email) {
-                const email = session.customer_details.email;
-                const { data: userList } = await supabase.auth.admin.listUsers();
-                const matchedUser = userList?.users?.find(
-                    (u: any) => u.email === email
-                );
-                if (matchedUser) {
-                    userId = matchedUser.id;
-                    console.log(`Resolved user by customer_details.email: ${email} → ${userId}`);
-                }
-            }
+            const userId = await resolveUserId(supabase, session);
 
             if (!userId) {
                 console.error('Could not resolve user for session:', session.id);

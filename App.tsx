@@ -42,6 +42,11 @@ import AdminPanel from './components/AdminPanel';
 // Google Drive Client ID. Sigue los pasos en GOOGLE_DRIVE_SETUP.md para configurar el tuyo.
 const DEFAULT_CLIENT_ID = '147428616428-bafn28uqehgsdhivcs766t6f49o6gpl6.apps.googleusercontent.com';
 
+// Returns "today" as YYYY-MM-DD in America/Mexico_City, matching the
+// `(now() AT TIME ZONE 'America/Mexico_City')::date` logic in consume_vpo_credit().
+const getMexicoCityDateString = (): string =>
+  new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Mexico_City' }).format(new Date());
+
 // --- Badge Component for Header ---
 const ScoreBadge = ({ label, value, colorClass = "bg-clinical-navy", subValue }: { label: string, value: string | number | undefined, colorClass?: string, subValue?: string }) => {
   const hasValue = value !== undefined && value !== null && value !== '' && value !== -1;
@@ -492,7 +497,11 @@ const App: React.FC = () => {
               await supabase.from('profiles').update({ full_name: finalFullName }).eq('id', user.id);
             }
 
-            const today = new Date().toISOString().split('T')[0];
+            // IMPORTANT: must match the timezone used by consume_vpo_credit() in Supabase
+            // ('America/Mexico_City'). Using the local/UTC date here caused a ~6h/day window
+            // where the free-VPO counter shown to the doctor didn't match what the backend
+            // would actually allow (reported as "free VPOs reset incorrectly").
+            const today = getMexicoCityDateString();
             const isNewDay = profile.last_vpo_date && profile.last_vpo_date !== today;
             const freeUsed = isNewDay ? 0 : (profile.free_vpos_used_today || 0);
 
@@ -585,10 +594,12 @@ const App: React.FC = () => {
 
     const pdf = new jsPDF('p', 'mm', 'letter');
     const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = pdf.internal.pageSize.getHeight();
 
-    const capturePage = async (element: HTMLElement) => {
+    // Renders the element to a canvas at full content height (no cropping here).
+    const captureCanvas = async (element: HTMLElement): Promise<HTMLCanvasElement> => {
       await new Promise(resolve => setTimeout(resolve, 500));
-      const canvas = await html2canvas(element, {
+      return html2canvas(element, {
         scale: 3,
         useCORS: true,
         logging: false,
@@ -615,21 +626,44 @@ const App: React.FC = () => {
           body.style.backgroundColor = '#ffffff';
         }
       });
-      return canvas.toDataURL('image/png', 1.0);
     };
 
-    const imgData1 = await capturePage(page1);
-    const imgProps1 = pdf.getImageProperties(imgData1);
-    const imgHeight1 = (imgProps1.height * pdfWidth) / imgProps1.width;
-    pdf.addImage(imgData1, 'PNG', 0, 0, pdfWidth, imgHeight1);
+    // Slices a (possibly very tall) canvas across as many physical PDF pages as needed,
+    // so long content (many medicamentos/alertas) is never cut off at the end of the report.
+    // Previously the full-height canvas was squeezed onto a single PDF page, silently
+    // clipping anything past the physical page height (e.g. the final plan and signatures).
+    let isFirstPdfPage = true;
+    const addCanvasPaginated = (canvas: HTMLCanvasElement) => {
+      const mmPerPx = pdfWidth / canvas.width;
+      const pageHeightPx = Math.floor(pdfHeight / mmPerPx);
 
-    // Página 2 es opcional — si existe, la agrega
+      for (let offsetY = 0; offsetY < canvas.height; offsetY += pageHeightPx) {
+        const sliceHeightPx = Math.min(pageHeightPx, canvas.height - offsetY);
+
+        const sliceCanvas = document.createElement('canvas');
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = sliceHeightPx;
+        const ctx = sliceCanvas.getContext('2d');
+        if (!ctx) continue;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, sliceHeightPx);
+        ctx.drawImage(canvas, 0, offsetY, canvas.width, sliceHeightPx, 0, 0, canvas.width, sliceHeightPx);
+
+        if (!isFirstPdfPage) pdf.addPage();
+        isFirstPdfPage = false;
+
+        const sliceDataUrl = sliceCanvas.toDataURL('image/png', 1.0);
+        pdf.addImage(sliceDataUrl, 'PNG', 0, 0, pdfWidth, sliceHeightPx * mmPerPx);
+      }
+    };
+
+    const canvas1 = await captureCanvas(page1);
+    addCanvasPaginated(canvas1);
+
+    // Página 2 es opcional — si existe, la agrega (paginada dinámicamente también)
     if (page2) {
-      pdf.addPage();
-      const imgData2 = await capturePage(page2);
-      const imgProps2 = pdf.getImageProperties(imgData2);
-      const imgHeight2 = (imgProps2.height * pdfWidth) / imgProps2.width;
-      pdf.addImage(imgData2, 'PNG', 0, 0, pdfWidth, imgHeight2);
+      const canvas2 = await captureCanvas(page2);
+      addCanvasPaginated(canvas2);
     }
 
     return pdf;

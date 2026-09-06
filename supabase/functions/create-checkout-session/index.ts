@@ -32,6 +32,7 @@ serve(async (req) => {
         }
 
         const { priceId, mode, successUrl, cancelUrl, credits } = await req.json()
+        const checkoutMode = mode || 'payment'; // payment (créditos por VPO) o subscription (mensual ilimitado)
 
         // Create checkout session
         const session = await stripe.checkout.sessions.create({
@@ -42,14 +43,23 @@ serve(async (req) => {
                     quantity: 1,
                 },
             ],
-            mode: mode || 'payment', // payment or subscription
+            mode: checkoutMode,
             success_url: successUrl,
             cancel_url: cancelUrl,
-            client_reference_id: user.id, // Identifica al usuario en el webhook
+            client_reference_id: user.id, // Identifica al usuario en el webhook (checkout.session.completed)
             customer_email: user.email,
             metadata: {
                 credits: credits ? Number(credits) : 0,
-            }
+                supabase_user_id: user.id,
+            },
+            // Para suscripciones, eventos futuros (renovación, cancelación) llegan como
+            // customer.subscription.* SIN client_reference_id — se necesita el user id
+            // guardado en la propia suscripción para poder resolver a qué perfil pertenece.
+            ...(checkoutMode === 'subscription' ? {
+                subscription_data: {
+                    metadata: { supabase_user_id: user.id }
+                }
+            } : {})
         })
 
         return new Response(

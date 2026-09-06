@@ -2,9 +2,17 @@ import React, { useState, useEffect } from 'react';
 import {
     CreditCard, X, ShieldCheck, Zap, Loader2, Star,
     Gift, Calendar, CheckCircle, Lock, Sparkles, TrendingUp,
-    Award, FileText
+    Award, FileText, Infinity as InfinityIcon
 } from 'lucide-react';
 import { supabase } from '../utils/supabase';
+
+// ─── Suscripción mensual ilimitada ─────────────────────────────────────────
+// TODO: reemplazar con el Price ID real (modo "recurring") creado en el Dashboard
+// de Stripe. Ver README / instrucciones de despliegue para el paso a paso.
+// Mientras diga "REPLACE_WITH", la tarjeta de suscripción se muestra deshabilitada
+// para no ofrecer un cobro que en realidad no puede procesarse.
+const MONTHLY_UNLIMITED_PRICE_ID = 'price_REPLACE_WITH_YOUR_MONTHLY_PRICE_ID';
+const MONTHLY_UNLIMITED_PRICE_MXN = 699; // Solo para mostrar en la UI — debe coincidir con el precio configurado en Stripe.
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -108,6 +116,61 @@ const PackageCard: React.FC<{
     );
 };
 
+// ─── Subscription Card (Mensual Ilimitado) ──────────────────────────────────
+
+const SubscriptionCard: React.FC<{
+    loading: string | null;
+    onSubscribe: () => void;
+}> = ({ loading, onSubscribe }) => {
+    const isLoading = loading === 'subscription';
+    const isConfigured = !MONTHLY_UNLIMITED_PRICE_ID.includes('REPLACE_WITH');
+
+    return (
+        <button
+            onClick={onSubscribe}
+            disabled={loading !== null || !isConfigured}
+            className={`
+                relative w-full text-left rounded-2xl border-2 p-5 transition-all duration-300 group
+                border-emerald-500 bg-gradient-to-br from-emerald-600 to-teal-700 text-white shadow-xl shadow-emerald-600/25
+                ${!isConfigured ? 'opacity-60 cursor-not-allowed' : loading !== null ? 'opacity-70 cursor-not-allowed' : 'hover:brightness-110 cursor-pointer active:scale-[0.98]'}
+            `}
+        >
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest border bg-amber-400 text-amber-900 border-amber-300">
+                Ideal para uso frecuente
+            </span>
+
+            <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                    <InfinityIcon size={22} />
+                    <div>
+                        <p className="font-black text-base leading-tight text-white">Suscripción Mensual</p>
+                        <p className="text-[11px] font-bold text-emerald-100">VPOs ilimitados todo el mes</p>
+                    </div>
+                </div>
+                <div className="text-right">
+                    <p className="text-2xl font-black leading-none text-white">${MONTHLY_UNLIMITED_PRICE_MXN}</p>
+                    <p className="text-[10px] font-bold uppercase text-emerald-100">MXN / mes</p>
+                </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-3 border-t border-white/20">
+                <div className="flex items-center gap-1.5">
+                    <FileText size={14} className="text-emerald-100" />
+                    <span className="text-xs font-bold text-emerald-50">
+                        {isConfigured ? 'Reportes ilimitados, sin contar créditos' : 'Próximamente'}
+                    </span>
+                </div>
+                <div className="flex items-center gap-1.5 text-[11px] font-black px-3 py-1.5 rounded-lg bg-white/20 text-white group-hover:bg-white/30">
+                    {isLoading
+                        ? <><Loader2 size={14} className="animate-spin" /> Cargando...</>
+                        : <><CreditCard size={14} /> Suscribirme</>
+                    }
+                </div>
+            </div>
+        </button>
+    );
+};
+
 // ─── Main Modal ──────────────────────────────────────────────────────────────
 
 const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'paywall' }) => {
@@ -187,6 +250,38 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
             } else {
                 alert('Ocurrió un error. Contacta soporte: mcfidel98@gmail.com');
             }
+        } finally {
+            setLoading(null);
+        }
+    };
+
+    const handleSubscribe = async () => {
+        if (MONTHLY_UNLIMITED_PRICE_ID.includes('REPLACE_WITH')) {
+            alert('La suscripción mensual aún no está configurada. Contacta soporte: mcfidel98@gmail.com');
+            return;
+        }
+
+        setLoading('subscription');
+        try {
+            if (supabase) {
+                const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                    body: {
+                        priceId: MONTHLY_UNLIMITED_PRICE_ID,
+                        mode: 'subscription',
+                        successUrl: `${window.location.origin}/?success=true`,
+                        cancelUrl: `${window.location.origin}/?canceled=true`,
+                    }
+                });
+
+                if (!error && data?.url) {
+                    window.location.href = data.url;
+                    return;
+                }
+            }
+            alert('No se pudo iniciar la suscripción. Contacta soporte: mcfidel98@gmail.com');
+        } catch (error) {
+            console.error('Error creating subscription checkout:', error);
+            alert('No se pudo iniciar la suscripción. Contacta soporte: mcfidel98@gmail.com');
         } finally {
             setLoading(null);
         }
@@ -397,6 +492,9 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
 
                             {/* Package cards */}
                             <div className="space-y-3 mt-1">
+                                {!isVIP && (
+                                    <SubscriptionCard loading={loading} onSubscribe={handleSubscribe} />
+                                )}
                                 <PackageCard
                                     emoji="⚡"
                                     title="Paquete Starter"
@@ -418,6 +516,12 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
                                     onBuy={handleBuy}
                                 />
                             </div>
+
+                            {!isVIP && (
+                                <p className="text-center text-[10px] text-slate-400 font-medium">
+                                    ¿Generas muchos VPOs al mes? La suscripción sale más a cuenta que comprar paquetes sueltos.
+                                </p>
+                            )}
 
                             {/* Trust notice */}
                             <p className="text-center text-[10px] text-slate-400 font-medium flex items-center justify-center gap-1 pb-2">
