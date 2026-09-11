@@ -219,12 +219,12 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
             // Intentar Edge Function primero (si está desplegada y supabase existe)
             if (supabase) {
                 const { data, error } = await supabase.functions.invoke('create-checkout-session', {
+                    // Sólo se manda el priceId: créditos y modo los resuelve el servidor
+                    // contra supabase/functions/_shared/stripe-catalog.ts (nunca confiar en el cliente).
                     body: {
                         priceId,
-                        mode: 'payment',
                         successUrl: `${window.location.origin}/?success=true`,
                         cancelUrl: `${window.location.origin}/?canceled=true`,
-                        credits: creditsAmount,
                     }
                 });
 
@@ -267,7 +267,6 @@ const PaywallModal: React.FC<PaywallModalProps> = ({ isOpen, onClose, mode = 'pa
                 const { data, error } = await supabase.functions.invoke('create-checkout-session', {
                     body: {
                         priceId: MONTHLY_UNLIMITED_PRICE_ID,
-                        mode: 'subscription',
                         successUrl: `${window.location.origin}/?success=true`,
                         cancelUrl: `${window.location.origin}/?canceled=true`,
                     }
