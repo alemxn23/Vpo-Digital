@@ -208,6 +208,14 @@ const RiskFactors: React.FC = () => {
                                         <option value="BMS">Metálico (BMS)</option>
                                     </select>
                                 </div>
+                                <div className="col-span-2">
+                                    <label className="text-[10px] font-bold text-gray-500 uppercase">Indicación del Stent</label>
+                                    <select {...register('stent_indicacion')} className="w-full mt-1 p-2 border rounded-lg text-sm bg-white">
+                                        <option value="">No registrada (se asume SCA)</option>
+                                        <option value="sca">Síndrome coronario agudo (≥ 12 meses para cirugía electiva)</option>
+                                        <option value="cronica">Enfermedad coronaria crónica (≥ 6 meses)</option>
+                                    </select>
+                                </div>
                             </div>
                         )}
                     </div>

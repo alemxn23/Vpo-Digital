@@ -155,22 +155,30 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
     if (med.category === 'Antiagregante') {
         // Stent Logic
         if (patient.cardiopatiaIsquemica && patient.cardio_stent) {
-            const stentSafe = checkStentSafety(patient.stent_fecha_colocacion, patient.stent_tipo, patient.esUrgencia);
+            const stentSafe = checkStentSafety(patient.stent_fecha_colocacion, patient.stent_tipo, patient.stent_indicacion, patient.esUrgencia);
 
             if (!stentSafe.safe) {
                 recommendation.alertLevel = 'red';
-                recommendation.action = 'continue'; // Or POSTPONE
-                recommendation.instructions = `¡ALERTA! ${stentSafe.message}. Si C.Electiva: POSPONER o Interconsulta Cardio. Si Urgencia: MANTENER DUAL (Riesgo sangrado alto aceptado).`;
+                recommendation.action = 'continue';
+                recommendation.daysPrior = 0;
+                recommendation.hoursPrior = 0;
+                recommendation.instructions = patient.esUrgencia
+                    ? `¡ALERTA! ${stentSafe.message} Cirugía urgente: MANTENER terapia antiagregante dual (riesgo de sangrado aceptado); si es imprescindible suspender el P2Y12, mantener AAS y reiniciar en < 24-48h.`
+                    : `¡ALERTA! ${stentSafe.message} Cirugía electiva: POSPONER${stentSafe.timeSensitiveOk ? ' (si es tiempo-sensible, puede considerarse con decisión compartida cardiología-cirugía, manteniendo AAS)' : ''} e interconsulta a cardiología.`;
+                recommendation.rationale = "ACC/AHA 2024: riesgo de trombosis del stent.";
             } else {
                 // Safe to stop P2Y12?
                 if (med.id === 'asa') {
                     recommendation.action = 'continue';
-                    recommendation.instructions = "CONTINUAR AAS (Prevención Secundaria).";
+                    recommendation.daysPrior = 0;
+                    recommendation.hoursPrior = 0;
+                    recommendation.instructions = "CONTINUAR AAS (prevención secundaria). Suspender sólo en neurocirugía / cirugía de canal medular.";
                 } else {
                     // P2Y12 (Clopidogrel etc)
                     recommendation.action = 'stop';
-                    recommendation.daysPrior = med.daysPrior; // 5-7 days
-                    recommendation.instructions = `Suspender ${med.daysPrior} días antes.`;
+                    recommendation.daysPrior = med.daysPrior;
+                    recommendation.hoursPrior = (med.daysPrior ?? 0) * 24;
+                    recommendation.instructions = `Suspender ${med.daysPrior} días antes. Mantener AAS. Reiniciar 24-72h después según hemostasia (con dosis de carga si persiste indicación de DAPT).`;
                 }
             }
         }
@@ -186,15 +194,29 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
     }
 
     if (med.isGLP1) {
-        recommendation.action = 'stop';
-        if (med.glp1Frequency === 'weekly') {
-            recommendation.daysPrior = 7;
-            recommendation.instructions = "SUSPENDER 1 SEMANA ANTES.";
+        // Guía multisociedad ASA/AGA/ASMBS/SAGES/ISPCOP (oct 2024): la MAYORÍA continúa el GLP-1.
+        // Sólo con factores de riesgo de retraso en vaciamiento gástrico (fase de escalada de dosis,
+        // síntomas GI activos, comorbilidad que retrasa el vaciamiento) se indica dieta líquida clara
+        // 24 h previas y se avisa a anestesiología (estómago lleno / ultrasonido gástrico es decisión suya).
+        // Reemplaza la guía ASA de junio 2023 (suspender 1 semana / el día de la cirugía).
+        const riskFactors: string[] = [];
+        if (med.glp1EscalationPhase) riskFactors.push('inicio o aumento de dosis en las últimas 4-8 semanas');
+        if (med.glp1GiSymptoms) riskFactors.push('síntomas gastrointestinales activos');
+        if (patient.diabetes && patient.diabetesTiempo && Number(patient.diabetesTiempo) >= 10) riskFactors.push('diabetes de larga evolución (posible gastroparesia)');
+
+        recommendation.action = 'continue';
+        recommendation.daysPrior = 0;
+        recommendation.hoursPrior = 0;
+
+        if (riskFactors.length === 0) {
+            recommendation.alertLevel = 'green';
+            recommendation.instructions = "CONTINUAR. Sin factores de riesgo de retraso en vaciamiento gástrico: ayuno estándar.";
+            recommendation.rationale = "Guía multisociedad 2024 (ASA/AGA/ASMBS/SAGES): la mayoría de los pacientes continúa el agonista GLP-1.";
         } else {
-            recommendation.daysPrior = 1;
-            recommendation.instructions = "Suspender día de cirugía.";
+            recommendation.alertLevel = 'yellow';
+            recommendation.instructions = `CONTINUAR, pero indicar DIETA LÍQUIDA CLARA las 24h previas y notificar a anestesiología riesgo de estómago lleno (${riskFactors.join('; ')}).${!patient.esUrgencia && (med.glp1EscalationPhase || med.glp1GiSymptoms) ? ' Cirugía electiva: valorar diferir hasta completar la escalada de dosis y resolver síntomas.' : ''}`;
+            recommendation.rationale = "Riesgo de retraso en vaciamiento gástrico. Guía multisociedad 2024.";
         }
-        recommendation.rationale = "Riesgo de aspiración por gastroparesia (Estómago lleno).";
     }
 
     // --- H: CORTICOSTEROIDES & HORMONAS ---
@@ -403,21 +425,37 @@ const getMonthsDiff = (dateString: string) => {
     return months <= 0 ? 0 : months;
 };
 
-const checkStentSafety = (dateStr: string, type: 'BMS' | 'DES', isUrgent: boolean): { safe: boolean, message: string } => {
-    if (!dateStr) return { safe: true, message: "" };
+const checkStentSafety = (
+    dateStr: string,
+    type: 'BMS' | 'DES',
+    indication: 'sca' | 'cronica' | '' | undefined,
+    _isUrgent: boolean // el mensaje urgente/electivo se arma en el llamador
+): { safe: boolean, message: string, timeSensitiveOk: boolean } => {
+    if (!dateStr) return { safe: true, message: "", timeSensitiveOk: true };
 
     const stentDate = new Date(dateStr);
     const today = new Date();
-    const diffTime = Math.abs(today.getTime() - stentDate.getTime());
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    const diffMonths = diffDays / 30;
+    const diffDays = Math.ceil(Math.abs(today.getTime() - stentDate.getTime()) / (1000 * 60 * 60 * 24));
+    const diffMonths = diffDays / 30.44;
 
-    if (type === 'BMS' && diffDays < 30) {
-        return { safe: false, message: "Stent Metálico < 30 días. Riesgo Trombosis Altísimo." };
-    }
-    if (type === 'DES' && diffMonths < 6) {
-        return { safe: false, message: "Stent Farmacoactivo < 6 meses. Riesgo Trombosis Alto." };
+    // ACC/AHA 2024: BMS ≥ 30 días; DES por SCA ≥ 12 meses; DES por enfermedad coronaria crónica ≥ 6 meses;
+    // cirugía tiempo-sensible tras DES puede considerarse ≥ 3 meses. Sin indicación registrada se asume SCA
+    // (el escenario más conservador).
+    if (type === 'BMS') {
+        if (diffDays < 30) return { safe: false, message: "Stent metálico < 30 días. Riesgo de trombosis muy alto.", timeSensitiveOk: false };
+        return { safe: true, message: "Stent metálico endotelizado (> 30 días).", timeSensitiveOk: true };
     }
 
-    return { safe: true, message: "Stent endotelizado (> tiempo seguridad)." };
+    const isChronic = indication === 'cronica';
+    const requiredMonths = isChronic ? 6 : 12;
+    const label = isChronic ? 'enfermedad coronaria crónica' : (indication === 'sca' ? 'síndrome coronario agudo' : 'indicación no registrada, se asume SCA');
+
+    if (diffMonths < requiredMonths) {
+        return {
+            safe: false,
+            message: `Stent farmacoactivo de ${Math.floor(diffMonths)} meses por ${label}: la cirugía electiva debe diferirse ≥ ${requiredMonths} meses.`,
+            timeSensitiveOk: diffMonths >= 3
+        };
+    }
+    return { safe: true, message: `Stent farmacoactivo > ${requiredMonths} meses (${label}).`, timeSensitiveOk: true };
 };

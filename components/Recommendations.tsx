@@ -78,7 +78,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({ isUnlocked = false, o
         cardiopatiaIsquemica: data.cardiopatiaIsquemica, enfRenalCronica: data.enfRenalCronica,
         hepatopatia: data.hepatopatia, hta_control: data.hta_control,
         caprini: capriniScore, gupta: data.gupta, gupta_surgical_site: data.gupta_surgical_site,
-        cardio_stent: data.cardio_stent, stent_tipo: data.stent_tipo, stent_fecha_colocacion: data.stent_fecha_colocacion,
+        cardio_stent: data.cardio_stent, stent_tipo: data.stent_tipo, stent_indicacion: data.stent_indicacion, stent_fecha_colocacion: data.stent_fecha_colocacion,
         lee: data.lee, tfg: data.tfg, creatinina: data.creatinina,
         peso: data.peso, imc: data.imc, usaInsulina: data.usaInsulina,
         alergicos: data.alergicos, alergicosDetalle: data.alergicosDetalle,

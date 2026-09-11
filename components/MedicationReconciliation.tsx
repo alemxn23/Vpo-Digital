@@ -26,7 +26,7 @@ const MedicationReconciliation: React.FC = () => {
     const [interactions, setInteractions] = useState<InteractionResult[]>([]);
     const [isLoadingInteractions, setIsLoadingInteractions] = useState(false);
 
-    const [activeModalMed, setActiveModalMed] = useState<{ med: SelectedMed, rec: MedicationRecommendation, fda?: FDASafetyInfo | null, loadingFda?: boolean, isChronic?: boolean, fdaWarning?: string, dose?: number } | null>(null);
+    const [activeModalMed, setActiveModalMed] = useState<{ med: SelectedMed, rec: MedicationRecommendation, fda?: FDASafetyInfo | null, loadingFda?: boolean, isChronic?: boolean, glp1EscalationPhase?: boolean, glp1GiSymptoms?: boolean, fdaWarning?: string, dose?: number } | null>(null);
     const [isBlackBoxOpen, setIsBlackBoxOpen] = useState(false);
 
     // Custom Med State
@@ -59,7 +59,12 @@ const MedicationReconciliation: React.FC = () => {
         // 1. Get Recommendation from Engine (Centralized Logic)
         // This calculates Stress Doses, Bridge needs, etc. based on updated Patient Data
         const engineRec = getMedicationRecommendation(
-            { ...activeModalMed.med, isChronic: activeModalMed.isChronic }, // Pass updated chronic state
+            {
+                ...activeModalMed.med,
+                isChronic: activeModalMed.isChronic, // Pass updated chronic state
+                glp1EscalationPhase: activeModalMed.glp1EscalationPhase,
+                glp1GiSymptoms: activeModalMed.glp1GiSymptoms,
+            },
             formData
         );
 
@@ -77,9 +82,15 @@ const MedicationReconciliation: React.FC = () => {
         const newMed: SelectedMed = {
             ...activeModalMed.med,
             // Override with specific logic from modal
-            instructions: activeModalMed.isChronic ? (engineRec.instructions) : activeModalMed.med.instructions, // Use Engine instructions if chronic/modified
-            alertLevel: engineRec.alertLevel, // Use Engine alert level
+            // El motor es la fuente de verdad: los flags del modal (crónico, GLP-1) pueden cambiar la recomendación
+            action: engineRec.action,
+            daysPrior: engineRec.daysPrior,
+            stopTimeHours: engineRec.hoursPrior,
+            instructions: engineRec.instructions,
+            alertLevel: engineRec.alertLevel,
             isChronic: activeModalMed.isChronic,
+            glp1EscalationPhase: activeModalMed.glp1EscalationPhase,
+            glp1GiSymptoms: activeModalMed.glp1GiSymptoms,
             stressDoseRecommendation: stressDoseRec,
             fdaWarning: fdaWarn,
             dose: activeModalMed.dose !== undefined ? activeModalMed.dose : activeModalMed.med.dose
@@ -520,6 +531,42 @@ const MedicationReconciliation: React.FC = () => {
                             {activeModalMed.rec.bridgeRequired && (
                                 <div className="p-3 bg-amber-50 border border-amber-200 rounded text-amber-900 text-xs font-bold">
                                     ⚠️ REQUIERE TERAPIA PUENTE. Se agregará Enoxaparina automáticamente.
+                                </div>
+                            )}
+
+                            {/* GLP-1 SPECIFIC LOGIC (guía multisociedad 2024) */}
+                            {activeModalMed.med.isGLP1 && (
+                                <div className="bg-teal-50 p-3 rounded-lg border border-teal-100 space-y-2">
+                                    <p className="text-[10px] font-bold text-teal-800 uppercase">Riesgo de retraso en vaciamiento gástrico</p>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="glp1EscalationCheck"
+                                            className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 cursor-pointer"
+                                            checked={activeModalMed.glp1EscalationPhase || false}
+                                            onChange={(e) => setActiveModalMed({ ...activeModalMed, glp1EscalationPhase: e.target.checked })}
+                                        />
+                                        <label htmlFor="glp1EscalationCheck" className="text-xs text-teal-900 font-bold cursor-pointer select-none flex-1">
+                                            ¿Inicio o aumento de dosis en las últimas 4-8 semanas?
+                                        </label>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <input
+                                            type="checkbox"
+                                            id="glp1GiCheck"
+                                            className="w-4 h-4 text-teal-600 rounded focus:ring-teal-500 cursor-pointer"
+                                            checked={activeModalMed.glp1GiSymptoms || false}
+                                            onChange={(e) => setActiveModalMed({ ...activeModalMed, glp1GiSymptoms: e.target.checked })}
+                                        />
+                                        <label htmlFor="glp1GiCheck" className="text-xs text-teal-900 font-bold cursor-pointer select-none flex-1">
+                                            ¿Náusea, vómito, distensión o estreñimiento activos?
+                                        </label>
+                                    </div>
+                                    <p className="text-[11px] text-teal-900 leading-snug">
+                                        {(activeModalMed.glp1EscalationPhase || activeModalMed.glp1GiSymptoms)
+                                            ? 'Continuar el fármaco; dieta líquida clara 24h previas y aviso a anestesiología (estómago lleno).'
+                                            : 'Sin factores de riesgo: continuar el fármaco con ayuno estándar.'}
+                                    </p>
                                 </div>
                             )}
 

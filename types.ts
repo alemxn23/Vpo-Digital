@@ -24,6 +24,9 @@ export interface SelectedMed {
   steroidDurationWeeks?: number;
   isGLP1?: boolean;
   glp1Frequency?: 'daily' | 'weekly';
+  // Guía multisociedad 2024 (ASA/AGA/ASMBS/SAGES/ISPCOP): factores de riesgo de retraso en vaciamiento gástrico
+  glp1EscalationPhase?: boolean; // Inicio o aumento de dosis en las últimas 4-8 semanas
+  glp1GiSymptoms?: boolean;      // Náusea, vómito, distensión, estreñimiento activos
   isAnticoagulant?: boolean;
   anticoagType?: 'AVK' | 'DOAC' | 'HBPM';
   route?: 'VO' | 'IV' | 'SC' | 'Inhalada' | 'Topica' | 'Oftalmica';
@@ -100,6 +103,7 @@ export interface VPOData {
   cardio_stent: boolean;
   stent_fecha_colocacion: string;
   stent_tipo: "BMS" | "DES";
+  stent_indicacion: "sca" | "cronica" | ""; // ACC/AHA 2024: DES por SCA → 12 meses; por enfermedad crónica → 6 meses
 
   // 6. Insuficiencia Cardiaca (ICC)
   icc: boolean;

@@ -365,7 +365,7 @@ const RESET_VALUES: Partial<VPOData> = {
   tabaquismo: false, indiceTabaquico: 0, active_smoking: false,
   alergicos: false, alergicosDetalle: '',
   hta: false, diabetes: false, usaInsulina: false,
-  cardiopatiaIsquemica: false, cardio_stent: false,
+  cardiopatiaIsquemica: false, cardio_stent: false, stent_indicacion: '',
   icc: false, arritmias: false, valvulopatia: false, valvula_protesis: false,
   evc: false, neumopatia: false, enfRenalCronica: false,
   hepatopatia: false, coagulopatia: false,

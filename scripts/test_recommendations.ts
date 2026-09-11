@@ -83,6 +83,7 @@ const defaultData = (): Partial<VPOData> => ({
     cardio_stent: false,
     stent_fecha_colocacion: '',
     stent_tipo: 'BMS',
+    stent_indicacion: '',
     icc: false,
     icc_nyha: 'I',
     icc_evolucion: 'cronica_comp',
@@ -181,7 +182,7 @@ dataB.selectedMeds = [
 const resultB = generateRecommendations(dataB);
 console.log(resultB);
 assertNoBrokenText('plan_pre (B)', resultB.plan_pre);
-assertTrue(/MANTENER DUAL|CONTINUAR AAS/i.test(resultB.plan_pre), 'Stent DES < 6 meses evita suspender antiagregantes (riesgo de trombosis)');
+assertTrue(/mantener terapia antiagregante dual/i.test(resultB.plan_pre) && !/Suspender fármaco/.test(resultB.plan_pre), 'Stent DES < 12 meses en urgencia mantiene DAPT (no suspende antiagregantes)');
 
 console.log("\n================================================");
 console.log("ESCENARIO C: Sencillo Ambulatorio");
@@ -248,6 +249,37 @@ assertTrue(formatStopWindow({ action: 'stop', daysPrior: 2, hoursPrior: 48 }) ==
 assertTrue(formatStopWindow({ action: 'stop', daysPrior: 0, hoursPrior: 0 }) === 'Omitir dosis el día de la cirugía', 'formatStopWindow 0h → omitir dosis');
 assertTrue(formatStopWindow({ action: 'stop', daysPrior: 5 }) === 'Suspender 5 días antes', 'formatStopWindow sin horas usa días');
 assertTrue(formatStopWindow({ action: 'continue' }) === 'Continuar', 'formatStopWindow continue');
+
+
+console.log("\n================================================");
+console.log("ESCENARIO G: GLP-1 según guía multisociedad 2024");
+const sema = medById('sema');
+const glpSinRiesgo = getMedicationRecommendation(sema, { ...defaultData() } as VPOData);
+assertTrue(glpSinRiesgo.action === 'continue' && glpSinRiesgo.alertLevel === 'green', 'GLP-1 sin factores de riesgo → continuar, ayuno estándar');
+const glpEscalada = getMedicationRecommendation({ ...sema, glp1EscalationPhase: true }, { ...defaultData() } as VPOData);
+assertTrue(glpEscalada.action === 'continue' && /DIETA LÍQUIDA CLARA/.test(glpEscalada.instructions) && /diferir/.test(glpEscalada.instructions), 'GLP-1 en escalada de dosis → continuar + dieta líquida 24h + valorar diferir electiva');
+const glpUrgente = getMedicationRecommendation({ ...sema, glp1GiSymptoms: true }, { ...defaultData(), esUrgencia: true } as VPOData);
+assertTrue(/anestesiología/.test(glpUrgente.instructions) && !/diferir/.test(glpUrgente.instructions), 'GLP-1 con síntomas GI en urgencia → aviso a anestesiología sin sugerir diferir');
+assertTrue(!/SUSPENDER 1 SEMANA/i.test(glpSinRiesgo.instructions + glpEscalada.instructions), 'GLP-1 ya no aplica la regla ASA 2023 de suspender 1 semana');
+
+console.log("\n================================================");
+console.log("ESCENARIO H: Stent DES por SCA vs enfermedad crónica (ACC/AHA 2024)");
+const monthsAgo = (n: number) => { const x = new Date(); x.setMonth(x.getMonth() - n); return x.toISOString(); };
+const clopi = medById('clopi');
+const stentBase = { ...defaultData(), cardiopatiaIsquemica: true, cardio_stent: true, stent_tipo: 'DES' as const };
+const sca8m = getMedicationRecommendation(clopi, { ...stentBase, stent_indicacion: 'sca', stent_fecha_colocacion: monthsAgo(8) } as VPOData);
+assertTrue(sca8m.alertLevel === 'red' && /≥ 12 meses/.test(sca8m.instructions) && /POSPONER/.test(sca8m.instructions), 'DES por SCA de 8 meses, electiva → posponer (≥ 12 meses)');
+assertTrue(/tiempo-sensible/.test(sca8m.instructions), 'DES por SCA de 8 meses ofrece la vía tiempo-sensible (≥ 3 meses)');
+const cron8m = getMedicationRecommendation(clopi, { ...stentBase, stent_indicacion: 'cronica', stent_fecha_colocacion: monthsAgo(8) } as VPOData);
+assertTrue(cron8m.action === 'stop' && cron8m.daysPrior === 5, 'DES por enfermedad crónica de 8 meses → seguro, suspender clopidogrel 5 días');
+const sinIndic8m = getMedicationRecommendation(clopi, { ...stentBase, stent_indicacion: '', stent_fecha_colocacion: monthsAgo(8) } as VPOData);
+assertTrue(sinIndic8m.alertLevel === 'red', 'DES sin indicación registrada → se asume SCA (conservador)');
+const sca2mUrg = getMedicationRecommendation(clopi, { ...stentBase, stent_indicacion: 'sca', stent_fecha_colocacion: monthsAgo(2), esUrgencia: true } as VPOData);
+assertTrue(/MANTENER terapia antiagregante dual/.test(sca2mUrg.instructions), 'DES de 2 meses en urgencia → mantener DAPT');
+const sca14m = getMedicationRecommendation(clopi, { ...stentBase, stent_indicacion: 'sca', stent_fecha_colocacion: monthsAgo(14) } as VPOData);
+assertTrue(sca14m.action === 'stop', 'DES por SCA de 14 meses → seguro suspender P2Y12');
+const bms20d = getMedicationRecommendation(clopi, { ...stentBase, stent_tipo: 'BMS', stent_fecha_colocacion: new Date(Date.now() - 20 * 86400000).toISOString() } as VPOData);
+assertTrue(bms20d.alertLevel === 'red' && /30 días/.test(bms20d.instructions), 'BMS de 20 días → alerta (< 30 días)');
 
 console.log("\n================================================");
 if (failures > 0) {
