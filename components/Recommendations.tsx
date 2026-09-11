@@ -111,7 +111,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({ isUnlocked = false, o
                     <ClipboardList className="text-clinical-navy" size={24} />
                     <div>
                         <h2 className="text-lg font-bold text-slate-800">Plan de Manejo Integral</h2>
-                        <p className="text-xs text-slate-500">Pre, Trans y Post-Quirúrgico</p>
+                        <p className="text-xs text-slate-500">Pre-quirúrgico, equipo quirúrgico-anestésico y post-quirúrgico</p>
                     </div>
                 </div>
 
@@ -328,7 +328,7 @@ const Recommendations: React.FC<RecommendationsProps> = ({ isUnlocked = false, o
                     <div className="bg-amber-600/10 p-3 border-b border-amber-100 flex items-center justify-between">
                         <div className="flex items-center gap-2.5">
                             <div className="bg-amber-600 text-white p-1.5 rounded-lg shadow-sm"><HeartPulse size={16} /></div>
-                            <h3 className="font-black text-xs text-amber-900 uppercase tracking-wider">Trans-Quirúrgico</h3>
+                            <h3 className="font-black text-xs text-amber-900 uppercase tracking-wider">Para el equipo quirúrgico-anestésico</h3>
                         </div>
                         {!isUnlocked && <Lock size={14} className="text-amber-500" />}
                         {isUnlocked && <ArrowRight size={14} className="text-amber-300 group-hover:translate-x-1 transition-transform" />}

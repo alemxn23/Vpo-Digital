@@ -539,7 +539,7 @@ const PrintView: React.FC<{ isPrintMode?: boolean }> = ({ isPrintMode }) => {
                             ))}
                         </div>
                     )}
-                    <div style={{ fontWeight: 'bold', fontSize: '10px', textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '12px', marginTop: '18px' }}>TRANS-QUIRÚRGICO</div>
+                    <div style={{ fontWeight: 'bold', fontSize: '10px', textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '12px', marginTop: '18px' }}>CONSIDERACIONES PARA EL EQUIPO QUIRÚRGICO-ANESTÉSICO</div>
                     <div style={{ fontSize: '9px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{data.plan_trans}</div>
                     <div style={{ fontWeight: 'bold', fontSize: '10px', textAlign: 'center', backgroundColor: '#eee', padding: '8px', border: '1px solid black', marginBottom: '12px', marginTop: '18px' }}>POST-QUIRÚRGICO</div>
                     <div style={{ fontSize: '9px', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>{data.plan_post}</div>

@@ -281,6 +281,23 @@ assertTrue(sca14m.action === 'stop', 'DES por SCA de 14 meses → seguro suspend
 const bms20d = getMedicationRecommendation(clopi, { ...stentBase, stent_tipo: 'BMS', stent_fecha_colocacion: new Date(Date.now() - 20 * 86400000).toISOString() } as VPOData);
 assertTrue(bms20d.alertLevel === 'red' && /30 días/.test(bms20d.instructions), 'BMS de 20 días → alerta (< 30 días)');
 
+
+console.log("\n================================================");
+console.log("ESCENARIO I: enfoque de medicina interna (plan_trans, reinicio, MINS)");
+const dataI: VPOData = { ...defaultData(), edad: 70, cardiopatiaIsquemica: true, gupta_surgical_site: 'vascular', lee: 'II', alergicos: true, alergicosDetalle: 'Penicilina', esUrgencia: true } as VPOData;
+dataI.selectedMeds = [addRealMed('Apixaban', dataI), addRealMed('Metformina', dataI)];
+const resultI = generateRecommendations(dataI);
+console.log(resultI);
+assertNoBrokenText('plan_post (I)', resultI.plan_post);
+assertTrue(!/cristaloides|secuencia rápida|re-dosificación/i.test(resultI.plan_pre + resultI.plan_trans), 'plan_trans ya no dicta decisiones anestésicas (fluidos, ISR, redosificación)');
+assertTrue(/evitar betalactámicos/.test(resultI.plan_trans), 'Alergia a penicilina se traduce en aviso sobre profilaxis');
+assertTrue(/\[APIXABAN\] Reiniciar 48-72 horas/.test(resultI.plan_post), 'Reinicio posoperatorio de DOAC tras cirugía de alto riesgo de sangrado: 48-72 h');
+assertTrue(/\[METFORMINA\] Reiniciar/.test(resultI.plan_post), 'Reinicio posoperatorio de metformina');
+assertTrue(/troponina de alta sensibilidad basal y a las 24 y 48 horas/.test(resultI.plan_post), 'Vigilancia MINS con troponina en paciente de alto riesgo');
+const dataI2: VPOData = { ...defaultData(), edad: 30 } as VPOData;
+const resultI2 = generateRecommendations(dataI2);
+assertTrue(!/troponina/.test(resultI2.plan_post), 'Sin riesgo cardiaco no se pide troponina posoperatoria');
+
 console.log("\n================================================");
 if (failures > 0) {
     console.error(`\n${failures} verificación(es) fallaron.`);

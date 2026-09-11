@@ -117,7 +117,7 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
             recommendation.hoursPrior = daysToStop * 24;
             recommendation.action = 'stop';
             recommendation.instructions = `SUSPENDER ${daysToStop} ${daysToStop === 1 ? 'día' : 'días'} antes (${daysToStop * 24}h). Reiniciar ${restart} después de la cirugía una vez asegurada la hemostasia, sin dosis de carga. NO requiere puente.${renalNote}`;
-            recommendation.rationale = `Protocolo PAUSE. Riesgo de sangrado quirúrgico: ${bleedingRisk.toUpperCase()}. TFG: ${crcl.toFixed(0)} ml/min.`;
+            recommendation.rationale = `Protocolo PAUSE. Riesgo de sangrado quirúrgico: ${bleedingRisk === 'high' ? 'ALTO' : 'BAJO'}. TFG: ${crcl.toFixed(0)} ml/min.`;
         }
 
         if (med.anticoagType === 'AVK') { // Warfarin
@@ -148,7 +148,7 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
             recommendation.hoursPrior = 24;
             recommendation.alertLevel = renalImpaired ? 'red' : 'yellow';
             recommendation.instructions = `Dosis terapéutica: última dosis 24h antes, a la MITAD de la dosis habitual (si BID, omitir la dosis vespertina del día previo). Dosis profiláctica: última dosis 12h antes.${renalImpaired ? ` TFG ${crcl.toFixed(0)} ml/min: ajustar a 1 mg/kg c/24h o cambiar a heparina no fraccionada por riesgo de acumulación; considerar anti-Xa si disponible.` : ''}`;
-            recommendation.rationale = `Riesgo de sangrado quirúrgico: ${bleedingRisk.toUpperCase()}. TFG: ${crcl.toFixed(0)} ml/min.`;
+            recommendation.rationale = `Riesgo de sangrado quirúrgico: ${bleedingRisk === 'high' ? 'ALTO' : 'BAJO'}. TFG: ${crcl.toFixed(0)} ml/min.`;
         }
     }
 
@@ -385,7 +385,7 @@ const calculateHydrocortisoneEquivalent = (med: SelectedMed): number => {
     return 0;
 };
 
-const getSurgicalBleedingRisk = (patient: VPOData): 'low' | 'high' => {
+export const getSurgicalBleedingRisk = (patient: VPOData): 'low' | 'high' => {
     // PAUSE / EHA Mapping
     const highRiskSites = [
         'intracranial', 'spinal', 'cardiac', 'vascular', 'aortic',

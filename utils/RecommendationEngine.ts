@@ -1,5 +1,5 @@
 import { VPOData, SelectedMed } from '../types';
-import { getMedicationRecommendation } from '../custom_services/PharmacologyEngine';
+import { getMedicationRecommendation, getSurgicalBleedingRisk } from '../custom_services/PharmacologyEngine';
 
 class RulesEngine {
     pre: string[] = [];
@@ -28,9 +28,9 @@ export const generateRecommendations = (data: VPOData): {
     // 1. AYUNO Y VIA AEREA
     // ============================================================================
     if (data.esUrgencia) {
-        rules.addPre("Vigilar ayuno: No garantizado por tratarse de intervención de urgencia. Anticipar inducción de secuencia rápida (estómago lleno).");
+        rules.addPre("Cirugía de urgencia: ayuno no garantizado. Informar al equipo anestésico el riesgo de estómago lleno.");
     } else {
-        rules.addPre("Ayuno estándar: Permitir ingesta de líquidos claros hasta 2 horas previas a la inducción. Sólidos 6 a 8 horas previas.");
+        rules.addPre("Ayuno estándar: líquidos claros hasta 2 horas antes; sólidos 6 a 8 horas antes (según protocolo del servicio de anestesiología).");
     }
 
     if (data.diabetes) {
@@ -43,20 +43,16 @@ export const generateRecommendations = (data: VPOData): {
     if (data.tfg && data.tfg < 60) {
         const severity = data.tfg < 30 ? "severo" : "moderado";
         rules.addPre(`Ajustar dosis de fármacos de excreción renal por TFG calculada de ${data.tfg.toFixed(1)} ml/min (deterioro ${severity}). Evitar uso de medios de contraste iodados y AINEs.`);
-        rules.addTrans(`Vigilar balance hídrico estricto por TFG de ${data.tfg.toFixed(1)} ml/min. Utilizar cristaloides balanceados y mantener PAM > 65 mmHg para perfusión renal.`);
+        rules.addTrans(`Paciente con TFG de ${data.tfg.toFixed(1)} ml/min (${severity}): se sugiere evitar hipotensión sostenida (PAM > 65 mmHg), nefrotóxicos y medio de contraste; vigilancia estricta de diuresis.`);
         rules.addPost("Monitorear creatinina sérica y volumen urinario postoperatorio.");
-    } else {
-        rules.addTrans("Terapia hídrica guiada por metas: Utilizar cristaloides balanceados a requerimiento basal y pérdidas estimadas.");
     }
 
     // ============================================================================
     // 3. RIESGO CARDIOVASCULAR
     // ============================================================================
     if (data.icc || data.cardiopatiaIsquemica || data.cardio_stent) {
-        rules.addTrans("Riesgo cardiovascular aumentado: Mantener normotensión estricta perioperatoria (evitar descenso de PAM > 20% de la basal) y control de frecuencia cardíaca.");
-        if (data.cardiopatiaIsquemica) {
-            rules.addPost("Vigilar aparición de isquemia miocárdica; solicitar ECG de 12 derivaciones y marcadores cardíacos en sala de recuperación en caso de inestabilidad hemodinámica.");
-        }
+        rules.addTrans("Riesgo cardiovascular aumentado: se sugiere evitar hipotensión sostenida (descenso de PAM > 20% de la basal) y taquicardia; monitorización electrocardiográfica con análisis del segmento ST.");
+
     }
 
     if (data.hta_control === 'descontrolada' || (data.taSistolica && data.taSistolica > 160)) {
@@ -65,7 +61,7 @@ export const generateRecommendations = (data: VPOData): {
 
     if (data.arritmias) {
         rules.addPre("Arritmia basal: Evaluar necesidad de corrección hidroelectrolítica preoperatoria (K+, Mg2+).");
-        rules.addTrans("Monitoreo continuo de ritmo cardíaco para detección oportuna de eventos arrítmicos durante transoperatorio.");
+        rules.addTrans("Arritmia basal: se sugiere monitorización continua del ritmo durante el procedimiento y en recuperación.");
     }
 
     // ============================================================================
@@ -107,23 +103,68 @@ export const generateRecommendations = (data: VPOData): {
                 .replace(/NO REQUIERE PUENTE/ig, 'No requiere terapia puente')
                 .replace(/REQUIERE PUENTE/ig, 'Requiere terapia puente');
 
-            text = `[${med.name.toUpperCase()}] ${actionText}. Indicación específica: ${formalizedInstruction}. Justificación: ${formalizedRationale}`;
+            const instr = formalizedInstruction.trim().replace(/\.+$/, '');
+            const isDefaultRationale = /^Protocolo estándar\.?$/i.test(formalizedRationale.trim());
+            const rationale = formalizedRationale.trim().replace(/\.+$/, '');
+            text = `[${med.name.toUpperCase()}] ${actionText}. Indicación específica: ${instr}.${isDefaultRationale ? '' : ` Justificación: ${rationale}.`}`;
             
             rules.addPre(text);
 
             if (med.isSteroid && med.isChronic) {
-                rules.addTrans(`[${med.name.toUpperCase()}] Administrar dosis de estrés intraoperatoria con hidrocortisona intravenosa según grado de severidad quirúrgica.`);
+                rules.addTrans(`[${med.name.toUpperCase()}] Uso crónico de corticoide: administrar dosis de estrés con hidrocortisona intravenosa según la pauta indicada en el plan preoperatorio.`);
             }
         });
     }
 
     if (data.diabetes && data.usaInsulina) {
         rules.addPre("Uso de Insulina: Ajustar dosis basal a administrar la noche previa (75-80% de dosis habitual). Suspender bolos preprandiales matutinos el día de la cirugía.");
-        rules.addTrans("Monitoreo glucémico capilar cada 2 horas intraoperatoriamente. Meta glucémica de 140 - 180 mg/dL.");
+        rules.addTrans("Paciente insulinodependiente: meta glucémica perioperatoria de 140-180 mg/dL; se sugiere glucemia capilar cada 1-2 horas durante el procedimiento.");
     }
 
     if (data.alergicos && data.alergicosDetalle) {
         rules.addPre(`Alerta por Alergia conocida: ${data.alergicosDetalle}. Evitar administración absoluta e indicar en expediente clínico.`);
+    }
+
+    // ============================================================================
+    // 4b. PLAN DE REINICIO POSOPERATORIO (a cargo de medicina interna)
+    // ============================================================================
+    if (data.selectedMeds && data.selectedMeds.length > 0) {
+        const bleedingRisk = getSurgicalBleedingRisk(data);
+        const highBleed = bleedingRisk === 'high';
+        const stentRecent = !!data.cardio_stent;
+
+        data.selectedMeds.forEach((med: SelectedMed) => {
+            const rec = getMedicationRecommendation(med, data);
+            const name = med.name.toUpperCase();
+
+            if (med.isAnticoagulant && med.anticoagType === 'DOAC') {
+                rules.addPost(`[${name}] Reiniciar ${highBleed ? '48-72 horas' : '24 horas'} después de la cirugía una vez asegurada la hemostasia, a la dosis habitual sin carga. Mientras tanto, tromboprofilaxis con HBPM a dosis profiláctica si el riesgo tromboembólico lo justifica.`);
+            } else if (med.isAnticoagulant && med.anticoagType === 'AVK') {
+                rules.addPost(`[${name}] Reiniciar la noche de la cirugía o a las 24 horas a la dosis habitual (sin carga).${rec.bridgeRequired ? ' Continuar puente con HBPM terapéutica desde 48-72 horas (según hemostasia) hasta INR en rango.' : ''}`);
+            } else if (med.isAnticoagulant && med.anticoagType === 'HBPM') {
+                rules.addPost(`[${name}] Reiniciar dosis terapéutica a las ${highBleed ? '48-72' : '24'} horas con hemostasia asegurada; dosis profiláctica puede reanudarse a las 12-24 horas.`);
+            } else if (med.category === 'Antiagregante' && rec.action === 'stop') {
+                rules.addPost(`[${name}] Reiniciar 24-72 horas después según hemostasia${stentRecent ? ', con dosis de carga por portador de stent' : ''}.`);
+            } else if (med.category === 'Antiagregante' && med.id === 'asa') {
+                rules.addPost(`[${name}] Continuar sin interrupción; si se omitió alguna dosis, reanudar en cuanto exista hemostasia (< 24 horas).`);
+            } else if (med.category === 'iSGLT2') {
+                rules.addPost(`[${name}] Reiniciar al reanudar la dieta oral normal y descartar cetoacidosis (típicamente 24-48 horas después).`);
+            } else if (med.id === 'metf') {
+                rules.addPost(`[${name}] Reiniciar con dieta oral y función renal estable (creatinina de control); posponer si hubo contraste o hipoperfusión.`);
+            } else if (med.atcCode?.startsWith('C09') && rec.action === 'stop') {
+                rules.addPost(`[${name}] Reiniciar en cuanto haya estabilidad hemodinámica y tolerancia a la vía oral, idealmente antes de 48 horas.`);
+            }
+        });
+    }
+
+    // ============================================================================
+    // 4c. VIGILANCIA DE LESIÓN MIOCÁRDICA POSOPERATORIA (MINS) — ACC/AHA 2024 / ESC 2022
+    // ============================================================================
+    const highRiskSurgery = data.capB_cxMayor || ['aortic', 'vascular', 'thoracic', 'intracranial', 'cardiac', 'amputation'].includes(data.gupta_surgical_site);
+    const rcriElevated = data.lee === 'II' || data.lee === 'III' || data.lee === 'IV';
+    const cardiacRisk = data.cardiopatiaIsquemica || data.icc || data.cardio_stent || rcriElevated || (data.edad >= 65 && highRiskSurgery);
+    if (cardiacRisk) {
+        rules.addPost("Vigilancia de lesión miocárdica posoperatoria (MINS): troponina de alta sensibilidad basal y a las 24 y 48 horas aunque el paciente esté asintomático; ECG de 12 derivaciones ante elevación o síntomas. Valoración por medicina interna/cardiología si hay elevación.");
     }
 
     // ============================================================================
@@ -148,16 +189,14 @@ export const generateRecommendations = (data: VPOData): {
     // ============================================================================
     // 6. PROFILAXIS ANTIMICROBIANA Y OTROS POST
     // ============================================================================
-    const antibiotic = (data.alergicos && (data.alergicosDetalle || '').toLowerCase().includes('penicilina')) 
-        ? "Clindamicina 900 mg IV más Gentamicina 5 mg/kg IV" 
-        : "Cefazolina 2g IV (o 3g si >120 kg)";
+    const penicillinAllergy = data.alergicos && (data.alergicosDetalle || '').toLowerCase().includes('penicilina');
+    if (penicillinAllergy) {
+        rules.addTrans("Alergia a penicilina: evitar betalactámicos en la profilaxis antimicrobiana (alternativas habituales: clindamicina ± gentamicina, o vancomicina según protocolo).");
+    } else {
+        rules.addTrans("Profilaxis antimicrobiana y su re-dosificación conforme al protocolo del servicio quirúrgico.");
+    }
 
-    rules.addPre(`Administrar profilaxis antimicrobiana con ${antibiotic} dentro de los 60 minutos previos a la incisión quirúrgica.`);
-    
-    // Check if redose is possibly needed (trans)
-    rules.addTrans(`Considerar re-dosificación de profilaxis antimicrobiana intraoperatoria si la duración excede las 4 horas o ante pérdida hemática mayor a 1,500 ml.`);
-
-    rules.addPost("Establecer plan de analgesia multimodal de acuerdo a escala visual análoga (EVA), minimizando el uso de opioides de ser posible.");
+    rules.addPost("Analgesia multimodal ahorradora de opioides según protocolo del servicio, con evaluación por escala visual análoga (EVA).");
 
     // FORMATTING RESULTS
     const formatBulletPoints = (items: string[]) => {
