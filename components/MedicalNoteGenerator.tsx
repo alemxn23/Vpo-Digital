@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { VPOData, Gender } from '../types';
 import { Clipboard, Check, Copy, FileText, User, Activity, Pill, ShieldCheck, Lock } from 'lucide-react';
+import { formatStopWindow } from '../custom_services/PharmacologyEngine';
 
 interface MedicalNoteGeneratorProps {
     isUnlocked?: boolean;
@@ -116,7 +117,7 @@ const MedicalNoteGenerator: React.FC<MedicalNoteGeneratorProps> = ({ isUnlocked 
 
     const generatePlan = () => {
         const medInstructions = data.selectedMeds?.map(med => {
-            const status = med.action === 'stop' ? `SUSPENDER ${med.daysPrior} días antes` : med.action === 'adjust' ? 'AJUSTAR DOSIS' : 'CONTINUAR';
+            const status = formatStopWindow({ action: med.action, daysPrior: med.daysPrior, hoursPrior: med.stopTimeHours }).toUpperCase();
             return `• ${med.name} (${med.dose}mg, ${med.route}): ${status}. Indicación: ${med.instructions}`;
         }).join('\n') || 'Sin fármacos registrados.';
 

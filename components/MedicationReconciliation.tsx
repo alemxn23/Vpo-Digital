@@ -4,7 +4,7 @@ import { VPOData, SelectedMed } from '../types';
 import { Pill, Search, X, AlertTriangle, Syringe, Tablets, RefreshCcw, CheckCircle, Ban, ArrowRightLeft, Info, ChevronRight, Activity, ShieldAlert } from 'lucide-react';
 import { MEDICATIONS_DB } from '../data/medications';
 import { fetchDrugSafetyInfo, FDASafetyInfo } from '../custom_services/OpenFDAClient';
-import { getMedicationRecommendation, MedicationRecommendation, calculateStressDose } from '../custom_services/PharmacologyEngine';
+import { getMedicationRecommendation, MedicationRecommendation, calculateStressDose, formatStopWindow } from '../custom_services/PharmacologyEngine';
 import { searchOpenFDAMeds } from '../custom_services/UniversalSearchService';
 import { Shield, CloudOff, FileText, Database, Zap } from 'lucide-react';
 import { checkMedicationInteractions, InteractionResult } from '../custom_services/DDIClient';
@@ -258,6 +258,7 @@ const MedicationReconciliation: React.FC = () => {
             ...medDbItem,
             action: rec.action,
             daysPrior: rec.daysPrior,
+            stopTimeHours: rec.hoursPrior,
             alertLevel: rec.alertLevel,
             instructions: rec.instructions,
             dose: 0,
@@ -301,6 +302,7 @@ const MedicationReconciliation: React.FC = () => {
                 ...med,
                 action: rec.action,
                 daysPrior: rec.daysPrior,
+                stopTimeHours: rec.hoursPrior,
                 alertLevel: rec.alertLevel,
                 instructions: rec.instructions
             };
@@ -763,7 +765,7 @@ const MedicationReconciliation: React.FC = () => {
 
                                 <div className="w-full">
                                     <p className="font-bold text-xs uppercase mb-0.5" style={{ color: med.alertLevel === 'red' ? '#dc2626' : med.alertLevel === 'yellow' ? '#d97706' : '#16a34a' }}>
-                                        {med.action === 'stop' ? `Suspender ${med.daysPrior} días antes` : med.action === 'adjust' ? 'Modificar Dosis' : 'Continuar'}
+                                        {formatStopWindow({ action: med.action, daysPrior: med.daysPrior, hoursPrior: med.stopTimeHours })}
                                     </p>
                                     <p className="text-xs text-slate-600 font-medium leading-tight">{med.instructions}</p>
                                 </div>

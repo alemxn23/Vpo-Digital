@@ -17,6 +17,19 @@ export interface MedicationRecommendation {
     stressDoseRecommendation?: string;
 }
 
+/**
+ * Texto uniforme para la ventana de suspensión. Evita etiquetas como "1.5 días" cuando
+ * la recomendación se expresó en horas, y "0 días" cuando se trata de omitir la dosis matutina.
+ */
+export const formatStopWindow = (rec: { action: string; daysPrior?: number; hoursPrior?: number }): string => {
+    if (rec.action === 'continue') return 'Continuar';
+    if (rec.action === 'adjust') return 'Modificar dosis';
+    const hours = typeof rec.hoursPrior === 'number' ? rec.hoursPrior : (rec.daysPrior ?? 0) * 24;
+    if (hours <= 0) return 'Omitir dosis el día de la cirugía';
+    if (hours < 48 || hours % 24 !== 0) return `Suspender ${hours}h antes`;
+    return `Suspender ${hours / 24} días antes`;
+};
+
 export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData): MedicationRecommendation => {
     // 1. DEFAULT VALUES (From DB)
     let recommendation: MedicationRecommendation = {
@@ -42,18 +55,28 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
     }
 
     if (med.atcCode?.startsWith('C09')) { // ACE inhibitors / ARBs
-        // Logic: Stop 24h before to prevent vasoplegia, UNLESS severe Heart Failure (HFrEF)
-        if (patient.icc && patient.icc_nyha !== 'I') {
-            // Complex case: HFrEF might need continuance to prevent afterload spike, 
-            // BUT mainstream guideline is still STOP to prevent vasoplegia during induction.
-            recommendation.action = 'stop';
-            recommendation.daysPrior = 1;
-            recommendation.instructions = "SUSPENDER 24h Antes. (Riesgo vasoplejía).";
-            recommendation.rationale = "Evitar hipotensión refractaria intraoperatoria.";
+        // ACC/AHA 2024: en HTA controlada es razonable omitir la dosis 24 h antes para limitar la
+        // hipotensión a la inducción; en insuficiencia cardiaca con FE reducida es razonable
+        // CONTINUARLOS (el riesgo de descompensación supera al de vasoplejía). ESC 2022 coincide:
+        // omitir el día de la cirugía sólo en pacientes sin IC.
+        const feviConocida = typeof patient.eco_fevi === 'number' && patient.eco_fevi > 0;
+        const hfref = !!patient.icc && (!feviConocida || patient.eco_fevi <= 40);
+
+        if (hfref) {
+            recommendation.action = 'continue';
+            recommendation.alertLevel = 'yellow';
+            recommendation.daysPrior = 0;
+            recommendation.hoursPrior = 0;
+            recommendation.instructions = feviConocida
+                ? `CONTINUAR (IC con FEVI ${patient.eco_fevi}%). Vigilar hipotensión a la inducción; reiniciar dosis plena al recuperar estabilidad hemodinámica.`
+                : "CONTINUAR (insuficiencia cardiaca; FEVI no registrada, se asume FE reducida). Vigilar hipotensión a la inducción.";
+            recommendation.rationale = "ACC/AHA 2024: en HFrEF es razonable continuar IECA/ARA-II perioperatoriamente.";
         } else {
             recommendation.action = 'stop';
             recommendation.daysPrior = 1;
-            recommendation.instructions = "SUSPENDER 24h Antes (Omitir dosis de la mañana).";
+            recommendation.hoursPrior = 24;
+            recommendation.instructions = "SUSPENDER 24h antes (omitir la dosis de la mañana). Reiniciar en cuanto haya estabilidad hemodinámica y vía oral (idealmente < 48 h).";
+            recommendation.rationale = "Limitar hipotensión refractaria a la inducción (vasoplejía). ACC/AHA 2024.";
         }
     }
 
@@ -64,29 +87,37 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
         const crcl = patient.tfg || 90;
 
         if (med.anticoagType === 'DOAC') {
-            // Basic PAUSE Logic
-            let daysToStop = 1; // Low risk default (24h approx)
+            // Protocolo PAUSE (Douketis, JAMA Intern Med 2019), endosado por ACC/AHA 2024:
+            //   Apixabán / rivaroxabán / edoxabán: bajo riesgo 1 día, alto riesgo 2 días. SIN ajuste por TFG.
+            //   Dabigatrán TFG >= 50: 1 / 2 días.  TFG 30-49: 2 / 4 días.  TFG < 30: contraindicado.
+            // Reinicio: 1 día tras bajo riesgo, 2-3 días tras alto riesgo. Nunca puente.
+            const isDabi = med.id === 'dabi';
+            const high = bleedingRisk === 'high';
+            let daysToStop: number;
+            let renalNote = '';
 
-            if (bleedingRisk === 'high') {
-                if (crcl < 50) {
-                    daysToStop = 3; // 72h (Apixaban/Rivaroxaban High Risk + Low TFG)
-                } else {
-                    daysToStop = 2; // 48h (High Risk + Normal TFG)
+            if (!isDabi) {
+                daysToStop = high ? 2 : 1;
+                if (crcl < 30) {
+                    recommendation.alertLevel = 'red';
+                    renalNote = ' TFG < 30: fuera del rango validado por PAUSE (los ensayos excluyeron TFG < 25-30); considerar prolongar la suspensión y valorar con hematología.';
                 }
             } else {
-                daysToStop = 1; // Low Risk (24h)
+                if (crcl >= 50) daysToStop = high ? 2 : 1;
+                else if (crcl >= 30) daysToStop = high ? 4 : 2;
+                else {
+                    daysToStop = high ? 4 : 2;
+                    recommendation.alertLevel = 'red';
+                    renalNote = ' TFG < 30: dabigatrán CONTRAINDICADO; acumulación impredecible. Interconsulta a hematología, considerar TTPa/tiempo de trombina diluido antes de la cirugía.';
+                }
             }
 
-            // Dabigatran Specifics (Accumulates more)
-            if (med.id === 'dabi') {
-                if (crcl < 50) daysToStop += 2; // +48h conservative
-                else if (bleedingRisk === 'high') daysToStop = 3; // 72h min for Dabi high risk
-            }
-
+            const restart = high ? '48-72 h' : '24 h';
             recommendation.daysPrior = daysToStop;
+            recommendation.hoursPrior = daysToStop * 24;
             recommendation.action = 'stop';
-            recommendation.instructions = `SUSPENDER ${daysToStop} días antes (aprox ${daysToStop * 24}h).`;
-            recommendation.rationale = `Riesgo Sangrado: ${bleedingRisk.toUpperCase()}. TFG: ${crcl.toFixed(0)}. Protocolo PAUSE.`;
+            recommendation.instructions = `SUSPENDER ${daysToStop} ${daysToStop === 1 ? 'día' : 'días'} antes (${daysToStop * 24}h). Reiniciar ${restart} después de la cirugía una vez asegurada la hemostasia, sin dosis de carga. NO requiere puente.${renalNote}`;
+            recommendation.rationale = `Protocolo PAUSE. Riesgo de sangrado quirúrgico: ${bleedingRisk.toUpperCase()}. TFG: ${crcl.toFixed(0)} ml/min.`;
         }
 
         if (med.anticoagType === 'AVK') { // Warfarin
@@ -105,17 +136,19 @@ export const getMedicationRecommendation = (med: SelectedMed, patient: VPOData):
         }
 
         if (med.anticoagType === 'HBPM') { // Enoxaparina y otras heparinas de bajo peso molecular
-            // Dosis terapéutica: suspender ~24h antes (36h si hay deterioro renal, por vida media prolongada).
-            // Dosis profiláctica solo requiere ~12h, pero sin un campo que distinga la intención de dosis
-            // se usa el criterio más conservador (terapéutica) para no subestimar el riesgo de sangrado.
+            // Consenso SEC/SEDAR 2025 y ACCP: dosis terapéutica → última dosis 24 h antes A LA MITAD de la
+            // dosis diaria (si es BID, omitir la dosis vespertina del día previo). Dosis profiláctica → 12 h.
+            // Sin campo que distinga la intención de dosis, el motor asume terapéutica (conservador).
+            // TFG < 30: el problema es la ACUMULACIÓN → ajustar dosis (1 mg/kg c/24 h) o cambiar a HNF,
+            // no simplemente alargar el intervalo.
             const renalImpaired = crcl < 30;
-            const hoursToStop = renalImpaired ? 36 : 24;
 
             recommendation.action = 'stop';
-            recommendation.daysPrior = hoursToStop / 24;
-            recommendation.hoursPrior = hoursToStop;
-            recommendation.instructions = `SUSPENDER dosis terapéutica ${hoursToStop}h antes (12h antes si es dosis profiláctica). TFG: ${crcl.toFixed(0)} ml/min${renalImpaired ? ' — vida media prolongada por deterioro renal' : ''}.`;
-            recommendation.rationale = `Riesgo de Sangrado Quirúrgico: ${bleedingRisk.toUpperCase()}.`;
+            recommendation.daysPrior = 1;
+            recommendation.hoursPrior = 24;
+            recommendation.alertLevel = renalImpaired ? 'red' : 'yellow';
+            recommendation.instructions = `Dosis terapéutica: última dosis 24h antes, a la MITAD de la dosis habitual (si BID, omitir la dosis vespertina del día previo). Dosis profiláctica: última dosis 12h antes.${renalImpaired ? ` TFG ${crcl.toFixed(0)} ml/min: ajustar a 1 mg/kg c/24h o cambiar a heparina no fraccionada por riesgo de acumulación; considerar anti-Xa si disponible.` : ''}`;
+            recommendation.rationale = `Riesgo de sangrado quirúrgico: ${bleedingRisk.toUpperCase()}. TFG: ${crcl.toFixed(0)} ml/min.`;
         }
     }
 

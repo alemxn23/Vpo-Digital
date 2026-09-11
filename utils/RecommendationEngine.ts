@@ -80,7 +80,10 @@ export const generateRecommendations = (data: VPOData): {
             let actionText = "";
 
             if (medRec.action === 'stop') {
-                actionText = `Suspender fármaco ${medRec.daysPrior * 24} horas previas al procedimiento`;
+                const hours = typeof medRec.hoursPrior === 'number' ? medRec.hoursPrior : medRec.daysPrior * 24;
+                actionText = hours <= 0
+                    ? 'Omitir la dosis el día del procedimiento'
+                    : `Suspender fármaco ${hours} horas previas al procedimiento`;
             } else if (medRec.action === 'continue') {
                 actionText = `Mantener tratamiento ininterrumpido`;
             } else {
